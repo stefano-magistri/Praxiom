@@ -15,16 +15,31 @@ public class PdfService
 
     public byte[] GenerateTherapyPdf(Therapy therapy)
     {
+        var paragraphs = therapy.Description
+            .Split("\n")
+            .Select(par => $"<p>{par}</p>");
+
         var htmlContent = $@"
         <html>
             <head>
                 <style>
-                    body {{ font-family: Calibri, sans-serif; }} 
+                    body {{ 
+                        font-family: Calibri, sans-serif; 
+                    }} 
+
+                    .h1 {{
+                        font-size: 20px;
+                        font-weight: bold;
+                    }}
+
+                    p {{
+                        font-size: 18px;
+                    }}
                 </style>
             </head>
             <body>
-                <h4>{therapy.Patient.Title} {therapy.Patient.FirstName} {therapy.Patient.LastName},</h4>
-                <p>{therapy.Description.Replace("\n", "<br />")}</p>
+                 <p class=""h1"">{therapy.Patient.Title} {therapy.Patient.FirstName} {therapy.Patient.LastName},</p>
+                {string.Join("", paragraphs)}
             </body>
         </html>";
 
@@ -46,7 +61,7 @@ public class PdfService
             },
             FooterSettings = { FontName = "Calibri", FontSize = 8, Spacing = 10,
                 Left = $"Terapia Paziente: {therapy.CreatedDate:dd/MM/yyyy} - {therapy.Patient.Title} {therapy.Patient.FirstName} {therapy.Patient.LastName}",
-                Right = "Pagina [page] di [toPage]", 
+                Right = "Pagina [page] di [toPage]",
                 HtmUrl = "_pdf_therapy/footer.html",  }
         };
 
