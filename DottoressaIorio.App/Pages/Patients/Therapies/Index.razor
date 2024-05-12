@@ -20,9 +20,12 @@ else
         <p>
             <strong>Data di Nascita:</strong> @patient.DateOfBirth?.ToShortDateString()
         </p>
-        <p>
-            <strong>Email:</strong> <a href="mailto:@patient.Email">@patient.Email</a>
-        </p>
+        @if (!string.IsNullOrEmpty(patient.Email))
+        {
+            <p>
+                <strong>Email:</strong> <a href="mailto:@patient.Email">@patient.Email</a>
+            </p>
+        }
         @if (patient.PlaceOfBirth != null)
         {
             <p>

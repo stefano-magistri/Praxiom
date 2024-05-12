@@ -10,13 +10,13 @@ namespace DottoressaIorio.App.Models
 
         public string? Title { get; set; }
 
-        [Required(ErrorMessage = "Il Nome è obbligatorio.")]
+        [Required(ErrorMessage = "Il Nome Ã© obbligatorio.")]
         public string FirstName { get; set; }
 
-        [Required(ErrorMessage = "Il Cognome è obbligatorio.")]
+        [Required(ErrorMessage = "Il Cognome Ã© obbligatorio.")]
         public string LastName { get; set; }
 
-        [Required(ErrorMessage = "La Data di Nascita è obbligatoria.")]
+        [Required(ErrorMessage = "La Data di Nascita Ã© obbligatoria.")]
         [DataType(DataType.Date)]
         [Range(typeof(DateTime), "1900-01-01", "2099-12-31", ErrorMessage = "La data di nascita deve essere compresa tra il 1900/01/01 e il 2099/12/31.")]
         public DateTime? DateOfBirth { get; set; }
@@ -25,12 +25,10 @@ namespace DottoressaIorio.App.Models
 
         public string? Gender { get; set; }
 
-        [RegularExpression(@"^\+?(\d{1,4})?[-. ]?(\(\d{1,4}\))?[ .-]?(\d{1,10})$", ErrorMessage = "Il formato del numero di telefono non è valido.")]
+        [RegularExpression(@"^\+?(\d{1,4})?[-. ]?(\(\d{1,4}\))?[ .-]?(\d{1,10})$", ErrorMessage = "Il formato del numero di telefono non Ã© valido.")]
         public string? PhoneNumber { get; set; }
-
-        [Required(ErrorMessage = "L'indirizzo email è obbligatorio.")]
-        [EmailAddress(ErrorMessage = "Indirizzo email non valido.")]
-        public string Email { get; set; }
+ 
+        public string Email { get; set; } = string.Empty;
 
         public List<Therapy> Therapies { get; set; }
 
