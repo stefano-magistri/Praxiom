@@ -1,10 +1,12 @@
-$sourcePath = "C:\Program Files\DottoressaIorio\app.db"
+cd "C:\Program Files\DottoressaIorio"
+
+$sourcePath = ".\app.db"
 $serviceName = "DottoressaIorio.App"
 $onedrivePath = [System.IO.Path]::Combine($env:USERPROFILE, "OneDrive")
 $vaultPath = [System.IO.Path]::Combine($onedrivePath, "Personal Vault")
 $backupPath = [System.IO.Path]::Combine($vaultPath, $serviceName)
 
-$backupPath2 = "C:\Program Files\DottoressaIorio\_db_backup\"
+$backupPath2 = ".\_db_backup\"
 
 # Check if the backup folder exists, create it if not
 if (-not (Test-Path $backupPath -PathType Container)) {
