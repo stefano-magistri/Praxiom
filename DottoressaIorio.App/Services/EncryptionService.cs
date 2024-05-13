@@ -6,11 +6,15 @@ namespace DottoressaIorio.App.Services;
 
 public static class EncryptionService
 {
-    private const string Key = "Alessandra2024";
+    private const string VariableName = "DottoressaIorio_App_Key";
 
-    private const string EncryptedDbPath = "app.db";
-    private const string UnencryptedDbPath = "app_unencrypted.db";
-    private const string ConnectionString = $"Data Source={EncryptedDbPath};Password={Key};Pooling=false";
+    private static string? Key => Environment.GetEnvironmentVariable(VariableName)
+                                  ?? "Alessandra2024";
+                                  //throw new ArgumentNullException(VariableName, "The environment variable is not set!");
+
+    private static readonly string EncryptedDbPath = "app.db";
+    private static readonly string UnencryptedDbPath = "app_unencrypted.db";
+    private static readonly string ConnectionString = $"Data Source={EncryptedDbPath};Password={Key};Pooling=false";
 
 
     public static string GetDatabaseConnectionString()

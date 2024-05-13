@@ -14,7 +14,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{87434521-9538-46EF-A483-56BF0E614104}"
 	ProjectSection(SolutionItems) = preProject
 		Utility\backup_script.ps1 = Utility\backup_script.ps1
-		Setup\DottoressaIorioTaskSchedule.xml = Setup\DottoressaIorioTaskSchedule.xml
 		Setup\install.bat = Setup\install.bat
 		Setup\uninstall.bat = Setup\uninstall.bat
 	EndProjectSection
