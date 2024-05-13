@@ -1,12 +1,12 @@
-﻿@page "/patients/edit/{id:int}"
+﻿@page "/patient/{id:int}/edit/"
 @inject PatientRepository repository
 @inject NavigationManager navigationManager
-
-
+ 
 <PageTitle>Modifica Paziente</PageTitle>
 <h1>Modifica Paziente</h1>
 
-<a href="/patients">Torna indietro</a>
+<a class="btn btn-primary" href="/patient/@Id/">Visualizza</a>
+<a class="btn btn-danger" href="/patient/@Id/delete/">Rimuovi</a>
 
 <hr class="my-4">
 @if (model == null)
@@ -78,8 +78,6 @@ else
                 </div>
             </div>
         </div>
-
-
         <div class="row g-3">
             <div class="col-12">
                 <label>Numero di telefono:</label>
@@ -87,11 +85,17 @@ else
                 <ValidationMessage For="@(() => model.PhoneNumber)" />
             </div>
         </div>
-
         <div class="form-group">
             <label>Indirizzo email:</label>
             <input type="email" class="form-control" @bind="model.Email" placeholder="name@example.com" />
             <ValidationMessage For="@(() => model.Email)" />
+        </div>
+        <hr class="my-4">
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Notes">Note:</label>
+                <InputTextArea id="Notes" @bind-Value="model.Notes" class="form-control" />
+            </div>
         </div>
         <hr class="my-4">
         <button type="submit" class="w-100 btn btn-primary btn-lg">Salva</button>
@@ -112,6 +116,6 @@ else
     private async Task SaveAsync()
     {
         await repository.UpdateAsync(model);
-        navigationManager.NavigateTo("/patients");
+        navigationManager.NavigateTo($"/patient/{Id}/");
     }
 }

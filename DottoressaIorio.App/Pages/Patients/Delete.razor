@@ -1,4 +1,4 @@
-﻿@page "/patients/delete/{id:int}"
+﻿@page "/patient/{id:int}/delete/"
 @inject PatientRepository repository
 @inject NavigationManager navigationManager
 
@@ -9,7 +9,7 @@
 <p>Vuoi rimuovere questo paziente?</p>
 
 <button class="btn btn-danger" @onclick="@SaveAsync">Rimuovi</button>
-<a class="btn btn-secondary" href="/patients">Cancella</a>
+<a class="btn btn-secondary" href="/patient/@Id">Cancella</a>
 
 @code {
     [Parameter]

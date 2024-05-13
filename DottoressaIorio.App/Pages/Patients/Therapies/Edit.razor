@@ -1,4 +1,4 @@
-﻿@page "/therapies/edit/{id:int}"
+﻿@page "/patient/{id:int}/edit-therapy"
 
 @inject PatientTherapyRepository repository
 @inject NavigationManager navigationManager
@@ -7,7 +7,7 @@
 <h1>Modifica Terapia</h1>
 <hr class="my-4">
 
-<a href="/patient/@model.PatientId/therapies">Torna indietro</a>
+<a href="/patient/@model.PatientId/">Torna indietro</a>
 <hr class="my-4">
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
     <DataAnnotationsValidator />
@@ -36,6 +36,6 @@
     private async Task SaveAsync()
     {
         await repository.UpdateAsync(model);
-        navigationManager.NavigateTo($"/patient/{model.PatientId}/therapies");
+        navigationManager.NavigateTo($"/patient/{model.PatientId}/");
     }
 }

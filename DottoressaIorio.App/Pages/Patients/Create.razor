@@ -60,6 +60,6 @@
         }
 
         await repository.AddAsync(model); 
-        navigationManager.NavigateTo($"/patient/{model.PatientId}/therapies");
+        navigationManager.NavigateTo($"/patient/{model.PatientId}/");
     }
 }

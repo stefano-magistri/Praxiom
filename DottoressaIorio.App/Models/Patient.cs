@@ -27,8 +27,10 @@ namespace DottoressaIorio.App.Models
 
         [RegularExpression(@"^\+?(\d{1,4})?[-. ]?(\(\d{1,4}\))?[ .-]?(\d{1,10})$", ErrorMessage = "Il formato del numero di telefono non é valido.")]
         public string? PhoneNumber { get; set; }
- 
+
         public string? Email { get; set; }
+
+        public string? Notes { get; set; }
 
         public List<Therapy> Therapies { get; set; }
 

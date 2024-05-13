@@ -1,4 +1,4 @@
-﻿@page "/patient/{patientId:int}/therapies"
+﻿@page "/patient/{patientId:int}/"
 
 @inject PatientRepository patientRepository
 @inject PatientTherapyRepository repository
@@ -7,7 +7,10 @@
 @inject PdfService pdfService
 
 <PageTitle>@patient.Title @patient.FirstName @patient.LastName</PageTitle>
-    <h1>@patient.Title @patient.FirstName @patient.LastName</h1>
+<h1>@patient.Title @patient.FirstName @patient.LastName</h1>
+<a class="btn btn-primary" href="/patient/@PatientId/edit/">Modifica</a>
+<a class="btn btn-danger" href="/patient/@PatientId/delete/">Rimuovi</a>
+
 <hr class="my-4">
 
 @if (patient == null)
@@ -45,9 +48,26 @@ else
             </p>
         }
     </div>
+
+    <hr class="my-4">
+    <h3>Note</h3>
+    
+    @if (!string.IsNullOrEmpty(patient.Notes))
+    {
+        <p>
+            @patient.Notes
+        </p>
+    }
+    else
+    {
+        <p>
+            Non ci sono note.
+        </p>
+    }
+
     <hr class="my-4">
     <h3>Terapie</h3>
-    <a class="btn btn-outline-primary" href="/patients/edit/@PatientId/therapies/create">
+    <a class="btn btn-outline-primary" href="/patient/@PatientId/create-therapy/">
         Aggiungi
     </a>
     @if (therapies != null && therapies.Any())
@@ -55,26 +75,26 @@ else
         <hr class="my-4">
         <table class="table">
             <thead>
-                <tr>
-                    <th>Data inizio terapia</th>
-                    <th>Azioni</th>
-                </tr>
+            <tr>
+                <th>Data inizio terapia</th>
+                <th>Azioni</th>
+            </tr>
             </thead>
             <tbody>
-                @foreach (var t in therapies)
-                {
-                    <tr>
-                        <td>
-                            <a href="/therapies/edit/@t.TherapyId">
-                                @t.CreatedDate.ToString("dd/MM/yyyy")
-                            </a>
-                        </td>
-                        <td>
-                            <button class="btn btn-primary" @onclick="() => PrintAsync(t.TherapyId)">Scarica</button>
-                            <button class="btn btn-danger" @onclick="() => NavigateToDeleteTherapy(t.TherapyId)">Rimuovi</button>
-                        </td>
-                    </tr>
-                }
+            @foreach (var t in therapies)
+            {
+                <tr>
+                    <td>
+                            <a href="patient/@t.TherapyId/edit-therapy/">
+                            @t.CreatedDate.ToString("dd/MM/yyyy")
+                        </a>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => PrintAsync(t.TherapyId)">Scarica</button>
+                        <button class="btn btn-danger" @onclick="() => NavigateToDeleteTherapy(t.TherapyId)">Rimuovi</button>
+                    </td>
+                </tr>
+            }
             </tbody>
         </table>
     }
@@ -106,6 +126,6 @@ else
 
     private void NavigateToDeleteTherapy(int id)
     {
-        navigationManager.NavigateTo($"/therapies/delete/{id}");
+        navigationManager.NavigateTo($"/patient/{id}/delete-therapy/");
     }
 }

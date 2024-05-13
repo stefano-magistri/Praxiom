@@ -38,7 +38,7 @@ public class TherapyDeletePageTests : TestContext, IAsyncDisposable
         var therapyId = 1;
         var patientId = 1;
         var navigationManagerMock = new Mock<NavigationManager>();
-        var expectedNavigationUri = $"/patient/{patientId}/therapies";
+        var expectedNavigationUri = $"/patient/{patientId}/";
 
         // Arrange
         var ctx = new TestContext();

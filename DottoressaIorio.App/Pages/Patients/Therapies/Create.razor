@@ -1,4 +1,4 @@
-﻿@page "/patients/edit/{id:int}/therapies/create"
+﻿@page "/patient/{id:int}/create-therapy"
 
 @inject TherapyTemplateRepository templateRepository
 @inject PatientTherapyRepository repository
@@ -7,7 +7,7 @@
 <PageTitle>Aggiungi Terapia</PageTitle>
 <h1>Aggiungi Terapia</h1>
 
-<a href="/patient/@Id/therapies">Torna indietro</a>
+<a href="/patient/@Id/">Torna indietro</a>
 <hr class="my-4">
 <EditForm Model="@model" OnValidSubmit="@SaveAsync">
     <DataAnnotationsValidator />
@@ -49,7 +49,7 @@
     {
         model.PatientId = Id;
         await  repository.AddAsync(model); 
-        navigationManager.NavigateTo($"/patient/{Id}/therapies");
+        navigationManager.NavigateTo($"/patient/{Id}");
     }
 
     private async Task TemplateChanged(ChangeEventArgs args)

@@ -52,14 +52,14 @@ public class PatientsBase : ComponentBase
     }
 
 
-    protected void NavigateToEditPatient(int patientId)
+    protected void NavigateToEditPatient(int id)
     {
-        NavigationManager.NavigateTo($"/patients/edit/{patientId}");
+        NavigationManager.NavigateTo($"/patient/{id}/edit/");
     }
 
     protected void NavigateToDeletePatient(int id)
     {
-        NavigationManager.NavigateTo($"/patients/delete/{id}");
+        NavigationManager.NavigateTo($"/patient/{id}/delete");
     }
 
     protected async Task PreviousPage()

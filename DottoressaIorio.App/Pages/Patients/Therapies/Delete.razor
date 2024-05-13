@@ -1,4 +1,4 @@
-﻿@page "/therapies/delete/{id:int}"
+﻿@page "/patient/{id:int}/delete-therapy"
 
 @inject PatientTherapyRepository repository
 @inject NavigationManager navigationManager
@@ -10,7 +10,7 @@
 <p>Vuoi rimuovere questa terapia?</p>
 
 <button class="btn btn-danger" @onclick="@SaveAsync">Rimuovi</button>
-<a class="btn btn-secondary" href="/patient/@model.PatientId/therapies">Cancella</a>
+<a class="btn btn-secondary" href="/patient/@model.PatientId/">Cancella</a>
 
 @code {
     [Parameter] public int Id { get; set; }
@@ -25,6 +25,6 @@
     private async Task SaveAsync()
     {
         await repository.DeleteAsync(model);
-        navigationManager.NavigateTo($"/patient/{model.PatientId}/therapies");
+        navigationManager.NavigateTo($"/patient/{model.PatientId}/");
     }
 }
