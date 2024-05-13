@@ -22,8 +22,12 @@ builder.Host.UseSerilog();
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+ 
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Encrypt existing database or create new encrypted database if not exists
+EncryptionService.EncryptDatabaseIfNotExists();
+var connectionString = EncryptionService.GetDatabaseConnectionString();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
 
