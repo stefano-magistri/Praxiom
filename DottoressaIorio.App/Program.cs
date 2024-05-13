@@ -44,9 +44,8 @@ using (var scope = app.Services.CreateScope())
     var serviceProvider = scope.ServiceProvider;
     var dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
 
-    if (!dbContext.Database.IsRelational() || !dbContext.Database.CanConnect())
-        // SQLite file doesn't exist or cannot connect, run migration
-        dbContext.Database.Migrate();
+    // Ensure the database is created and apply pending migrations 
+    dbContext.Database.Migrate();
 }
 
 // Configure the HTTP request pipeline.

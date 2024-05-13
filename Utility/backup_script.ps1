@@ -1,12 +1,12 @@
-cd "C:\Program Files\DottoressaIorio"
-
+$destinationFolder="C:\Program Files\DottoressaIorio\"
 $sourcePath = ".\app.db"
 $serviceName = "DottoressaIorio.App"
 $onedrivePath = [System.IO.Path]::Combine($env:USERPROFILE, "OneDrive")
 $vaultPath = [System.IO.Path]::Combine($onedrivePath, "Personal Vault")
 $backupPath = [System.IO.Path]::Combine($vaultPath, $serviceName)
 
-$backupPath2 = ".\_db_backup\"
+
+cd $destinationFolder
 
 # Check if the backup folder exists, create it if not
 if (-not (Test-Path $backupPath -PathType Container)) {
@@ -21,7 +21,6 @@ Copy-Item $sourcePath ([System.IO.Path]::Combine($backupPath, "app_backup_$(Get-
 
 # Copy the item with a timestamped backup file name 2
 Copy-Item $sourcePath "$backupPath\app_backup_$(Get-Date -Format 'yyyyMMddHHmmss').db"
-
 
 # Start the installed service using NSSM
 .\nssm start $serviceName
