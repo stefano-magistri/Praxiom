@@ -11,7 +11,7 @@
     <div class="row g-3">
         <div class="col-12">
             <label for="TemplateId">Precompilato:</label>
-            <select id="TemplateId" @onchange="TemplateChanged" class="form-control">
+            <select id="TemplateId" @onchange="TemplateChanged" class="form-select">
                 <option value="0">Seleziona...</option>
                 @foreach (var template in templates)
                 {
