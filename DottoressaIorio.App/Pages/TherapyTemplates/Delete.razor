@@ -1,15 +1,13 @@
-﻿@page "/therapy-templates/delete/{id:int}"
+﻿@page "/therapy-template/{id:int}/delete"
 @inject TherapyTemplateRepository repository
 @inject NavigationManager navigationManager
-
-<PageTitle>Rimuovi Terapia Precompilata</PageTitle>
-<h1>Rimuovi Terapia Precompilata</h1>
-<hr class="my-4">
+ 
+<PageHeader Title="Rimuovi Terapia Precompilata" /> 
 
 <p>Vuoi rimuovere questa terapia precompilata?</p>
-
-<a class="btn btn-secondary" href="/therapy-templates">Annulla</a>
-<button type="button" class="btn btn-danger" @onclick="@SaveAsync"><span class="oi oi-trash px-1" aria-hidden="true"></span>Rimuovi</button>
+ 
+<CancelButton Url="/therapy-templates" />
+<RemoveButton OnClick="@SaveAsync" /> 
 
 @code {
     [Parameter]

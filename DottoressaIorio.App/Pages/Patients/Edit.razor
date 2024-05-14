@@ -5,9 +5,6 @@
 <PageTitle>Modifica Paziente</PageTitle>
 <h1>Modifica Paziente</h1>
 
-<a class="btn btn-primary" href="/patient/@Id/"><span class="oi oi-eye px-1" aria-hidden="true"></span>Visualizza</a>
-<a class="btn btn-danger" href="/patient/@Id/delete/"><span class="oi oi-trash px-1" aria-hidden="true"></span>Rimuovi</a>
-
 <hr class="my-4">
 @if (model == null)
 {
@@ -98,7 +95,9 @@ else
             </div>
         </div>
         <hr class="my-4">
-        <button type="submit" class="w-100 btn btn-primary btn-lg"><span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva</button>
+        <CancelButton Url="@($"/patient/{Id}/")" />
+        <AnchorButton ButtonText="Rimuovi" ButtonClass="danger" Url="@($"/patient/{Id}/delete/")"></AnchorButton>
+        <SubmitButton />
     </EditForm>
 }
 

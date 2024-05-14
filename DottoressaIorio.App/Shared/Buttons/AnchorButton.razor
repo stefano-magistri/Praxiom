@@ -1,0 +1,21 @@
+﻿<a class="btn btn-@ButtonClass" href="@Url">
+    @if (!string.IsNullOrEmpty(IconClass))
+    {
+        <span class="@IconClass @(string.IsNullOrEmpty(ButtonText) ? "" : "px-1")" aria-hidden="true"></span>
+    }
+    @ButtonText
+</a>
+
+@code {
+    [Parameter, EditorRequired]
+    public string ButtonText { get; set; }
+
+    [Parameter, EditorRequired]
+    public string ButtonClass { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Url { get; set; }
+
+    [Parameter]
+    public string IconClass { get; set; }
+}

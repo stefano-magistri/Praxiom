@@ -3,9 +3,9 @@
 @inject TherapyTemplateRepository repository
 @inject NavigationManager navigationManager
 
-<PageTitle>Terapie Precompilate</PageTitle>
-<h1>Terapie Precompilate</h1>
-<hr class="my-4">
+
+<PageHeader Title="Terapie Precompilate" />
+
 @if (therapyTemplates == null || therapyTemplates.Count == 0)
 {
     <p>Nessuna terapia precompilata trovata.</p>
@@ -30,8 +30,8 @@ else
                             @template.Description
                         </td>
                         <td>
-                            <button type="button" class="btn btn-primary" @onclick="() => NavigateToEdit(template.Id)"><span class="oi oi-pencil" aria-hidden="true"></span></button>
-                            <button type="button" class="btn btn-danger" @onclick="() => NavigateToDelete(template.Id)"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                            <ActionButton ButtonClass="primary" OnClick="() => NavigateToEdit(template.Id)" IconClass="oi oi-pencil"></ActionButton>
+                            <ActionButton ButtonClass="danger" OnClick="() => NavigateToDelete(template.Id)" IconClass="oi oi-trash"></ActionButton>
                         </td>
                     </tr>
                 }
@@ -50,11 +50,11 @@ else
 
     private void NavigateToEdit(int id)
     {
-        navigationManager.NavigateTo($"/therapy-templates/edit/{id}");
+        navigationManager.NavigateTo($"/therapy-template/{id}/edit");
     }
 
     private void NavigateToDelete(int id)
     {
-        navigationManager.NavigateTo($"/therapy-templates/delete/{id}");
+        navigationManager.NavigateTo($"/therapy-template/{id}/delete");
     }
 }

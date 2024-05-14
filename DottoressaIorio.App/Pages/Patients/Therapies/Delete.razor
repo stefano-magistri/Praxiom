@@ -3,14 +3,12 @@
 @inject PatientTherapyRepository repository
 @inject NavigationManager navigationManager
 
-<PageTitle>Rimuovi Terapia</PageTitle>
-<h1>Rimuovi Terapia</h1>
-<hr class="my-4">
+<PageHeader Title="Rimuovi Terapia" /> 
 
 <p>Vuoi rimuovere questa terapia?</p>
-
-<a class="btn btn-secondary" href="/patient/@model.PatientId/">Annulla</a>
-<button type="button" class="btn btn-danger" @onclick="@SaveAsync"><span class="oi oi-trash px-1" aria-hidden="true"></span>Rimuovi</button>
+ 
+<CancelButton Url="@($"/patient/{model.PatientId}/")" />
+<RemoveButton OnClick="@SaveAsync" />
 @code {
     [Parameter] public int Id { get; set; }
 

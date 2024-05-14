@@ -3,12 +3,8 @@
 @inject PatientTherapyRepository repository
 @inject NavigationManager navigationManager
 
-<PageTitle>Modifica Terapia</PageTitle>
-<h1>Modifica Terapia</h1>
-<hr class="my-4">
+<PageHeader Title="Modifica Terapia" />
 
-<a href="/patient/@model.PatientId/">Torna indietro</a>
-<hr class="my-4">
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
     <DataAnnotationsValidator />
     <div class="row g-3">
@@ -18,8 +14,10 @@
             <ValidationMessage For="@(() => model.Description)" />
         </div>
     </div>
-    <hr class="my-4">
-    <button type="submit" class="w-100 btn btn-primary btn-lg"><span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva</button>
+
+    <hr class="my-4"> 
+    <CancelButton Url="@($"/patient/{model.PatientId}/")" />
+    <SubmitButton /> 
 </EditForm>
 
 @code {
