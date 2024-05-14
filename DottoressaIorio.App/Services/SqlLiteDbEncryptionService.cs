@@ -4,32 +4,45 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DottoressaIorio.App.Services;
 
-public static class EncryptionService
+public class SqlLiteDbEncryptionService
 {
-    private const string VariableName = "DottoressaIorio_App_Key";
+    private const string EncryptedDbPath = "app.db";
+    private const string UnencryptedDbPath = "app_unencrypted.db";
+    private readonly string connectionString;
+    private readonly string key;
 
-    private static string? Key => Environment.GetEnvironmentVariable(VariableName)
-                                  ?? "Alessandra2024";
-                                  //throw new ArgumentNullException(VariableName, "The environment variable is not set!");
-
-    private static readonly string EncryptedDbPath = "app.db";
-    private static readonly string UnencryptedDbPath = "app_unencrypted.db";
-    private static readonly string ConnectionString = $"Data Source={EncryptedDbPath};Password={Key};Pooling=false";
-
-
-    public static string GetDatabaseConnectionString()
+    public SqlLiteDbEncryptionService(string key)
     {
-        var connectionStringBuilder = new SqliteConnectionStringBuilder(ConnectionString)
+        this.key = key;
+        connectionString = $"Data Source={EncryptedDbPath};Password={key};Pooling=false";
+    }
+
+    public string GetDatabaseConnectionString()
+    {
+        SqliteConnectionStringBuilder connectionStringBuilder;
+        if (string.IsNullOrEmpty(key))
         {
-            Mode = SqliteOpenMode.ReadWriteCreate,
-            Password = Key // Replace with your desired password
-        };
+            connectionStringBuilder = new SqliteConnectionStringBuilder($"Data Source={EncryptedDbPath}")
+            {
+                Mode = SqliteOpenMode.ReadWriteCreate,
+            };
+        }
+        else
+        {
+            connectionStringBuilder = new SqliteConnectionStringBuilder($"Data Source={EncryptedDbPath}")
+            {
+                Mode = SqliteOpenMode.ReadWriteCreate,
+                Password = key // Replace with your desired password
+            };
+        }
         return connectionStringBuilder.ToString();
     }
 
     // Method to encrypt existing database if not encrypted
-    public static void EncryptDatabaseIfNotExists()
+    public void EncryptDatabaseIfNotExists()
     {
+        if (string.IsNullOrEmpty(key)) return; // If encrypted key not exists, return
+
         if (!File.Exists(EncryptedDbPath)) return; // If encrypted database not exists, return
 
         // Check if the existing database is encrypted
@@ -50,11 +63,11 @@ public static class EncryptionService
     }
 
     // Method to export data from existing database to encrypted database
-    private static void ExportDataToEncryptedDatabase()
+    private void ExportDataToEncryptedDatabase()
     {
         // Create a new encrypted database file
         using var encryptedDbContext = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlite(ConnectionString)
+            .UseSqlite(connectionString)
             .Options);
 
         // Apply EF Core migrations to create database schema in the encrypted database
@@ -78,7 +91,7 @@ public static class EncryptionService
     }
 
     // Method to check if database is encrypted
-    private static bool IsDatabaseEncrypted()
+    private bool IsDatabaseEncrypted()
     {
         using var connection = new SqliteConnection($"Data Source={EncryptedDbPath};Pooling=false");
         try
