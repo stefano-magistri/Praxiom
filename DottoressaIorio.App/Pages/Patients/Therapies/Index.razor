@@ -8,8 +8,8 @@
 
 <PageTitle>@patient.Title @patient.FirstName @patient.LastName</PageTitle>
 <h1>@patient.Title @patient.FirstName @patient.LastName</h1>
-<a class="btn btn-primary" href="/patient/@PatientId/edit/">Modifica</a>
-<a class="btn btn-danger" href="/patient/@PatientId/delete/">Rimuovi</a>
+<a class="btn btn-primary" href="/patient/@PatientId/edit/"><span class="oi oi-pencil px-1" aria-hidden="true"></span>Modifica</a>
+<a class="btn btn-danger" href="/patient/@PatientId/delete/"><span class="oi oi-trash px-1" aria-hidden="true"></span>Rimuovi</a>
 
 <hr class="my-4">
 
@@ -51,11 +51,11 @@ else
 
     <hr class="my-4">
     <h3>Note</h3>
-    
+
     @if (!string.IsNullOrEmpty(patient.Notes))
     {
         <p>
-            @patient.Notes
+            @((MarkupString)patient.GetHtmlNotes())
         </p>
     }
     else
@@ -68,7 +68,7 @@ else
     <hr class="my-4">
     <h3>Terapie</h3>
     <a class="btn btn-outline-primary" href="/patient/@PatientId/create-therapy/">
-        Aggiungi
+        <span class="oi oi-plus px-1" aria-hidden="true"></span> Aggiungi
     </a>
     @if (therapies != null && therapies.Any())
     {
@@ -77,6 +77,7 @@ else
             <thead>
             <tr>
                 <th>Data inizio terapia</th>
+                <th>Descrizione</th>
                 <th>Azioni</th>
             </tr>
             </thead>
@@ -85,13 +86,21 @@ else
             {
                 <tr>
                     <td>
-                            <a href="patient/@t.TherapyId/edit-therapy/">
-                            @t.CreatedDate.ToString("dd/MM/yyyy")
-                        </a>
+                        @t.CreatedDate.ToString("dd/MM/yyyy")
+                    </td>
+                    <td class="text-truncate truncate-small">
+                        @t.Description
                     </td>
                     <td>
-                        <button class="btn btn-primary" @onclick="() => PrintAsync(t.TherapyId)">Scarica</button>
-                        <button class="btn btn-danger" @onclick="() => NavigateToDeleteTherapy(t.TherapyId)">Rimuovi</button>
+                        <a class="btn btn-dark" @onclick="() => PrintAsync(t.TherapyId)">
+                            <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
+                        </a>
+                        <a class="btn btn-primary" href="patient/@t.TherapyId/edit-therapy/">
+                            <span class="oi oi-pencil" aria-hidden="true"></span>
+                        </a>
+                        <a class="btn btn-danger" @onclick="() => NavigateToDeleteTherapy(t.TherapyId)">
+                            <span class="oi oi-trash" aria-hidden="true"></span>
+                        </a>
                     </td>
                 </tr>
             }
@@ -128,4 +137,5 @@ else
     {
         navigationManager.NavigateTo($"/patient/{id}/delete-therapy/");
     }
+
 }

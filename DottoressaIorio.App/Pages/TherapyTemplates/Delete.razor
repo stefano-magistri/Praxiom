@@ -8,8 +8,8 @@
 
 <p>Vuoi rimuovere questa terapia precompilata?</p>
 
-<button class="btn btn-danger" @onclick="@SaveAsync">Rimuovi</button>
-<a class="btn btn-secondary" href="/therapy-templates">Cancella</a>
+<a class="btn btn-secondary" href="/therapy-templates">Annulla</a>
+<button type="button" class="btn btn-danger" @onclick="@SaveAsync"><span class="oi oi-trash px-1" aria-hidden="true"></span>Rimuovi</button>
 
 @code {
     [Parameter]

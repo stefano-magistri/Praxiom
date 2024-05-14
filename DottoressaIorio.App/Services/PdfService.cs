@@ -14,11 +14,7 @@ public class PdfService
     }
 
     public byte[] GenerateTherapyPdf(Therapy therapy)
-    {
-        var paragraphs = therapy.Description
-            .Split("\n")
-            .Select(par => $"<p>{par}</p>");
-
+    { 
         var htmlContent = $@"
         <html>
             <head>
@@ -39,7 +35,7 @@ public class PdfService
             </head>
             <body>
                  <p class=""h1"">{therapy.Patient.Title} {therapy.Patient.FirstName} {therapy.Patient.LastName},</p>
-                {string.Join("", paragraphs)}
+                {therapy.GetHtmlDescription()}
             </body>
         </html>";
 

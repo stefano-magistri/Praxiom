@@ -5,8 +5,8 @@
 <PageTitle>Modifica Paziente</PageTitle>
 <h1>Modifica Paziente</h1>
 
-<a class="btn btn-primary" href="/patient/@Id/">Visualizza</a>
-<a class="btn btn-danger" href="/patient/@Id/delete/">Rimuovi</a>
+<a class="btn btn-primary" href="/patient/@Id/"><span class="oi oi-eye px-1" aria-hidden="true"></span>Visualizza</a>
+<a class="btn btn-danger" href="/patient/@Id/delete/"><span class="oi oi-trash px-1" aria-hidden="true"></span>Rimuovi</a>
 
 <hr class="my-4">
 @if (model == null)
@@ -54,7 +54,7 @@ else
         </div>
         <div class="row g-3">
             <div class="col-12">
-                <label>Luogo di Nascita:*</label>
+                <label>Luogo di Nascita:</label>
                 <InputText id="PlaceOfBirth" @bind-Value="model.PlaceOfBirth" class="form-control" autocomplete="off" />
             </div>
         </div>
@@ -98,7 +98,7 @@ else
             </div>
         </div>
         <hr class="my-4">
-        <button type="submit" class="w-100 btn btn-primary btn-lg">Salva</button>
+        <button type="submit" class="w-100 btn btn-primary btn-lg"><span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva</button>
     </EditForm>
 }
 

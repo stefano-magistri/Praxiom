@@ -4,7 +4,7 @@
     <ul class="pagination">
         <li class="page-item" @onclick="PreviousPage">
             <a class="page-link" href="#" @onclick:preventDefault>
-                <span aria-hidden="true">&laquo;</span>
+                <span class="oi oi-caret-left px-1" aria-hidden="true"></span>
             </a>
         </li>
         @for (var pageIndex = 1; pageIndex <= TotalPages; pageIndex++)
@@ -28,7 +28,7 @@
         }
         <li class="page-item" @onclick="NextPage">
             <a class="page-link" href="#" @onclick:preventDefault>
-                <span aria-hidden="true">&raquo;</span>
+                <span class="oi oi-caret-right px-1" aria-hidden="true"></span>
             </a>
         </li>
     </ul>
