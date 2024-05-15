@@ -1,5 +1,10 @@
-﻿<AuthorizeView>
+﻿@inject IWebHostEnvironment Environment
+<AuthorizeView>
     <div class="px-4 auth">
-        Ciao, @context.User.Identity?.Name!
+        Ciao, @context.User.Identity?.Name! 
+        @if (!@Environment.IsProduction())
+        {
+            <small class="text-muted">@Environment.EnvironmentName</small>
+        }
     </div>
 </AuthorizeView>

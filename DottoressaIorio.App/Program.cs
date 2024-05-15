@@ -8,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
+
+var encryptionKey = configuration["EncryptionKey"];
+var allowedUsername = configuration["AllowedUsername"];
 
 // Add services to the container.
 builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
@@ -15,6 +19,13 @@ builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("SpecificUserOnly", policy =>
+        policy.RequireAssertion(context =>
+            context.User.Identity?.Name != null &&
+            context.User.Identity.Name
+                .Equals(allowedUsername,
+                    StringComparison.InvariantCultureIgnoreCase))); // Replace with your specific username
+
     // By default, all incoming requests will be authorized according to the default policy.
     options.FallbackPolicy = options.DefaultPolicy;
 });
@@ -22,7 +33,6 @@ builder.Services.AddAuthorization(options =>
 // Configure Serilog for logging to a file
 builder.Logging.ClearProviders();
 Log.Logger = new LoggerConfiguration()
-    //.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.File("logs/DottoressaIorio.App.log", rollingInterval: RollingInterval.Day)
@@ -30,13 +40,13 @@ Log.Logger = new LoggerConfiguration()
 
 // Use Serilog for logging
 builder.Host.UseSerilog();
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-var configuration = builder.Configuration;
-var encryptionKey = configuration["EncryptionKey"];
 var encryption = new SqlLiteDbEncryptionService(encryptionKey);
+
 // Encrypt existing database or create new encrypted database if not exists
 encryption.EncryptDatabaseIfNotExists();
 var connectionString = encryption.GetDatabaseConnectionString();
@@ -55,7 +65,6 @@ builder.Services.AddScoped<PdfService>();
 
 var app = builder.Build();
 
-
 using (var scope = app.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
@@ -69,18 +78,11 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
-
-    // If not in development, listen on all interfaces
-    //app.Urls.Add("http://0.0.0.0:5000");  // For IPv4
-    //app.Urls.Add("http://[::]:5000");  // For IPv6
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseRouting();
 
 app.UseAuthentication();
