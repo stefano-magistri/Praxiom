@@ -8,40 +8,36 @@ public class SqlLiteDbEncryptionService
 {
     private const string EncryptedDbPath = "app.db";
     private const string UnencryptedDbPath = "app_unencrypted.db";
-    private readonly string connectionString;
-    private readonly string key;
+    private readonly string _connectionString;
+    private readonly string _key;
 
     public SqlLiteDbEncryptionService(string key)
     {
-        this.key = key;
-        connectionString = $"Data Source={EncryptedDbPath};Password={key};Pooling=false";
+        _key = key;
+        _connectionString = $"Data Source={EncryptedDbPath};Password={key};Pooling=false";
     }
 
     public string GetDatabaseConnectionString()
     {
         SqliteConnectionStringBuilder connectionStringBuilder;
-        if (string.IsNullOrEmpty(key))
-        {
+        if (string.IsNullOrEmpty(_key))
             connectionStringBuilder = new SqliteConnectionStringBuilder($"Data Source={EncryptedDbPath}")
             {
-                Mode = SqliteOpenMode.ReadWriteCreate,
+                Mode = SqliteOpenMode.ReadWriteCreate
             };
-        }
         else
-        {
             connectionStringBuilder = new SqliteConnectionStringBuilder($"Data Source={EncryptedDbPath}")
             {
                 Mode = SqliteOpenMode.ReadWriteCreate,
-                Password = key // Replace with your desired password
+                Password = _key // Replace with your desired password
             };
-        }
         return connectionStringBuilder.ToString();
     }
 
     // Method to encrypt existing database if not encrypted
     public void EncryptDatabaseIfNotExists()
     {
-        if (string.IsNullOrEmpty(key)) return; // If encrypted key not exists, return
+        if (string.IsNullOrEmpty(_key)) return; // If encrypted key not exists, return
 
         if (!File.Exists(EncryptedDbPath)) return; // If encrypted database not exists, return
 
@@ -67,7 +63,7 @@ public class SqlLiteDbEncryptionService
     {
         // Create a new encrypted database file
         using var encryptedDbContext = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlite(connectionString)
+            .UseSqlite(_connectionString)
             .Options);
 
         // Apply EF Core migrations to create database schema in the encrypted database
