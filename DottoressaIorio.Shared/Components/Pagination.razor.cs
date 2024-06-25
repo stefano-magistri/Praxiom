@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace DottoressaIorio.App.Shared;
+namespace DottoressaIorio.Shared.Components;
 
 public class PaginationBase : ComponentBase
 {

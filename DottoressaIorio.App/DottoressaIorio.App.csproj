@@ -51,6 +51,7 @@
 	  <ProjectReference Include="..\DottoressaIorio.Models\DottoressaIorio.Models.csproj" />
 	  <ProjectReference Include="..\DottoressaIorio.Repositories\DottoressaIorio.Repositories.csproj" />
 	  <ProjectReference Include="..\DottoressaIorio.Services\DottoressaIorio.Services.csproj" />
+	  <ProjectReference Include="..\DottoressaIorio.Shared\DottoressaIorio.Shared.csproj" />
 	</ItemGroup>
 
 </Project>
