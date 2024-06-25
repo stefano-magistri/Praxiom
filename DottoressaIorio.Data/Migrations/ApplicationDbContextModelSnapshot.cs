@@ -15,9 +15,9 @@ namespace DottoressaIorio.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.29");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.31");
 
-            modelBuilder.Entity("DottoressaIorio.App.Models.Patient", b =>
+            modelBuilder.Entity("DottoressaIorio.Models.Patient", b =>
                 {
                     b.Property<int>("PatientId")
                         .ValueGeneratedOnAdd()
@@ -67,7 +67,7 @@ namespace DottoressaIorio.Migrations
                     b.ToTable("Patients");
                 });
 
-            modelBuilder.Entity("DottoressaIorio.App.Models.Therapy", b =>
+            modelBuilder.Entity("DottoressaIorio.Models.Therapy", b =>
                 {
                     b.Property<int>("TherapyId")
                         .ValueGeneratedOnAdd()
@@ -96,7 +96,7 @@ namespace DottoressaIorio.Migrations
                     b.ToTable("Therapies");
                 });
 
-            modelBuilder.Entity("DottoressaIorio.App.Models.TherapyTemplate", b =>
+            modelBuilder.Entity("DottoressaIorio.Models.TherapyTemplate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -124,9 +124,9 @@ namespace DottoressaIorio.Migrations
                     b.ToTable("TherapyTemplates");
                 });
 
-            modelBuilder.Entity("DottoressaIorio.App.Models.Therapy", b =>
+            modelBuilder.Entity("DottoressaIorio.Models.Therapy", b =>
                 {
-                    b.HasOne("DottoressaIorio.App.Models.Patient", "Patient")
+                    b.HasOne("DottoressaIorio.Models.Patient", "Patient")
                         .WithMany("Therapies")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -135,7 +135,7 @@ namespace DottoressaIorio.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("DottoressaIorio.App.Models.Patient", b =>
+            modelBuilder.Entity("DottoressaIorio.Models.Patient", b =>
                 {
                     b.Navigation("Therapies");
                 });
