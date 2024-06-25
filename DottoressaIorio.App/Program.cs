@@ -1,8 +1,8 @@
 using DinkToPdf;
 using DinkToPdf.Contracts;
-using DottoressaIorio.App.Data;
-using DottoressaIorio.App.Services;
-using DottoressaIorio.App.Services.Repositories;
+using DottoressaIorio.Data;
+using DottoressaIorio.Repositories;
+using DottoressaIorio.Services;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.EntityFrameworkCore;
 using Serilog;

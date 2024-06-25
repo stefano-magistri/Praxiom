@@ -1,0 +1,47 @@
+﻿using DottoressaIorio.Data;
+using DottoressaIorio.Models.Abstract;
+using Microsoft.EntityFrameworkCore;
+
+namespace DottoressaIorio.Repositories;
+
+public class GenericRepository<T> where T : class, IDataHandler
+{
+    private readonly ApplicationDbContext _context;
+
+    public GenericRepository(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<T> GetByIdAsync(int id)
+    {
+        var entity = await _context.Set<T>().FindAsync(id);
+        _context.Entry(entity).State = EntityState.Detached;
+        return entity;
+    }
+
+    public async Task<IList<T>> GetAllAsync()
+    {
+        return await _context.Set<T>().ToListAsync();
+    }
+
+    public async Task AddAsync(T entity)
+    {
+        entity.CreatedDate = DateTime.Now;
+        _context.Set<T>().Add(entity);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(T entity)
+    {
+        entity.EditDate = DateTime.Now;
+        _context.Entry(entity).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(T entity)
+    {
+        entity.Deleted = true;
+        await UpdateAsync(entity);
+    }
+}

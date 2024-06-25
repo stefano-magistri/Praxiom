@@ -1,6 +1,6 @@
-﻿using DottoressaIorio.App.Models;
-using DottoressaIorio.App.Services.Repositories;
-using Microsoft.AspNetCore.Components;
+﻿ using DottoressaIorio.Models;
+ using DottoressaIorio.Repositories;
+ using Microsoft.AspNetCore.Components;
 
 namespace DottoressaIorio.App.Pages.Patients;
 
