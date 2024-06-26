@@ -416,24 +416,10 @@
       "targets": [],
       "value": "random_title"
     }, {
-      "id": "878d3628-56a0-4408-968a-9f0950b13d3a",
-      "comment": "",
-      "command": "store",
-      "target": "${random_title}",
-      "targets": [],
-      "value": "random_title"
-    }, {
       "id": "1e1c4e62-6205-45e4-84cb-0d95f1321455",
       "comment": "",
       "command": "executeScript",
       "target": "var xhr = new XMLHttpRequest(); xhr.open(\"GET\", \"https://baconipsum.com/api/?type=meat-and-filler&sentences=100\", false); xhr.send(); if (xhr.status == 200) {   var response = JSON.parse(xhr.responseText);   var random_title = response[0];   return random_title; }",
-      "targets": [],
-      "value": "random_description"
-    }, {
-      "id": "6d2d77f6-634d-4d31-afe7-b55c059ca3d9",
-      "comment": "",
-      "command": "store",
-      "target": "${random_description}",
       "targets": [],
       "value": "random_description"
     }, {
@@ -519,26 +505,33 @@
     "id": "abf2012c-7443-4a4b-916a-4ce2b207bc5e",
     "name": "Aggiungi Paziente",
     "commands": [{
-      "id": "dc0cb414-e94a-4115-9e07-684d8b56ebf0",
+      "id": "3fd4e534-0e44-4803-9c7c-1d1ab49081d1",
       "comment": "",
       "command": "executeScript",
-      "target": "var xhr = new XMLHttpRequest();  xhr.open(\"GET\", \"https://randomuser.me/api/\", false);  xhr.send();  var response = JSON.parse(xhr.responseText);  return response.results[0]; ",
+      "target": "var xhr = new XMLHttpRequest();   xhr.open(\"GET\", \"https://randomuser.me/api/\", false);  xhr.send();  var response = JSON.parse(xhr.responseText);  return response.results[0]; ",
       "targets": [],
       "value": "random_user"
     }, {
-      "id": "1a42a141-1e18-4ec7-825f-6a27488b322b",
+      "id": "79f05488-a1f9-47cc-b473-192077e2e6e9",
       "comment": "",
-      "command": "store",
-      "target": "${random_surname}",
+      "command": "executeScript",
+      "target": "var xhr = new XMLHttpRequest(); xhr.open(\"GET\", \"https://baconipsum.com/api/?type=meat-and-filler&sentences=100\", false); xhr.send(); if (xhr.status == 200) {   var response = JSON.parse(xhr.responseText);   var random_title = response[0];   return random_title; }",
       "targets": [],
-      "value": "random_surname"
+      "value": "random_description"
     }, {
-      "id": "aa646634-8369-4c11-a23d-4766990e576f",
+      "id": "db78c7d8-7682-45fe-ac13-77f7d9d9ea20",
       "comment": "",
       "command": "executeScript",
       "target": "var start = new Date(1950, 0, 1);  var end = new Date(2003, 11, 31);  var randomDOB = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));  return randomDOB.toISOString().split('T')[0]; ",
       "targets": [],
       "value": "random_dob"
+    }, {
+      "id": "aa646634-8369-4c11-a23d-4766990e576f",
+      "comment": "",
+      "command": "executeScript",
+      "target": "var options = ['Signore', 'Signora', 'Dottore', 'Dottoressa', 'Professore', 'Professoressa']; var randomOption = options[Math.floor(Math.random() * options.length)]; return randomOption;",
+      "targets": [],
+      "value": "random_title"
     }, {
       "id": "7f08296b-d2e9-472f-b541-370b7221d2e9",
       "comment": "",
@@ -636,6 +629,197 @@
       "value": "${random_dob}"
     }, {
       "id": "2033868b-bfbd-47b2-b35e-b00e18701bd9",
+      "comment": "",
+      "command": "click",
+      "target": "css=.btn-primary",
+      "targets": [
+        ["css=.btn-primary", "css:finder"],
+        ["xpath=//button[@type='submit']", "xpath:attributes"],
+        ["xpath=//form/button", "xpath:position"],
+        ["xpath=//button[contains(.,'Salva')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "fe6d2b58-6e05-489d-9b1a-215ec0c5c832",
+      "comment": "",
+      "command": "click",
+      "target": "linkText=Modifica",
+      "targets": [
+        ["linkText=Modifica", "linkText"],
+        ["css=.btn-primary", "css:finder"],
+        ["xpath=//a[contains(text(),'Modifica')]", "xpath:link"],
+        ["xpath=//a[contains(@href, '/patient/11/edit/')]", "xpath:href"],
+        ["xpath=//main/a", "xpath:position"],
+        ["xpath=//a[contains(.,'Modifica')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "5162d4f8-f25a-4dad-a2f7-c114231242e3",
+      "comment": "",
+      "command": "click",
+      "target": "id=Title",
+      "targets": [
+        ["id=Title", "id"],
+        ["css=#Title", "css:finder"],
+        ["xpath=//select[@id='Title']", "xpath:attributes"],
+        ["xpath=//select", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "83830f1f-7eea-49b0-88cf-5f432221a376",
+      "comment": "",
+      "command": "select",
+      "target": "id=Title",
+      "targets": [],
+      "value": "label=${random_title}"
+    }, {
+      "id": "c2c51969-d12b-4771-a44d-63c49af135eb",
+      "comment": "",
+      "command": "click",
+      "target": "id=PlaceOfBirth",
+      "targets": [
+        ["id=PlaceOfBirth", "id"],
+        ["name=model.PlaceOfBirth", "name"],
+        ["css=#PlaceOfBirth", "css:finder"],
+        ["xpath=//input[@id='PlaceOfBirth']", "xpath:attributes"],
+        ["xpath=//div[5]/div/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "7def570e-2798-4f11-be10-ed650f8f4417",
+      "comment": "",
+      "command": "type",
+      "target": "id=PlaceOfBirth",
+      "targets": [
+        ["id=PlaceOfBirth", "id"],
+        ["name=model.PlaceOfBirth", "name"],
+        ["css=#PlaceOfBirth", "css:finder"],
+        ["xpath=//input[@id='PlaceOfBirth']", "xpath:attributes"],
+        ["xpath=//div[5]/div/input", "xpath:position"]
+      ],
+      "value": "${random_user.location.city}"
+    }, {
+      "id": "ee017091-a297-4fd7-946d-3e9fa3bcc7f9",
+      "comment": "",
+      "command": "click",
+      "target": "name=Gender",
+      "targets": [
+        ["name=Gender", "name"],
+        ["css=.form-check:nth-child(2) > input", "css:finder"],
+        ["xpath=//input[@name='Gender']", "xpath:attributes"],
+        ["xpath=//div[6]/div/div/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "d7897f5f-c5ec-4f99-926a-7e68e2faf06b",
+      "comment": "",
+      "command": "click",
+      "target": "css=.row:nth-child(7) .form-control",
+      "targets": [
+        ["css=.row:nth-child(7) .form-control", "css:finder"],
+        ["xpath=//input[@type='tel']", "xpath:attributes"],
+        ["xpath=//div[7]/div/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "258989fa-23c9-46e7-b679-7e8c321e577a",
+      "comment": "",
+      "command": "type",
+      "target": "css=.row:nth-child(7) .form-control",
+      "targets": [
+        ["css=.row:nth-child(7) .form-control", "css:finder"],
+        ["xpath=//input[@type='tel']", "xpath:attributes"],
+        ["xpath=//div[7]/div/input", "xpath:position"]
+      ],
+      "value": "${random_user.phone}"
+    }, {
+      "id": "ee359549-27ab-4bc3-be89-81edec60cdd0",
+      "comment": "",
+      "command": "click",
+      "target": "css=.form-group > .form-control",
+      "targets": [
+        ["css=.form-group > .form-control", "css:finder"],
+        ["xpath=//input[@type='email']", "xpath:attributes"],
+        ["xpath=//div[8]/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "c6467103-6f32-4b38-88a5-0aeac7252eea",
+      "comment": "",
+      "command": "type",
+      "target": "css=.form-group > .form-control",
+      "targets": [
+        ["css=.form-group > .form-control", "css:finder"],
+        ["xpath=//input[@type='email']", "xpath:attributes"],
+        ["xpath=//div[8]/input", "xpath:position"]
+      ],
+      "value": "${random_user.email}"
+    }, {
+      "id": "a8005183-671c-40d2-a114-9e91f18d8c76",
+      "comment": "",
+      "command": "click",
+      "target": "id=Notes",
+      "targets": [
+        ["id=Notes", "id"],
+        ["name=model.Notes", "name"],
+        ["css=#Notes", "css:finder"],
+        ["xpath=//textarea[@id='Notes']", "xpath:attributes"],
+        ["xpath=//textarea", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "db326398-bcff-499f-8632-828df345aa7c",
+      "comment": "",
+      "command": "type",
+      "target": "id=Notes",
+      "targets": [
+        ["id=Notes", "id"],
+        ["name=model.Notes", "name"],
+        ["css=#Notes", "css:finder"],
+        ["xpath=//textarea[@id='Notes']", "xpath:attributes"],
+        ["xpath=//textarea", "xpath:position"]
+      ],
+      "value": " ${random_description}"
+    }, {
+      "id": "c6237b8a-b81a-40c5-bf3c-0baa74bc7f4e",
+      "comment": "",
+      "command": "click",
+      "target": "css=.btn-primary",
+      "targets": [
+        ["css=.btn-primary", "css:finder"],
+        ["xpath=//button[@type='submit']", "xpath:attributes"],
+        ["xpath=//form/button", "xpath:position"],
+        ["xpath=//button[contains(.,'Salva')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "10fb5ecf-a7d3-46bf-b755-ec06147d6693",
+      "comment": "",
+      "command": "click",
+      "target": "linkText=Aggiungi",
+      "targets": [
+        ["linkText=Aggiungi", "linkText"],
+        ["css=.btn-outline-primary", "css:finder"],
+        ["xpath=(//a[contains(text(),'Aggiungi')])[3]", "xpath:link"],
+        ["xpath=//a[contains(@href, '/patient/11/create-therapy/')]", "xpath:href"],
+        ["xpath=//a[3]", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "5037119c-e727-48b4-83d4-38c50f55bf26",
+      "comment": "",
+      "command": "type",
+      "target": "id=Description",
+      "targets": [
+        ["id=Description", "id"],
+        ["name=model.Description", "name"],
+        ["css=#Description", "css:finder"],
+        ["xpath=//textarea[@id='Description']", "xpath:attributes"],
+        ["xpath=//textarea", "xpath:position"]
+      ],
+      "value": " ${random_description}"
+    }, {
+      "id": "e0b1d6ae-d54d-44da-af82-3a4b8814c742",
       "comment": "",
       "command": "click",
       "target": "css=.btn-primary",

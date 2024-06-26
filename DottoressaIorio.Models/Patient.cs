@@ -24,7 +24,8 @@ namespace DottoressaIorio.Models
 
         public string? Gender { get; set; }
 
-        [RegularExpression(@"^\+?(\d{1,4})?[-. ]?(\(\d{1,4}\))?[ .-]?(\d{1,10})$", ErrorMessage = "Il formato del numero di telefono non é valido.")]
+        [RegularExpression(@"^\+?[\d\s-().]+$", 
+            ErrorMessage = "Il formato del numero di telefono non é valido.")]
         public string? PhoneNumber { get; set; }
 
         public string? Email { get; set; }

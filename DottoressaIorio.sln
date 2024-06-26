@@ -30,7 +30,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DottoressaIorio.Repositorie
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DottoressaIorio.Shared", "DottoressaIorio.Shared\DottoressaIorio.Shared.csproj", "{DFBBCE82-2C65-42E2-A9D0-FF5C048976CC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DottoressaIorio.Services.Tests", "DottoressaIorio.Services.Tests\DottoressaIorio.Services.Tests.csproj", "{D6CF6813-FF87-4785-8B02-44E3D72FCC8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DottoressaIorio.Services.Tests", "DottoressaIorio.Services.Tests\DottoressaIorio.Services.Tests.csproj", "{D6CF6813-FF87-4785-8B02-44E3D72FCC8B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "selenium ide", "selenium ide", "{02464F47-F18B-4ED6-928A-8119C26BAD05}"
+	ProjectSection(SolutionItems) = preProject
+		Selenium IDE\Dottoressa Iorio App.side = Selenium IDE\Dottoressa Iorio App.side
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +88,7 @@ Global
 		{E68FC8A1-1E66-4EC1-9E0C-75E0A2464CA1} = {3513F683-F25C-424D-B3CA-2155C25BEAA4}
 		{DFBBCE82-2C65-42E2-A9D0-FF5C048976CC} = {FDDCD4B1-5276-475A-9B1C-00BFFE3EF7DC}
 		{D6CF6813-FF87-4785-8B02-44E3D72FCC8B} = {3513F683-F25C-424D-B3CA-2155C25BEAA4}
+		{02464F47-F18B-4ED6-928A-8119C26BAD05} = {3513F683-F25C-424D-B3CA-2155C25BEAA4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CFAACA53-7824-4529-BB93-10234472B6E4}
