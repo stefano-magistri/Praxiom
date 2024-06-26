@@ -171,9 +171,9 @@ textarea {
 
 .copyright {
     position: fixed;
-    bottom: 0;
-    width: 160px; /* Adjust this width to match the width of your sidebar */
+    bottom: 0;  
     padding: 5px;
     background-color: #f8f9fa; /* Match the sidebar background color */
     text-align: left;
+    color: #6c757d; /* Optional: Adjust text color */
 }
