@@ -830,6 +830,26 @@
         ["xpath=//button[contains(.,'Salva')]", "xpath:innerText"]
       ],
       "value": ""
+    }, {
+      "id": "da5b091f-7da9-47cd-9a9b-689d31d8f331",
+      "comment": "",
+      "command": "click",
+      "target": "css=.col-md-9",
+      "targets": [
+        ["css=.col-md-9", "css:finder"],
+        ["xpath=//main", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "dc14ceb1-7637-46d7-83fd-b14fb695fc08",
+      "comment": "",
+      "command": "click",
+      "target": "css=.oi-data-transfer-download",
+      "targets": [
+        ["css=.oi-data-transfer-download", "css:finder"],
+        ["xpath=//td[3]/button/span", "xpath:position"]
+      ],
+      "value": ""
     }]
   }],
   "suites": [{
