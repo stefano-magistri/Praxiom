@@ -38,13 +38,13 @@ if %errorlevel% neq 0 (
     goto :afterWinget
 )
 
-rem Install .NET 6 Runtime using winget
-echo Installing .NET 6 Runtime using winget...
-echo y | winget install Microsoft.DotNet.Runtime.6
+rem Install .NET 8 Runtime using winget
+echo Installing .NET 8 Runtime using winget...
+echo y | winget install Microsoft.DotNet.Runtime.8
 
-rem Install .NET 6 AspNetCore using winget
-echo Installing .NET 6 AspNetCore using winget...
-echo y | winget install Microsoft.DotNet.AspNetCore.6
+rem Install .NET 8 AspNetCore using winget
+echo Installing .NET 8 AspNetCore using winget...
+echo y | winget install Microsoft.DotNet.AspNetCore.8
 
 rem End of script
 :afterWinget
@@ -67,3 +67,4 @@ rem Open the default browser to the application's URL
 start http://localhost:5000
 
 pause
+exit /b

@@ -93,4 +93,4 @@ Contribute to the project by submitting bug reports, feature requests, or code c
 
 ## License
 
-This project is licensed under the Papa_Mazinga License - see the LICENSE.md file for details.
+This project is licensed under the Dottoressa Alessandra Iorio License - see the LICENSE.md file for details.

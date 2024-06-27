@@ -143,6 +143,7 @@ textarea {
         box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
     }
 
+
 /* 
  * Auth bar
  */
@@ -166,4 +167,13 @@ textarea {
 
 .text-truncate.truncate-big {
     max-width: 500px;
+}
+
+.copyright {
+    position: fixed;
+    bottom: 0;  
+    padding: 5px;
+    background-color: #f8f9fa; /* Match the sidebar background color */
+    text-align: left;
+    color: #6c757d; /* Optional: Adjust text color */
 }

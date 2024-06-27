@@ -1,14 +1,35 @@
 @echo off
 setlocal
 
+rem Check if a parameter is provided
+if "%1"=="" (
+    echo No parameter provided.
+    echo Usage: publish.bat "AllowedUsername"
+    exit /b 1
+)
+
 rem Define the destination folder for publishing
 set "destinationFolder=..\Setup\Service"
+set "allowedUsername=%~1"
+ 
+rem Replace single backslash with double backslashes
+set "allowedUsername=%allowedUsername:\=\\%"
 
 rem Publish the .NET Core application to the destination folder
 dotnet publish -c Release -o %destinationFolder%
 
 rem Copy utility files to the destination folder
 copy ..\Utility\*.* %destinationFolder%
+
+rem Update the appsettings.Production.json file with the allowedUsername parameter
+set "configFile=%destinationFolder%\appsettings.Production.json"
+if exist "%configFile%" (
+    echo Updating appsettings.Production.json...
+    call :replaceAllowedUsername "%configFile%" "%allowedUsername%"
+) else (
+    echo appsettings.Production.json not found.
+    exit /b 1
+)
 
 rem Navigate to the Installer folder
 cd ..\Setup
@@ -21,3 +42,23 @@ rem Create a new compressed archive (zip) of the Service folder
 
 rem Remove the publish directory and its contents
 rmdir /s /q ".\Service"
+
+exit /b 0
+
+:replaceAllowedUsername
+setlocal
+set "configFile=%~1"
+set "allowedUsername=%~2"
+set "tempFile=%configFile%.tmp"
+
+(for /f "usebackq tokens=*" %%i in ("%configFile%") do (
+    set "line=%%i"
+    setlocal enabledelayedexpansion
+    echo !line:[AllowedUsername]=%allowedUsername%!>> "%tempFile%"
+    endlocal
+))
+
+move /y "%tempFile%" "%configFile%" >nul
+
+endlocal
+exit /b 0
