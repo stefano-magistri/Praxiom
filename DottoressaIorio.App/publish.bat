@@ -10,7 +10,10 @@ if "%1"=="" (
 
 rem Define the destination folder for publishing
 set "destinationFolder=..\Setup\Service"
-set "allowedUsername=%1"
+set "allowedUsername=%~1"
+ 
+rem Replace single backslash with double backslashes
+set "allowedUsername=%allowedUsername:\=\\%"
 
 rem Publish the .NET Core application to the destination folder
 dotnet publish -c Release -o %destinationFolder%
@@ -22,7 +25,7 @@ rem Update the appsettings.Production.json file with the allowedUsername paramet
 set "configFile=%destinationFolder%\appsettings.Production.json"
 if exist "%configFile%" (
     echo Updating appsettings.Production.json...
-    call :addAllowedUsername "%configFile%" "%allowedUsername%"
+    call :replaceAllowedUsername "%configFile%" "%allowedUsername%"
 ) else (
     echo appsettings.Production.json not found.
     exit /b 1
@@ -38,24 +41,24 @@ rem Create a new compressed archive (zip) of the Service folder
 7z a -tzip "Service.7z" ".\Service\*"
 
 rem Remove the publish directory and its contents
-::rmdir /s /q ".\Service"
+rmdir /s /q ".\Service"
 
 exit /b 0
 
-:addAllowedUsername
-rem Parameters: %1 = configFile, %2 = allowedUsername
-setlocal enabledelayedexpansion
-set "newline="
-for /f "delims=" %%i in ('type "%~1"') do (
+:replaceAllowedUsername
+setlocal
+set "configFile=%~1"
+set "allowedUsername=%~2"
+set "tempFile=%configFile%.tmp"
+
+(for /f "usebackq tokens=*" %%i in ("%configFile%") do (
     set "line=%%i"
-    if "!line!"=="  }" (
-        set "newline=  },"
-        echo !newline!>>"%~1.tmp"
-        set "newline=  "AllowedUsername": "%~2""
-        echo !newline!>>"%~1.tmp"
-    )
-    echo %%i>>"%~1.tmp"
-)
-move /y "%~1.tmp" "%~1"
+    setlocal enabledelayedexpansion
+    echo !line:[AllowedUsername]=%allowedUsername%!>> "%tempFile%"
+    endlocal
+))
+
+move /y "%tempFile%" "%configFile%" >nul
+
 endlocal
 exit /b 0
