@@ -49,9 +49,9 @@ set "newline="
 for /f "delims=" %%i in ('type "%~1"') do (
     set "line=%%i"
     if "!line!"=="  }" (
-        set "newline=,"
+        set "newline=  },"
         echo !newline!>>"%~1.tmp"
-        set  "newline=  "AllowedUsername": "%~2""
+        set "newline=  "AllowedUsername": "%~2""
         echo !newline!>>"%~1.tmp"
     )
     echo %%i>>"%~1.tmp"
