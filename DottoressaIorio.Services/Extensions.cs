@@ -28,6 +28,11 @@ public static class StringExtensions
         var paragraphs = value
             .Split("\n")
             .Select(par => $"<p>{par}</p>");
-        return string.Join("", paragraphs);
+
+        var res = string.Join("", paragraphs);
+
+        res = res.Replace("<p></p>", "<p><br /></p>");
+
+        return res;
     }
 }
