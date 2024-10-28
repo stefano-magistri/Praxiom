@@ -48,7 +48,7 @@ public class PatientRepository : GenericRepository<Patient>
     {
         var query = await GetAllOrderedAsync();
         return query.Any(p => p.FirstName.Equals(patient.FirstName, StringComparison.InvariantCultureIgnoreCase) &&
-                              p.LastName.Equals(patient.LastName, StringComparison.InvariantCultureIgnoreCase) &
+                              p.LastName.Equals(patient.LastName, StringComparison.InvariantCultureIgnoreCase) &&
                               (p.DateOfBirth == patient.DateOfBirth));
     }
 }
