@@ -1,95 +1,169 @@
-# Medical Management App
+# Dottoressa Iorio Medical Management System
 
-The Medical Management App is a Blazor Web Application designed for individual doctors to manage their patients efficiently. The application utilizes a local SQLite database to store patient information, therapy records, and associated PDF files. This README provides essential information on setting up, using, and deploying the application.
+A comprehensive medical management system built with Blazor WebAssembly, designed for individual medical practitioners to efficiently manage patient records, therapies, and documentation.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
-- [Requirements](#requirements)
+- [Technical Stack](#technical-stack)
 - [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Database](#database)
-- [File Storage](#file-storage)
-- [Deployment](#deployment-steps)
+- [Configuration](#configuration)
+- [Database Management](#database-management)
+- [Security](#security)
 - [Testing](#testing)
+- [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Overview
 
-The Medical Management App enables individual doctors to manage patient records, therapy sessions, and generated PDF files. With a focus on simplicity and efficiency, the app provides a secure and user-friendly environment for doctors to track and organize their patient information.
+The Dottoressa Iorio Medical Management System is a secure, efficient, and user-friendly application designed to help medical practitioners manage their practice. The system provides comprehensive tools for patient management, therapy tracking, and document generation, all while maintaining strict data privacy and security standards.
 
 ## Features
 
-- Patient management with detailed information including title, first name, last name, date of birth, place of birth, gender, phone number, and email.
-- Therapy tracking for each patient.
-- Attachment of one or more PDF files to each patient record.
+### Patient Management
+- Complete patient profiles with personal and contact information
+- Patient search and filtering capabilities
+- Patient history tracking
+- Secure patient data storage
 
-## Requirements
+### Therapy Management
+- Therapy template creation and management
+- Patient-specific therapy tracking
+- Therapy history and progress monitoring
+- PDF report generation for therapies
 
-- Windows 10 operating system on the doctor's computer.
-- Visual Studio with ASP.NET and web development workload.
-- SQLite NuGet package for database access.
+### Security Features
+- Windows Authentication integration
+- Role-based access control
+- Encrypted SQLite database
+- Secure file handling
+
+### Document Management
+- PDF generation for patient records and therapies
+- Document storage and retrieval
+- Template-based document creation
+
+## Technical Stack
+
+- **Frontend**: Blazor WebAssembly
+- **Backend**: ASP.NET Core
+- **Database**: SQLite with encryption
+- **Authentication**: Windows Authentication (Negotiate)
+- **PDF Generation**: DinkToPdf
+- **Testing**: xUnit, Moq
+- **Logging**: Serilog
 
 ## Getting Started
 
-1. Clone the repository.
-2. Configure the SQLite database connection in `Startup.cs`.
-3. Set up authentication and authorization.
-4. Run the application locally.
+### Prerequisites
+- Windows 10 or later
+- .NET 8.0 SDK
+- Visual Studio 2022 (recommended)
+- SQLite
 
-## Usage
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/DottoressaIorio.git
+   ```
 
-1. Manage patients, therapies, and therapy templates through the user interface.
-2. Ensure patient data is accurately entered, and PDF files are appropriately attached.
+2. Open the solution in Visual Studio
 
-## Database
+3. Restore NuGet packages
 
-The application uses a local SQLite database. Database setup, including schema and migrations, is handled by the application.
+4. Configure the application (see Configuration section)
 
-## File Storage
+5. Run the application:
+   ```bash
+   dotnet run --project DottoressaIorio.App
+   ```
 
-PDF files are generated and downloaded locally on the doctor's computer. The application manages the linking of patient records to their respective files.
+## Configuration
 
-## Deployment Steps
+### Authentication
+The application supports two authentication modes:
+1. Windows Authentication (Negotiate)
+2. Development mode (no authentication)
 
-### 1. Build and Publish the Application
-
-1. Open the application solution in Visual Studio.
-2. Build the solution to ensure all dependencies are resolved.
-3. Use Visual Studio Publish Profiler to publish the application.
-
-### 2. Create Service Archive
-
-1. Navigate to the `setup/installer` directory.
-2. Run `archive.bat` to create the `Service.zip` file containing the necessary files for installation.
-
-### 3. Install the Windows Service
-
-1. Run `install.bat` to install the application as a Windows service.
-   
-### 4. Set Up Task Scheduler for Database Backup
-
-1. Open Task Scheduler on the doctor's computer.
-2. Create a new task to schedule database backups.
-3. Configure the task to run at specified intervals.
-   - Set the action to run a batch script or executable that triggers the database backup process.
-
-**Example Batch Script for Database Backup:**
-
-```batch
-REM Replace placeholders with actual paths and commands
--ExecutionPolicy Bypass -File "C:\path\to\your\backup_script.ps1"
+Configure in `appsettings.json`:
+```json
+{
+  "Authentication": {
+    "UseNegotiate": true,
+    "AllowedUsername": "DOMAIN\\username"
+  }
+}
 ```
-See also: https://chat.openai.com/share/f6f0854a-aecb-43c7-aff6-d5e35711ac9b
+
+### Database
+The SQLite database is automatically encrypted. Configure the encryption key in `appsettings.json`:
+```json
+{
+  "EncryptionKey": "your-encryption-key"
+}
+```
+
+## Database Management
+
+### Initial Setup
+The application automatically:
+- Creates the encrypted database if it doesn't exist
+- Applies migrations
+- Sets up initial schema
+
+### Backup
+Regular database backups are recommended. Use the built-in backup functionality or implement your own backup strategy.
+
+## Security
+
+### Authentication
+- Windows Authentication integration
+- Configurable allowed users
+- Secure session management
+
+### Data Protection
+- Encrypted SQLite database
+- Secure file storage
+- Input validation and sanitization
+
 ## Testing
 
-Thoroughly test the application to ensure it meets the specified requirements. Include unit tests and integration tests as needed.
+The application includes comprehensive test coverage:
+- Unit tests for repositories
+- Integration tests for services
+- Authentication and authorization tests
+
+Run tests:
+```bash
+dotnet test
+```
+
+## Deployment
+
+### Windows Service Deployment
+1. Build the application:
+   ```bash
+   dotnet publish -c Release
+   ```
+
+2. Use the provided installer scripts in the `setup/installer` directory:
+   - `archive.bat` - Creates deployment package
+   - `install.bat` - Installs Windows service
+
+### Configuration
+- Update `appsettings.Production.json` with production settings
+- Configure Windows Authentication
+- Set up database encryption key
 
 ## Contributing
 
-Contribute to the project by submitting bug reports, feature requests, or code contributions. Follow the guidelines outlined in the CONTRIBUTING.md file. 
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
