@@ -3,14 +3,40 @@ using DottoressaIorio.Models.Abstract;
 
 namespace DottoressaIorio.Models;
 
+/// <summary>
+/// Represents a template for creating therapies or treatments.
+/// </summary>
 public class TherapyTemplate : IDataHandler
 {
+    /// <summary>
+    /// Gets or sets the unique identifier for the therapy template.
+    /// </summary>
     public int Id { get; set; }
-    [Required(ErrorMessage = "Il titolo é richiesto.")]
+
+    /// <summary>
+    /// Gets or sets the title of the therapy template.
+    /// </summary>
+    [Required(ErrorMessage = "Il titolo Ã¨ richiesto.")]
     public string Title { get; set; }
-    [Required(ErrorMessage = "La descrizione é richiesta.")]
+
+    /// <summary>
+    /// Gets or sets the description of the therapy template.
+    /// </summary>
+    [Required(ErrorMessage = "La descrizione Ã¨ richiesta.")]
     public string Description { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date when the therapy template was created.
+    /// </summary>
     public DateTime CreatedDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date when the therapy template was last edited.
+    /// </summary>
     public DateTime? EditDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the therapy template is marked as deleted.
+    /// </summary>
     public bool Deleted { get; set; }
 }

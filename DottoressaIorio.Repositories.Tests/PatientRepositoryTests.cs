@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
+/// <summary>
+/// Contains unit tests for the PatientRepository class, testing patient-specific repository operations.
+/// </summary>
 public class PatientRepositoryTests : IDisposable, IAsyncDisposable
 {
     private readonly ApplicationDbContext _context;
@@ -34,6 +37,10 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         }
     };
 
+    /// <summary>
+    /// Initializes a new instance of the PatientRepositoryTests class.
+    /// Sets up an in-memory database for testing.
+    /// </summary>
     public PatientRepositoryTests()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -43,16 +50,27 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         _context.Database.EnsureCreated(); // Ensure database is created
     }
 
+    /// <summary>
+    /// Asynchronously disposes of the test resources.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         await _context.DisposeAsync();
     }
 
+    /// <summary>
+    /// Disposes of the test resources.
+    /// </summary>
     public void Dispose()
     {
         _context.Dispose();
     }
 
+    /// <summary>
+    /// Tests that the SearchPatientsAsync method returns the expected number of results for various search terms.
+    /// </summary>
+    /// <param name="searchTerm">The term to search for.</param>
+    /// <param name="expectedCount">The expected number of results.</param>
     [Theory]
     [InlineData("John", 1)]
     [InlineData(null, 2)]
@@ -67,6 +85,9 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(expectedCount, result.Count);
     }
 
+    /// <summary>
+    /// Tests that the GetAllOrderedAsync method returns all non-deleted patients ordered by last name and first name.
+    /// </summary>
     [Fact]
     public async Task GetAllOrderedAsync_ShouldReturnAllPatientsOrdered()
     {
@@ -83,6 +104,13 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Tests that the PatientExistsAsync method correctly identifies whether a patient exists based on their details.
+    /// </summary>
+    /// <param name="firstName">The first name to check.</param>
+    /// <param name="lastName">The last name to check.</param>
+    /// <param name="dob">The date of birth to check.</param>
+    /// <param name="expectedResult">The expected result of the existence check.</param>
     [Theory]
     [InlineData("John", "Doe", "10/02/1981", true)]
     [InlineData("John", "Doe", "10/02/1982", false)] // Wrong date of birth
@@ -99,6 +127,11 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(expectedResult, result);
     }
 
+    /// <summary>
+    /// Helper method to test patient search functionality.
+    /// </summary>
+    /// <param name="searchTerm">The term to search for.</param>
+    /// <returns>A list of patients matching the search criteria.</returns>
     private async Task<IList<Patient>> SearchPatientsAsync(string searchTerm = null)
     {
         _context.Patients.AddRange(data);
@@ -110,6 +143,10 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         return result;
     }
 
+    /// <summary>
+    /// Helper method to test retrieving all ordered patients.
+    /// </summary>
+    /// <returns>A list of all non-deleted patients ordered by last name and first name.</returns>
     private async Task<IList<Patient>> GetAllOrderedAsync()
     {
         _context.Patients.AddRange(data);
@@ -121,6 +158,11 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         return result;
     }
 
+    /// <summary>
+    /// Helper method to test patient existence check.
+    /// </summary>
+    /// <param name="patient">The patient to check for existence.</param>
+    /// <returns>True if the patient exists, false otherwise.</returns>
     private async Task<bool> PatientExistsAsync(Patient patient)
     {
         _context.Patients.AddRange(data);

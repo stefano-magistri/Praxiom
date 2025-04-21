@@ -5,8 +5,15 @@ using Moq;
 
 namespace DottoressaIorio.Services.Tests;
 
+/// <summary>
+/// Contains unit tests for the PdfService class.
+/// </summary>
 public class PdfServiceTests
 {
+    /// <summary>
+    /// Tests that the GenerateTherapyPdf method correctly formats the PDF document with the therapy details,
+    /// including patient information, therapy description, and proper header/footer settings.
+    /// </summary>
     [Fact]
     public void GenerateTherapyPdf_ShouldCallConverterWithCorrectSettings()
     {

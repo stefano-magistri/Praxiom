@@ -2,8 +2,15 @@ using DottoressaIorio.Models;
 
 namespace DottoressaIorio.Services.Tests;
 
+/// <summary>
+/// Contains unit tests for the PatientExtensions class.
+/// </summary>
 public class PatientExtensionsTests
 {
+    /// <summary>
+    /// Tests that the GetHtmlNotes method correctly converts patient notes into HTML paragraphs,
+    /// handling both cases where notes exist and where they are null.
+    /// </summary>
     [Fact]
     public void GetHtmlNotes_ShouldConvertToHtmlParagraphs()
     {

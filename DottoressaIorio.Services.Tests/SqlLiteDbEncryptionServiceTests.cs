@@ -1,7 +1,13 @@
 namespace DottoressaIorio.Services.Tests;
 
+/// <summary>
+/// Contains unit tests for the SqlLiteDbEncryptionService class.
+/// </summary>
 public class SqlLiteDbEncryptionServiceTests
 {
+    /// <summary>
+    /// Tests that when no encryption key is provided, the connection string is returned without encryption settings.
+    /// </summary>
     [Fact]
     public void GetDatabaseConnectionString_NoEncryptionKey_ReturnsUnencryptedConnectionString()
     {
@@ -16,6 +22,9 @@ public class SqlLiteDbEncryptionServiceTests
         Assert.DoesNotContain("Password=", connectionString);
     }
 
+    /// <summary>
+    /// Tests that when an encryption key is provided, the connection string includes the encryption password.
+    /// </summary>
     [Fact]
     public void GetDatabaseConnectionString_WithEncryptionKey_ReturnsEncryptedConnectionString()
     {

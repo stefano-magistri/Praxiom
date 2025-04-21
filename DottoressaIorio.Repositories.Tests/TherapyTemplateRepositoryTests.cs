@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
+/// <summary>
+/// Contains unit tests for the <see cref="TherapyTemplateRepository"/> class.
+/// </summary>
 public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
 {
     private readonly ApplicationDbContext _context;
@@ -37,6 +40,10 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
         }
     };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TherapyTemplateRepositoryTests"/> class.
+    /// Sets up an in-memory database for testing purposes.
+    /// </summary>
     public TherapyTemplateRepositoryTests()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -46,16 +53,26 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
         _context.Database.EnsureCreated();
     }
 
+    /// <summary>
+    /// Asynchronously disposes of the test resources.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         await _context.DisposeAsync();
     }
 
+    /// <summary>
+    /// Disposes of the test resources.
+    /// </summary>
     public void Dispose()
     {
         _context.Dispose();
     }
 
+    /// <summary>
+    /// Tests that the GetAllOrderedAsync method returns all non-deleted therapy templates ordered by title.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
     public async Task GetAllOrderedAsync_ShouldReturnAllTherapyTemplatesOrdered()
     {
@@ -73,6 +90,12 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(expectedTemplates.Select(t => t.Id), result.Select(t => t.Id));
     }
 
+    /// <summary>
+    /// Tests that the TitleExistsAsync method correctly identifies whether a therapy template with a given title exists.
+    /// </summary>
+    /// <param name="title">The title to check for existence.</param>
+    /// <param name="expectedResult">The expected result of the existence check.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     [Theory]
     [InlineData("Therapy Template 1", true)]
     [InlineData("Therapy Template 2", true)]
@@ -91,6 +114,10 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(expectedResult, result);
     }
 
+    /// <summary>
+    /// Seeds the test database with initial data.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task SeedDataAsync()
     {
         _context.TherapyTemplates.AddRange(_data);

@@ -5,11 +5,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
+/// <summary>
+/// Contains unit tests for the GenericRepository class, testing basic CRUD operations.
+/// </summary>
 public class GenericRepositoryTests : IDisposable, IAsyncDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly GenericRepository<Patient> _repository;
 
+    /// <summary>
+    /// Initializes a new instance of the GenericRepositoryTests class.
+    /// Sets up an in-memory database for testing.
+    /// </summary>
     public GenericRepositoryTests()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -20,16 +27,25 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         _context.Database.EnsureCreated();
     }
 
+    /// <summary>
+    /// Asynchronously disposes of the test resources.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         await _context.DisposeAsync();
     }
 
+    /// <summary>
+    /// Disposes of the test resources.
+    /// </summary>
     public void Dispose()
     {
         _context.Dispose();
     }
 
+    /// <summary>
+    /// Tests that the GetByIdAsync method correctly retrieves an entity by its ID.
+    /// </summary>
     [Fact]
     public async Task GetByIdAsync_ShouldReturnEntityById()
     {
@@ -50,6 +66,9 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(entityToAdd.PatientId, result.PatientId);
     }
 
+    /// <summary>
+    /// Tests that the GetAllAsync method returns all entities in the database.
+    /// </summary>
     [Fact]
     public async Task GetAllAsync_ShouldReturnAllEntities()
     {
@@ -90,6 +109,9 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(entitiesToAdd.Select(e => e.PatientId), result.Select(e => e.PatientId));
     }
 
+    /// <summary>
+    /// Tests that the UpdateAsync method correctly updates an existing entity.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldUpdateEntity()
     {
@@ -112,6 +134,9 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal("Updated", result.FirstName);
     }
 
+    /// <summary>
+    /// Tests that the DeleteAsync method correctly performs a soft delete on an entity.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldSoftDeleteEntity()
     {

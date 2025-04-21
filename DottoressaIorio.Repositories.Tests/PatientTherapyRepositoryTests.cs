@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
+/// <summary>
+/// Contains unit tests for the <see cref="PatientTherapyRepository"/> class.
+/// </summary>
 public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
 {
     private readonly ApplicationDbContext _context;
@@ -29,6 +32,10 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
         }
     };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PatientTherapyRepositoryTests"/> class.
+    /// Sets up an in-memory database for testing purposes.
+    /// </summary>
     public PatientTherapyRepositoryTests()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -38,16 +45,26 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
         _context.Database.EnsureCreated();
     }
 
+    /// <summary>
+    /// Asynchronously disposes of the test resources.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         await _context.DisposeAsync();
     }
 
+    /// <summary>
+    /// Disposes of the test resources.
+    /// </summary>
     public void Dispose()
     {
         _context.Dispose();
     }
 
+    /// <summary>
+    /// Tests that the GetAllsync method returns all therapies for a specific patient.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
     public async Task GetAllsync_ShouldReturnTherapiesForPatient()
     {
@@ -67,6 +84,10 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(expectedTherapies.Select(t => t.TherapyId), result.Select(t => t.TherapyId));
     }
 
+    /// <summary>
+    /// Seeds the test database with initial data.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task SeedDataAsync()
     {
         _context.Therapies.AddRange(_data);

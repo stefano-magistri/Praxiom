@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DottoressaIorio.Services;
 
+/// <summary>
+/// Service class for handling SQLite database encryption operations.
+/// </summary>
 public class SqlLiteDbEncryptionService
 {
     private const string EncryptedDbPath = "app.db";
@@ -11,12 +14,20 @@ public class SqlLiteDbEncryptionService
     private readonly string _connectionString;
     private readonly string _key;
 
+    /// <summary>
+    /// Initializes a new instance of the SqlLiteDbEncryptionService class.
+    /// </summary>
+    /// <param name="key">The encryption key to use for the database.</param>
     public SqlLiteDbEncryptionService(string key)
     {
         _key = key;
         _connectionString = $"Data Source={EncryptedDbPath};Password={key};Pooling=false";
     }
 
+    /// <summary>
+    /// Gets the database connection string with appropriate encryption settings.
+    /// </summary>
+    /// <returns>A connection string configured for the database with encryption if a key is provided.</returns>
     public string GetDatabaseConnectionString()
     {
         SqliteConnectionStringBuilder connectionStringBuilder;
@@ -34,7 +45,9 @@ public class SqlLiteDbEncryptionService
         return connectionStringBuilder.ToString();
     }
 
-    // Method to encrypt existing database if not encrypted
+    /// <summary>
+    /// Encrypts an existing database if it is not already encrypted.
+    /// </summary>
     public void EncryptDatabaseIfNotExists()
     {
         if (string.IsNullOrEmpty(_key)) return; // If encrypted key not exists, return
@@ -58,7 +71,9 @@ public class SqlLiteDbEncryptionService
         }
     }
 
-    // Method to export data from existing database to encrypted database
+    /// <summary>
+    /// Exports data from an unencrypted database to a new encrypted database.
+    /// </summary>
     private void ExportDataToEncryptedDatabase()
     {
         // Create a new encrypted database file
@@ -86,7 +101,10 @@ public class SqlLiteDbEncryptionService
         encryptedDbContext.SaveChanges();
     }
 
-    // Method to check if database is encrypted
+    /// <summary>
+    /// Checks if the database is currently encrypted.
+    /// </summary>
+    /// <returns>True if the database is encrypted, false otherwise.</returns>
     private bool IsDatabaseEncrypted()
     {
         using var connection = new SqliteConnection($"Data Source={EncryptedDbPath};Pooling=false");

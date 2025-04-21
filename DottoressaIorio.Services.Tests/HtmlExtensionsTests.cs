@@ -1,7 +1,13 @@
 namespace DottoressaIorio.Services.Tests;
 
+/// <summary>
+/// Contains unit tests for the StringExtensions class, specifically testing HTML conversion functionality.
+/// </summary>
 public class HtmlExtensionsTests
 {
+    /// <summary>
+    /// Tests that the GetHtml method correctly converts a multi-line text into HTML paragraphs.
+    /// </summary>
     [Fact]
     public void GetHtml_ShouldConvertTextToHtmlParagraphs()
     {
@@ -16,6 +22,9 @@ public class HtmlExtensionsTests
         Assert.Contains("<p>Line 2</p>", htmlResult);
     }
 
+    /// <summary>
+    /// Tests that the GetHtml method returns an empty string when given an empty input.
+    /// </summary>
     [Fact]
     public void GetHtml_ShouldHandleEmptyString()
     {
@@ -29,6 +38,9 @@ public class HtmlExtensionsTests
         Assert.Equal("", htmlResult);
     }
 
+    /// <summary>
+    /// Tests that the GetHtml method returns an empty string when given a null input.
+    /// </summary>
     [Fact]
     public void GetHtml_ShouldHandleNullString()
     {
@@ -42,6 +54,9 @@ public class HtmlExtensionsTests
         Assert.Equal("", htmlResult);
     }
 
+    /// <summary>
+    /// Tests that the GetHtml method correctly converts a single line of text into an HTML paragraph.
+    /// </summary>
     [Fact]
     public void GetHtml_ShouldHandleSingleLineText()
     {
@@ -55,6 +70,9 @@ public class HtmlExtensionsTests
         Assert.Equal("<p>Single line</p>", htmlResult);
     }
 
+    /// <summary>
+    /// Tests that the GetHtml method correctly handles multiple empty lines by converting them to paragraph breaks.
+    /// </summary>
     [Fact]
     public void GetHtml_ShouldHandleMultipleEmptyLines()
     {
@@ -68,6 +86,9 @@ public class HtmlExtensionsTests
         Assert.Equal("<p>Line 1</p><p><br /></p><p>Line 3</p>", htmlResult);
     }
 
+    /// <summary>
+    /// Tests that the GetHtml method correctly handles a text containing only empty lines.
+    /// </summary>
     [Fact]
     public void GetHtml_ShouldHandleOnlyEmptyLines()
     {
@@ -81,6 +102,9 @@ public class HtmlExtensionsTests
         Assert.Equal("<p><br /></p><p><br /></p><p><br /></p>", htmlResult);
     }
 
+    /// <summary>
+    /// Tests that the GetHtml method correctly handles a trailing newline character.
+    /// </summary>
     [Fact]
     public void GetHtml_ShouldHandleTrailingNewLine()
     {
@@ -94,6 +118,9 @@ public class HtmlExtensionsTests
         Assert.Equal("<p>Line 1</p><p>Line 2</p><p><br /></p>", htmlResult);
     }
 
+    /// <summary>
+    /// Tests that the GetHtml method correctly handles a leading newline character.
+    /// </summary>
     [Fact]
     public void GetHtml_ShouldHandleLeadingNewLine()
     {

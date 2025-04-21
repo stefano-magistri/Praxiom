@@ -4,15 +4,27 @@ using DottoressaIorio.Models;
 
 namespace DottoressaIorio.Services;
 
+/// <summary>
+/// Service class for generating PDF documents from therapy data.
+/// </summary>
 public class PdfService
 {
     private readonly IConverter _converter;
 
+    /// <summary>
+    /// Initializes a new instance of the PdfService class.
+    /// </summary>
+    /// <param name="converter">The PDF converter instance to use for document generation.</param>
     public PdfService(IConverter converter)
     {
         _converter = converter;
     }
 
+    /// <summary>
+    /// Generates a PDF document from a therapy record.
+    /// </summary>
+    /// <param name="therapy">The therapy record to generate the PDF from.</param>
+    /// <returns>A byte array containing the generated PDF document.</returns>
     public byte[] GenerateTherapyPdf(Therapy therapy)
     { 
         var htmlContent = $@"
