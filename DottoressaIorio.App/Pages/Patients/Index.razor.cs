@@ -4,28 +4,68 @@
 
 namespace DottoressaIorio.App.Pages.Patients;
 
+/// <summary>
+/// Base component for the Patients index page. Handles patient search, pagination,
+/// and navigation to edit/delete views.
+/// </summary>
 public class PatientsBase : ComponentBase
 {
+    /// <summary>
+    /// Number of patients displayed per page.
+    /// </summary>
     protected readonly int PageSize = 10; // Number of patients per page
 
+    /// <summary>
+    /// Cached list of all patients loaded from the repository.
+    /// </summary>
     private IList<Patient> patients;
 
+    /// <summary>
+    /// Repository used to query patient data.
+    /// </summary>
     [Inject] public PatientRepository Repository { get; set; }
 
+    /// <summary>
+    /// Navigation manager used to navigate between pages.
+    /// </summary>
     [Inject] public NavigationManager NavigationManager { get; set; }
 
+    /// <summary>
+    /// The subset of patients displayed on the current page after filtering and pagination.
+    /// </summary>
     protected IList<Patient> DisplayedPatients { get; set; }
+    /// <summary>
+    /// The list of patients matching the current search term.
+    /// </summary>
     protected IList<Patient> FilteredPatients { get; set; }
+    /// <summary>
+    /// The current page number (1-based).
+    /// </summary>
     protected int CurrentPage { get; set; } = 1;
+    /// <summary>
+    /// The total number of pages based on <see cref="FilteredPatients"/> and <see cref="PageSize"/>.
+    /// </summary>
     protected int TotalPages => (int)Math.Ceiling((double)FilteredPatients.Count / PageSize);
+    /// <summary>
+    /// The current search term used to filter patients.
+    /// </summary>
     protected string SearchTerm { get; set; } = "";
 
+    /// <summary>
+    /// Initializes the component by loading patients and computing the initial view.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task OnInitializedAsync()
     {
         patients = await Repository.GetAllOrderedAsync();
         await UpdateDisplayedPatients();
     }
 
+    /// <summary>
+    /// Updates the <see cref="DisplayedPatients"/> collection by applying the current
+    /// search filter and pagination.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected async Task UpdateDisplayedPatients()
     {
         await FilterPatientsBySearchTermAsync();
@@ -33,11 +73,20 @@ public class PatientsBase : ComponentBase
         DisplayedPatients = FilteredPatients.Skip(startIndex).Take(PageSize).ToList();
     }
 
+    /// <summary>
+    /// Filters patients using the current <see cref="SearchTerm"/>.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected async Task FilterPatientsBySearchTermAsync()
     {
         FilteredPatients = await Repository.SearchPatientsAsync(SearchTerm);
     }
 
+    /// <summary>
+    /// Handles changes to the search input and refreshes the displayed patients.
+    /// </summary>
+    /// <param name="e">The change event args containing the new search term.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected async Task SearchPatients(ChangeEventArgs e)
     {
         CurrentPage = 1;
@@ -45,6 +94,11 @@ public class PatientsBase : ComponentBase
         await UpdateDisplayedPatients();
     }
 
+    /// <summary>
+    /// Handles page selection from the pagination component.
+    /// </summary>
+    /// <param name="page">The page number to navigate to (1-based).</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected async Task HandleSelectedPage(int page)
     {
         CurrentPage = page;
@@ -52,16 +106,28 @@ public class PatientsBase : ComponentBase
     }
 
 
+    /// <summary>
+    /// Navigates to the edit page for the patient with the specified identifier.
+    /// </summary>
+    /// <param name="id">The patient identifier.</param>
     protected void NavigateToEditPatient(int id)
     {
         NavigationManager.NavigateTo($"/patient/{id}/edit/");
     }
 
+    /// <summary>
+    /// Navigates to the delete confirmation page for the patient with the specified identifier.
+    /// </summary>
+    /// <param name="id">The patient identifier.</param>
     protected void NavigateToDeletePatient(int id)
     {
         NavigationManager.NavigateTo($"/patient/{id}/delete");
     }
 
+    /// <summary>
+    /// Navigates to the previous page if not already on the first page.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected async Task PreviousPage()
     {
         if (CurrentPage != 1)
@@ -71,6 +137,10 @@ public class PatientsBase : ComponentBase
         }
     }
 
+    /// <summary>
+    /// Navigates to the next page if not already on the last page.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected async Task NextPage()
     {
         if (CurrentPage != TotalPages)
