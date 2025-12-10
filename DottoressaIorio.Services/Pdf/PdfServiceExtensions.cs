@@ -1,5 +1,6 @@
-﻿using DottoressaIorio.Services.Pdf;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace DottoressaIorio.Services.Pdf;
 
 public static class PdfServiceExtensions
 {

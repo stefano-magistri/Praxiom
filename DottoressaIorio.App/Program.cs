@@ -1,6 +1,7 @@
 using DottoressaIorio.App.Middleware;
 using DottoressaIorio.Data;
 using DottoressaIorio.Repositories;
+using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.EntityFrameworkCore;
 

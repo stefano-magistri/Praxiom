@@ -1,6 +1,7 @@
 ﻿using DottoressaIorio.Models;
-using DottoressaIorio.Services.Pdf;
 using Microsoft.Playwright;
+
+namespace DottoressaIorio.Services.Pdf;
 
 public class PdfService(PdfHtmlBuilder builder)
 {
@@ -11,7 +12,7 @@ public class PdfService(PdfHtmlBuilder builder)
 
         var page = await browser.NewPageAsync();
 
-        string html = builder.BuildHtml(therapy);
+        var html = builder.BuildHtml(therapy);
         await page.SetContentAsync(html);
 
         var header = builder.BuildHeaderHtml(await File.ReadAllTextAsync("_pdf_therapy/header.html"), therapy);
@@ -20,10 +21,17 @@ public class PdfService(PdfHtmlBuilder builder)
         return await page.PdfAsync(new PagePdfOptions
         {
             Format = "A4",
+            PrintBackground = true,
+            Margin = new Margin
+            {
+                Top = "170px",
+                Bottom = "60px",
+                Left = "15px",
+                Right = "15px"
+            },
             DisplayHeaderFooter = true,
             HeaderTemplate = header,
-            FooterTemplate = footer,
-            Margin = new() { Top = "80px", Bottom = "60px" }
+            FooterTemplate = footer
         });
     }
 }
