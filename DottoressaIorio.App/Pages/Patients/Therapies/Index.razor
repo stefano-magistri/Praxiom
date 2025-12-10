@@ -120,7 +120,7 @@ else
     private async Task PrintAsync(int id)
     {
         var therapy = await repository.GetByIdAsync(id);
-        var pdfBytes = pdfService.GenerateTherapyPdf(therapy);
+        var pdfBytes = await pdfService.GenerateTherapyPdfAsync(therapy);
         // Convert the PDF bytes to a Base64 string
         var pdfBase64 = Convert.ToBase64String(pdfBytes);
         var filename = $"{patient.FirstName}_{patient.LastName}_{therapy.CreatedDate:yy_MM_dd}_{DateTime.Now.ToFileTimeUtc()}.pdf";

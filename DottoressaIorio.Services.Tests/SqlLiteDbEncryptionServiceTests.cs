@@ -1,3 +1,5 @@
+using DottoressaIorio.Services.SqlLiteEncryption;
+
 namespace DottoressaIorio.Services.Tests;
 
 /// <summary>
@@ -6,37 +8,65 @@ namespace DottoressaIorio.Services.Tests;
 public class SqlLiteDbEncryptionServiceTests
 {
     /// <summary>
-    /// Tests that when no encryption key is provided, the connection string is returned without encryption settings.
+    /// When no encryption key is provided, the service should point to the unencrypted DB file.
     /// </summary>
     [Fact]
-    public void GetDatabaseConnectionString_NoEncryptionKey_ReturnsUnencryptedConnectionString()
+    public void GetConnectionString_NoEncryptionKey_UsesUnencryptedDatabase()
     {
         // Arrange
         var service = new SqlLiteDbEncryptionService(null);
 
         // Act
-        var connectionString = service.GetDatabaseConnectionString();
+        var cnStr = service.GetConnectionString();
 
         // Assert
-        Assert.Contains("Data Source=app.db", connectionString);
-        Assert.DoesNotContain("Password=", connectionString);
+        Assert.Contains("Data Source=app_unencrypted.db", cnStr);
     }
 
     /// <summary>
-    /// Tests that when an encryption key is provided, the connection string includes the encryption password.
+    /// When an encryption key is provided, the service should use the encrypted database file.
     /// </summary>
     [Fact]
-    public void GetDatabaseConnectionString_WithEncryptionKey_ReturnsEncryptedConnectionString()
+    public void GetConnectionString_WithEncryptionKey_UsesEncryptedDatabase()
     {
         // Arrange
-        var encryptionKey = "testEncryptionKey";
-        var service = new SqlLiteDbEncryptionService(encryptionKey);
+        var service = new SqlLiteDbEncryptionService("myKey");
 
         // Act
-        var connectionString = service.GetDatabaseConnectionString();
+        var cnStr = service.GetConnectionString();
 
         // Assert
-        Assert.Contains("Data Source=app.db", connectionString);
-        Assert.Contains($"Password={encryptionKey}", connectionString);
+        Assert.Contains("Data Source=app.db", cnStr);
+    }
+
+    /// <summary>
+    /// CreateConnection should successfully open a SQLite connection without throwing.
+    /// </summary>
+    [Fact]
+    public void CreateConnection_NoEncryptionKey_DoesNotThrow()
+    {
+        // Arrange
+        var service = new SqlLiteDbEncryptionService(null);
+
+        // Act & Assert
+        using var conn = service.CreateConnection();
+        Assert.NotNull(conn);
+        Assert.Equal(System.Data.ConnectionState.Open, conn.State);
+    }
+
+    /// <summary>
+    /// CreateConnection should open a SQLCipher-enabled connection when a key is provided.
+    /// (We only test that the connection opens without error.)
+    /// </summary>
+    [Fact]
+    public void CreateConnection_WithEncryptionKey_DoesNotThrow()
+    {
+        // Arrange
+        var service = new SqlLiteDbEncryptionService("key123");
+
+        // Act & Assert
+        using var conn = service.CreateConnection();
+        Assert.NotNull(conn);
+        Assert.Equal(System.Data.ConnectionState.Open, conn.State);
     }
 }

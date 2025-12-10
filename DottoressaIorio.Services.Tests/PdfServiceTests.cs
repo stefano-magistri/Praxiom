@@ -1,25 +1,14 @@
-using DinkToPdf;
-using DinkToPdf.Contracts;
 using DottoressaIorio.Models;
-using Moq;
+using DottoressaIorio.Services.Pdf;
 
 namespace DottoressaIorio.Services.Tests;
 
-/// <summary>
-/// Contains unit tests for the PdfService class.
-/// </summary>
-public class PdfServiceTests
+public class PdfHtmlBuilderTests
 {
-    /// <summary>
-    /// Tests that the GenerateTherapyPdf method correctly formats the PDF document with the therapy details,
-    /// including patient information, therapy description, and proper header/footer settings.
-    /// </summary>
     [Fact]
-    public void GenerateTherapyPdf_ShouldCallConverterWithCorrectSettings()
+    public void BuildHtml_ShouldGenerateCorrectHtml()
     {
-        // Arrange
-        var mockConverter = new Mock<IConverter>();
-        var pdfService = new PdfService(mockConverter.Object);
+        var builder = new PdfHtmlBuilder();
 
         var therapy = new Therapy
         {
@@ -33,18 +22,38 @@ public class PdfServiceTests
             Description = "Therapy description"
         };
 
-        mockConverter.Setup(m => m.Convert(It.IsAny<HtmlToPdfDocument>())).Returns(Array.Empty<byte>());
+        var html = builder.BuildHtml(therapy);
 
-        // Act
-        var result = pdfService.GenerateTherapyPdf(therapy);
+        Assert.Contains("Dr. John Doe", html);
+        Assert.Contains("Therapy description", html);
+    }
 
-        // Assert 
-        mockConverter.Verify(m => m.Convert(It.Is<HtmlToPdfDocument>(doc =>
-            //doc.GlobalSettings.PaperSize.ToString() == PaperKind.A4.ToString() &&
-            doc.Objects[0].HtmlContent.Contains("Dr. John Doe") &&
-            doc.Objects[0].HtmlContent.Contains("Therapy description") &&
-            doc.Objects[0].HeaderSettings.Right == "Data terapia: 01/01/2023" &&
-            doc.Objects[0].FooterSettings.Left.Contains("Dr. John Doe")
-        )), Times.Once);
+    [Fact]
+    public void BuildHeaderHtml_ShouldReplacePlaceholders()
+    {
+        var builder = new PdfHtmlBuilder();
+        var therapy = new Therapy { CreatedDate = new DateTime(2023, 1, 1) };
+
+        string template = "Data terapia: {{therapyDate}}";
+        var header = builder.BuildHeaderHtml(template, therapy);
+
+        Assert.Equal("Data terapia: 01/01/2023", header);
+    }
+
+    [Fact]
+    public void BuildFooterHtml_ShouldReplacePlaceholders()
+    {
+        var builder = new PdfHtmlBuilder();
+
+        var therapy = new Therapy
+        {
+            CreatedDate = new DateTime(2023, 1, 1),
+            Patient = new Patient { Title = "Dr.", FirstName = "John", LastName = "Doe" }
+        };
+
+        string template = "Terapia {{therapyDate}} - {{patient}}";
+        var footer = builder.BuildFooterHtml(template, therapy);
+
+        Assert.Equal("Terapia 01/01/2023 - Dr. John Doe", footer);
     }
 }
