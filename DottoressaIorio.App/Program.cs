@@ -8,6 +8,11 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
+if (OperatingSystem.IsWindows())
+{
+    builder.Host.UseWindowsService();
+}
+
 var encryptionKey = configuration["EncryptionKey"];
 var allowedUsername = configuration["Authentication:AllowedUsername"];
 

@@ -1,48 +1,45 @@
 @echo off
-:: Check if the script is run as administrator
->nul 2>&1 "%SYSTEMROOT%\System32\cacls.exe" "%SYSTEMROOT%\System32\config\system" && (
-    goto :runCommand
-) || (
-    echo Please run this script as an administrator.
-    echo Exiting...    
+setlocal EnableExtensions
+
+rem Check if the script is running as administrator.
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Please run this script as administrator.
     pause
-    exit /b
+    exit /b 1
 )
 
-:runCommand
-
-setlocal 
-
-rem Define the installation directory and service name
-set "destinationFolder=C:\Program Files\DottoressaIorio\"
+rem Define installation and service variables.
+set "destinationFolder=C:\Program Files\DottoressaIorio"
 set "service=DottoressaIorio.App"
-set "dbbackup=_db_backup"
+set "dbBackupFolder=_db_backup"
+set "dbFile=app.db"
 
-rem Navigate to the destination folder
-cd "%destinationFolder%"
-
-rem Stop the service using NSSM
-nssm stop "%service%"
- 
-rem Remove the service using NSSM (confirming the removal)
-nssm remove "%service%" confirm
-
-rem Create the destination folder if it does not exist
-if not exist "%dbbackup%" mkdir "%dbbackup%"
-
-rem Move the app.db file to _db_backup
-move "app.db" "%dbbackup%\"
-
-rem Remove all files and subdirectories in the installation directory except _db_backup
-for /F "delims=" %%i in ('dir /B /A:-D "%destinationFolder%" ^| findstr /V /C:"%dbbackup%"') do (
-    del /Q "%destinationFolder%\%%i"
+rem Stop and remove the Windows service when present.
+sc query "%service%" >nul 2>nul
+if %errorlevel% equ 0 (
+    sc stop "%service%" >nul 2>nul
+    timeout /t 2 /nobreak >nul
+    sc delete "%service%" >nul 2>nul
 )
 
-for /F "delims=" %%i in ('dir /B /AD "%destinationFolder%" ^| findstr /V /C:"%dbbackup%"') do (
-    rmdir /S /Q "%destinationFolder%\%%i"
+if exist "%destinationFolder%" (
+    cd /d "%destinationFolder%"
+
+    rem Keep app.db for future reinstalls.
+    if not exist "%dbBackupFolder%" mkdir "%dbBackupFolder%"
+    if exist "%dbFile%" move /Y "%dbFile%" "%dbBackupFolder%\%dbFile%" >nul
+
+    rem Remove all files and directories except the database backup folder.
+    for /F "delims=" %%i in ('dir /B /A:-D "%destinationFolder%" ^| findstr /V /I /C:"%dbBackupFolder%"') do (
+        del /Q "%destinationFolder%\%%i"
+    )
+
+    for /F "delims=" %%i in ('dir /B /AD "%destinationFolder%" ^| findstr /V /I /C:"%dbBackupFolder%"') do (
+        rmdir /S /Q "%destinationFolder%\%%i"
+    )
 )
 
-cd /d "%~dp0"
-
+echo Uninstall completed.
 pause
-exit /b
+exit /b 0

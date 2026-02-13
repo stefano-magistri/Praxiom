@@ -1,70 +1,87 @@
 @echo off
+setlocal EnableExtensions
 
-:: Check if the script is run as administrator
->nul 2>&1 "%SYSTEMROOT%\System32\cacls.exe" "%SYSTEMROOT%\System32\config\system" && (
-    goto :runCommand
-) || (
-    echo Please run this script as an administrator.
-    echo Exiting...    
+rem Check if the script is running as administrator.
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Please run this script as administrator.
     pause
-    exit /b
+    exit /b 1
 )
 
-:runCommand
-
-setlocal 
-
-rem Change to the directory where the script is located
+rem Change to the directory where the script is located.
 cd /d "%~dp0"
 
-rem Define source file, destination folder, and service-related variables
-set "sourceFile=Service.7z"
-set "destinationFolder=C:\Program Files\DottoressaIorio\"
+rem Define source file, destination folder, and service-related variables.
+set "sourceFile=%~dp0Service.7z"
+set "sevenZipExe=%~dp07z.exe"
+set "destinationFolder=C:\Program Files\DottoressaIorio"
 set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
+set "appUrl=http://localhost:5000"
+set "dbFile=app.db"
 set "dbBackupFolder=_db_backup"
 
+if not exist "%sourceFile%" (
+    echo Missing package: "%sourceFile%"
+    pause
+    exit /b 1
+)
 
-rem Create the destination folder if it does not exist
+if not exist "%sevenZipExe%" (
+    echo Missing extractor: "%sevenZipExe%"
+    pause
+    exit /b 1
+)
+
 if not exist "%destinationFolder%" mkdir "%destinationFolder%"
 
-rem Extract files from the 7z archive to the destination folder
-7z x %sourceFile% -o"%destinationFolder%" *.* -r -y
-
-rem Check if winget is available
-where winget >nul 2>nul
-if %errorlevel% neq 0 (
-    echo "Winget is not installed. Skipping package installation."
-    goto :afterWinget
+rem Backup current database before replacing files.
+if exist "%destinationFolder%\%dbFile%" (
+    if not exist "%destinationFolder%\%dbBackupFolder%" mkdir "%destinationFolder%\%dbBackupFolder%"
+    copy /Y "%destinationFolder%\%dbFile%" "%destinationFolder%\%dbBackupFolder%\%dbFile%" >nul
 )
 
-rem Install .NET 8 Runtime using winget
-echo Installing .NET 8 Runtime using winget...
-echo y | winget install Microsoft.DotNet.Runtime.8
-
-rem Install .NET 8 AspNetCore using winget
-echo Installing .NET 8 AspNetCore using winget...
-echo y | winget install Microsoft.DotNet.AspNetCore.8
-
-rem End of script
-:afterWinget
-
-rem Navigate to the destination folder
-cd "%destinationFolder%"
-
-rem Move files from _db_backup to the destination folder
-if exist "%dbBackupFolder%" (
-    move /Y "%dbBackupFolder%\*" "%destinationFolder%"
+rem Extract files from the 7z archive to the destination folder.
+"%sevenZipExe%" x "%sourceFile%" -o"%destinationFolder%" *.* -r -y
+if errorlevel 1 (
+    echo Failed to extract "%sourceFile%".
+    pause
+    exit /b 1
 )
 
-rem Install the service using NSSM
-nssm install %service% "%destinationFolder%\%app%"
+rem Restore database if backup is present.
+if exist "%destinationFolder%\%dbBackupFolder%\%dbFile%" (
+    copy /Y "%destinationFolder%\%dbBackupFolder%\%dbFile%" "%destinationFolder%\%dbFile%" >nul
+)
 
-rem Start the installed service using NSSM
-nssm start %service%
- 
-rem Open the default browser to the application's URL
-start http://localhost:5000
+rem Runtime installation is not required: payload is self-contained.
 
+rem Recreate the Windows service using native Service Control Manager.
+sc query "%service%" >nul 2>nul
+if %errorlevel% equ 0 (
+    sc stop "%service%" >nul 2>nul
+    timeout /t 2 /nobreak >nul
+    sc delete "%service%" >nul 2>nul
+    timeout /t 2 /nobreak >nul
+)
+
+sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls %appUrl%" start= auto DisplayName= "Dottoressa Iorio App"
+if errorlevel 1 (
+    echo Failed to create service "%service%".
+    pause
+    exit /b 1
+)
+
+sc description "%service%" "Dottoressa Iorio medical management application"
+sc start "%service%" >nul
+if errorlevel 1 (
+    echo Service "%service%" was created but failed to start.
+    pause
+    exit /b 1
+)
+
+start "" "%appUrl%"
+echo Installation completed successfully.
 pause
-exit /b
+exit /b 0
