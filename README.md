@@ -76,6 +76,8 @@ dotnet test DottoressaIorio.Repositories.Tests
 dotnet test DottoressaIorio.Services.Tests
 ```
 
+Continuous Integration: tests are also executed automatically in GitHub Actions on every pull request (`.github/workflows/ci.yml`).
+
 ## Deployment Notes
 
 This repository includes helper scripts and binaries in:
