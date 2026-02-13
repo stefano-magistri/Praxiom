@@ -133,4 +133,37 @@ public class HtmlExtensionsTests
         // Assert
         Assert.Equal("<p><br /></p><p>Line 1</p><p>Line 2</p>", htmlResult);
     }
+
+    /// <summary>
+    /// Tests that the GetHtml method encodes HTML-sensitive characters to prevent script injection.
+    /// </summary>
+    [Fact]
+    public void GetHtml_ShouldEncodeHtmlSensitiveCharacters()
+    {
+        // Arrange
+        var rawText = "<script>alert('x')</script>";
+
+        // Act
+        var htmlResult = StringExtensions.GetHtml(rawText);
+
+        // Assert
+        Assert.Equal("<p>&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt;</p>", htmlResult);
+    }
+
+    /// <summary>
+    /// Tests that the GetHtml method supports Windows-style line endings.
+    /// </summary>
+    [Fact]
+    public void GetHtml_ShouldHandleWindowsNewLines()
+    {
+        // Arrange
+        var windowsNewLines = "Line 1\r\nLine 2\r\n";
+
+        // Act
+        var htmlResult = StringExtensions.GetHtml(windowsNewLines);
+
+        // Assert
+        Assert.Equal("<p>Line 1</p><p>Line 2</p><p><br /></p>", htmlResult);
+    }
+
 }

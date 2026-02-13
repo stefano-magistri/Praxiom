@@ -1,4 +1,5 @@
-﻿using DottoressaIorio.Models;
+﻿using System.Net;
+using DottoressaIorio.Models;
 
 namespace DottoressaIorio.Services;
 
@@ -50,8 +51,9 @@ public static class StringExtensions
             return string.Empty;
 
         var paragraphs = value
-            .Split("\n")
-            .Select(par => $"<p>{par}</p>");
+            .Split('\n')
+            .Select(par => par.TrimEnd('\r'))
+            .Select(par => $"<p>{WebUtility.HtmlEncode(par)}</p>");
 
         var res = string.Join("", paragraphs);
 

@@ -6,15 +6,14 @@
 @inject IJSRuntime jsRuntime
 @inject PdfService pdfService
 
-<PageHeader Title="@($"{patient.Title} {patient.FirstName} {patient.LastName}")"></PageHeader>
-
-
 @if (patient == null)
 {
     <p>ID paziente non valido o paziente non trovato.</p>
 }
 else
 {
+    <PageHeader Title="@($"{patient.Title} {patient.FirstName} {patient.LastName}")"></PageHeader>
+
     <div>
         <p>
             <strong>Data di Nascita:</strong> @patient.DateOfBirth?.ToShortDateString()
