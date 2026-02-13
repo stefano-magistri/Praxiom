@@ -62,11 +62,11 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the GetAllsync method returns all therapies for a specific patient.
+    /// Tests that the GetAllAsync method returns all therapies for a specific patient.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task GetAllsync_ShouldReturnTherapiesForPatient()
+    public async Task GetAllAsync_ShouldReturnTherapiesForPatient()
     {
         // Arrange
         await SeedDataAsync();
@@ -77,7 +77,7 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
 
         // Act
         var repository = new PatientTherapyRepository(_context);
-        var result = await repository.GetAllsync(patientId);
+        var result = await repository.GetAllAsync(patientId);
 
         // Assert
         Assert.Equal(expectedTherapies.Count, result.Count);

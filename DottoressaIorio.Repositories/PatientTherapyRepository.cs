@@ -25,12 +25,21 @@ public class PatientTherapyRepository : GenericRepository<Therapy>
     /// </summary>
     /// <param name="patientId">The unique identifier of the patient.</param>
     /// <returns>A list of therapies associated with the specified patient.</returns>
-    public async Task<IList<Therapy>> GetAllsync(int patientId)
+    public async Task<IList<Therapy>> GetAllAsync(int patientId)
     {
         return await context.Therapies
             .Include(x => x.Patient)
             .Where(t => !t.Deleted && t.PatientId == patientId)
             .OrderBy(t => t.CreatedDate)
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// Backward-compatible alias for <see cref="GetAllAsync(int)"/>.
+    /// </summary>
+    [Obsolete("Use GetAllAsync(int patientId) instead.")]
+    public Task<IList<Therapy>> GetAllsync(int patientId)
+    {
+        return GetAllAsync(patientId);
     }
 }

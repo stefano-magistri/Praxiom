@@ -26,9 +26,13 @@ public class GenericRepository<T> where T : class, IDataHandler
     /// </summary>
     /// <param name="id">The unique identifier of the entity to retrieve.</param>
     /// <returns>The entity if found, null otherwise.</returns>
-    public async Task<T> GetByIdAsync(int id)
+    public async Task<T?> GetByIdAsync(int id)
     {
         var entity = await _context.Set<T>().FindAsync(id);
+
+        if (entity is null)
+            return null;
+
         _context.Entry(entity).State = EntityState.Detached;
         return entity;
     }
