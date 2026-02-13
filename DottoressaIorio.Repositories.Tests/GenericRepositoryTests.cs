@@ -63,7 +63,21 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         var result = await _repository.GetByIdAsync(entityToAdd.PatientId);
 
         // Assert
+        Assert.NotNull(result);
         Assert.Equal(entityToAdd.PatientId, result.PatientId);
+    }
+
+    /// <summary>
+    /// Tests that the GetByIdAsync method returns null when the entity does not exist.
+    /// </summary>
+    [Fact]
+    public async Task GetByIdAsync_ShouldReturnNullWhenEntityDoesNotExist()
+    {
+        // Act
+        var result = await _repository.GetByIdAsync(-1);
+
+        // Assert
+        Assert.Null(result);
     }
 
     /// <summary>
@@ -131,6 +145,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         var result = await _repository.GetByIdAsync(entityToAdd.PatientId);
 
         // Assert
+        Assert.NotNull(result);
         Assert.Equal("Updated", result.FirstName);
     }
 
@@ -155,6 +170,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         var result = await _repository.GetByIdAsync(entityToAdd.PatientId);
 
         // Assert
+        Assert.NotNull(result);
         Assert.True(result.Deleted);
     }
 }
