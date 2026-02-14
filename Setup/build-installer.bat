@@ -14,6 +14,7 @@ set "scriptDir=%~dp0"
 for %%I in ("%scriptDir%..") do set "repoDir=%%~fI"
 set "publishScript=%repoDir%\DottoressaIorio.App\publish.bat"
 set "issFile=%scriptDir%DottoressaIorioInstaller.iss"
+set "outputFile=%scriptDir%Output\DottoressaIorioInstaller.exe"
 
 if not exist "%publishScript%" (
     echo Missing publish script: "%publishScript%"
@@ -49,6 +50,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
+if not exist "%outputFile%" (
+    echo Installer build completed but output file was not found: "%outputFile%"
+    exit /b 1
+)
+
 echo Installer build completed.
-echo Output: "%scriptDir%Output\DottoressaIorioInstaller.exe"
+echo Output: "%outputFile%"
 exit /b 0

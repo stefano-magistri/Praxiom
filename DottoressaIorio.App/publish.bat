@@ -16,9 +16,6 @@ set "destinationFolder=%setupDir%\Service"
 set "archiveFile=%setupDir%\Service.7z"
 set "sevenZipExe=%setupDir%\7z.exe"
 set "allowedUsername=%~1"
- 
-rem Replace single backslash with double backslashes
-set "allowedUsername=%allowedUsername:\=\\%"
 
 if not exist "%sevenZipExe%" (
     echo Missing archive tool: "%sevenZipExe%"
@@ -38,7 +35,11 @@ rem Update the appsettings.Production.json file with the allowedUsername paramet
 set "configFile=%destinationFolder%\appsettings.Production.json"
 if exist "%configFile%" (
     echo Updating appsettings.Production.json...
-    call :replaceAllowedUsername "%configFile%" "%allowedUsername%"
+    call :setAllowedUsernameJson "%configFile%" "%allowedUsername%"
+    if errorlevel 1 (
+        echo Failed to update appsettings.Production.json.
+        exit /b 1
+    )
 ) else (
     echo appsettings.Production.json not found.
     exit /b 1
@@ -59,20 +60,18 @@ rmdir /s /q "%destinationFolder%"
 
 exit /b 0
 
-:replaceAllowedUsername
+:setAllowedUsernameJson
 setlocal
 set "configFile=%~1"
 set "allowedUsername=%~2"
-set "tempFile=%configFile%.tmp"
+set "CONFIG_FILE=%configFile%"
+set "ALLOWED_USERNAME=%allowedUsername%"
 
-(for /f "usebackq tokens=*" %%i in ("%configFile%") do (
-    set "line=%%i"
-    setlocal enabledelayedexpansion
-    >> "%tempFile%" echo !line:[AllowedUsername]=%allowedUsername%!
+powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $p=$env:CONFIG_FILE; $u=($env:ALLOWED_USERNAME -replace '\\+','\'); $json=Get-Content -Raw -Path $p; $uQuoted=($u | ConvertTo-Json -Compress); $uEscaped=$uQuoted.Substring(1,$uQuoted.Length-2); $json=$json.Replace('[AllowedUsername]',$uEscaped); Set-Content -Encoding UTF8 -Path $p -Value $json"
+if errorlevel 1 (
     endlocal
-))
-
-move /y "%tempFile%" "%configFile%" >nul
+    exit /b 1
+)
 
 endlocal
 exit /b 0
