@@ -11,6 +11,7 @@ AppPublisher=Dottoressa Iorio
 DefaultDirName={autopf64}\DottoressaIorio
 DefaultGroupName={#MyAppName}
 DisableDirPage=yes
+DisableProgramGroupPage=yes
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=commandline
 ArchitecturesAllowed=x64compatible
@@ -43,6 +44,5 @@ Filename: "{app}\_setup\install.bat"; Parameters: "--silent"; Flags: runhidden w
 Filename: "{app}\_setup\uninstall.bat"; Parameters: "--silent"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "DottoressaIorioAppUninstall"
 
 [Icons]
-Name: "{group}\Dottoressa Iorio App"; Filename: "{app}\DottoressaIorio.App.exe"
 Name: "{group}\Dottoressa Iorio Web"; Filename: "http://localhost:5000"
-Name: "{autodesktop}\Dottoressa Iorio App"; Filename: "{app}\DottoressaIorio.App.exe"; Tasks: desktopicon
+Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "http://localhost:5000"; Tasks: desktopicon
