@@ -401,5 +401,5 @@ FodyWeavers.xsd
 /DottoressaIorio.App/app.db
 /Setup/Service
 /Setup/Service.7z
-Setup/DottoressaIorioInstaller.exe
+/Setup/Output/
 query

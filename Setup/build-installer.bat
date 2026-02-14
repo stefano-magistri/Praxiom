@@ -50,5 +50,5 @@ if errorlevel 1 (
 )
 
 echo Installer build completed.
-echo Output: "%scriptDir%DottoressaIorioInstaller.exe"
+echo Output: "%scriptDir%Output\DottoressaIorioInstaller.exe"
 exit /b 0
