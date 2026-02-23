@@ -2,7 +2,25 @@
 setlocal EnableExtensions
 
 set "interactive=1"
-if /I "%~1"=="--silent" set "interactive=0"
+set "removeAllData=0"
+
+:parseArgs
+if "%~1"=="" goto argsDone
+if /I "%~1"=="--silent" (
+    set "interactive=0"
+    shift
+    goto parseArgs
+)
+if /I "%~1"=="--remove-all-data" (
+    set "removeAllData=1"
+    shift
+    goto parseArgs
+)
+echo Unknown argument: %~1
+if "%interactive%"=="1" pause
+exit /b 1
+
+:argsDone
 
 rem Check if the script is running as administrator.
 net session >nul 2>&1
@@ -33,14 +51,16 @@ if %errorlevel% equ 0 (
 if exist "%destinationFolder%" (
     cd /d "%destinationFolder%"
 
-    rem Keep SQLite database files for future reinstalls.
-    if not exist "%dbBackupFolder%" mkdir "%dbBackupFolder%"
-    call :backupDbFile "app.db"
-    call :backupDbFile "app.db-shm"
-    call :backupDbFile "app.db-wal"
-    call :backupDbFile "app_unencrypted.db"
-    call :backupDbFile "app_unencrypted.db-shm"
-    call :backupDbFile "app_unencrypted.db-wal"
+    if "%removeAllData%"=="0" (
+        rem Keep SQLite database files for future reinstalls.
+        if not exist "%dbBackupFolder%" mkdir "%dbBackupFolder%"
+        call :backupDbFile "app.db"
+        call :backupDbFile "app.db-shm"
+        call :backupDbFile "app.db-wal"
+        call :backupDbFile "app_unencrypted.db"
+        call :backupDbFile "app_unencrypted.db-shm"
+        call :backupDbFile "app_unencrypted.db-wal"
+    )
 
     rem Remove all files except the database backup directory.
     for /F "delims=" %%i in ('dir /B /A:-D "%destinationFolder%"') do (
@@ -48,8 +68,14 @@ if exist "%destinationFolder%" (
     )
 
     rem Remove all directories except the database backup directory.
-    for /F "delims=" %%i in ('dir /B /A:D "%destinationFolder%" ^| findstr /V /I /X /C:"%dbBackupFolder%"') do (
-        rmdir /S /Q "%destinationFolder%\%%i" >nul 2>nul
+    if "%removeAllData%"=="0" (
+        for /F "delims=" %%i in ('dir /B /A:D "%destinationFolder%" ^| findstr /V /I /X /C:"%dbBackupFolder%"') do (
+            rmdir /S /Q "%destinationFolder%\%%i" >nul 2>nul
+        )
+    ) else (
+        for /F "delims=" %%i in ('dir /B /A:D "%destinationFolder%"') do (
+            rmdir /S /Q "%destinationFolder%\%%i" >nul 2>nul
+        )
     )
 )
 

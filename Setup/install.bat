@@ -6,10 +6,12 @@ set "allowedUsername="
 set "appUrl=http://localhost:5000"
 set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
+set "statusFile=%~dp0install.status"
 
 > "%logFile%" echo [%date% %time%] Installer script started.
 >> "%logFile%" echo [%date% %time%] Script path=%0
 >> "%logFile%" echo [%date% %time%] Script dir=%scriptDir%
+if exist "%statusFile%" del /q "%statusFile%" >nul 2>nul
 
 :parseArgs
 if "%~1"=="" goto argsDone
@@ -54,6 +56,13 @@ if "%allowedUsername%"=="" (
 echo %appUrl% | findstr /I "://">nul
 if errorlevel 1 set "appUrl=http://%appUrl%"
 >> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl%
+call :validateUrl "%appUrl%"
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Invalid app URL "%appUrl%".
+    echo Invalid service URL. Use format: http://hostname:port or https://hostname:port
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
 
 rem Check if the script is running as administrator.
 net session >nul 2>&1
@@ -166,6 +175,7 @@ if errorlevel 1 (
     sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
     if errorlevel 1 (
         >> "%logFile%" echo [%date% %time%] WARNING: Failed to create service. Files remain installed.
+        > "%statusFile%" echo WARNING: Service creation failed.
         echo WARNING: Failed to create service "%service%".
         echo Application files were installed; service can be created manually.
         if "%interactive%"=="1" pause
@@ -177,6 +187,8 @@ sc description "%service%" "Dottoressa Iorio medical management application" >> 
 sc start "%service%" >> "%logFile%" 2>&1
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] WARNING: Service created but failed to start.
+    call :logServiceDiagnostics
+    > "%statusFile%" echo WARNING: Service start failed.
     echo WARNING: Service "%service%" was created but failed to start.
     echo You can inspect service logs and start it manually after installation.
     if "%interactive%"=="1" pause
@@ -184,6 +196,7 @@ if errorlevel 1 (
 )
 
 if "%interactive%"=="1" start "" "%appUrl%"
+> "%statusFile%" echo SUCCESS
 >> "%logFile%" echo [%date% %time%] Installation completed successfully.
 echo Installation completed successfully.
 if "%interactive%"=="1" pause
@@ -214,4 +227,24 @@ if errorlevel 1 (
 )
 
 endlocal
+exit /b 0
+
+:validateUrl
+setlocal
+set "urlToValidate=%~1"
+set "URL_TO_VALIDATE=%urlToValidate%"
+powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $u=$env:URL_TO_VALIDATE; if($u -notmatch '^(https?)://[^/:\s]+:\d{1,5}$'){ exit 1 }; $port=[int]($u.Split(':')[-1]); if($port -lt 1 -or $port -gt 65535){ exit 1 } else { exit 0 }"
+set "exitCode=%errorlevel%"
+endlocal & exit /b %exitCode%
+
+:logServiceDiagnostics
+>> "%logFile%" echo [%date% %time%] Collecting service diagnostics...
+sc query "%service%" >> "%logFile%" 2>&1
+sc queryex "%service%" >> "%logFile%" 2>&1
+set "DIAG_FILE=%scriptDir%service-diagnostics.tmp.log"
+powershell -NoProfile -Command "$ErrorActionPreference='Continue'; try { Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-15)} -ErrorAction Stop | Where-Object { $_.ProviderName -match 'ASP.NET|Application Error|.NET Runtime|IIS AspNetCore Module V2' -or $_.Message -match 'DottoressaIorio|DottoressaIorio.App.exe|Kestrel|address already in use|failed to start' } | Select-Object -First 20 TimeCreated, ProviderName, Id, LevelDisplayName, Message | Format-List | Out-String -Width 4096 | Set-Content -Encoding UTF8 -Path $env:DIAG_FILE } catch { $_ | Out-String | Set-Content -Encoding UTF8 -Path $env:DIAG_FILE }"
+if exist "%scriptDir%service-diagnostics.tmp.log" (
+    >> "%logFile%" type "%scriptDir%service-diagnostics.tmp.log"
+    del /q "%scriptDir%service-diagnostics.tmp.log" >nul 2>nul
+)
 exit /b 0

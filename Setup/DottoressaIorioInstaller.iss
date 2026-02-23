@@ -40,7 +40,7 @@ Source: "uninstall.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Filename: "{app}\_setup\install.bat"; Parameters: "{code:GetInstallParams}"; Flags: runhidden waituntilterminated; StatusMsg: "Configuring Windows service..."
 
 [UninstallRun]
-Filename: "{app}\_setup\uninstall.bat"; Parameters: "--silent"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "DottoressaIorioAppUninstall"
+Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "DottoressaIorioAppUninstall"
 
 [Icons]
 Name: "{group}\Dottoressa Iorio App"; Filename: "{app}\DottoressaIorio.App.exe"
@@ -50,6 +50,12 @@ Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}";
 [Code]
 var
   ConfigPage: TInputQueryWizardPage;
+  RemoveAllDataOnUninstall: Boolean;
+
+function IsValidServiceUrl(const Url: string): Boolean; forward;
+function ExtractPortFromUrl(const Url: string): Integer; forward;
+function IsPortInUse(PortValue: Integer): Boolean; forward;
+function GetUninstallParams(Value: string): string; forward;
 
 procedure InitializeWizard;
 var
@@ -76,6 +82,8 @@ begin
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  UrlToCheck: string;
 begin
   Result := True;
   if CurPageID = ConfigPage.ID then
@@ -93,6 +101,23 @@ begin
       Result := False;
       Exit;
     end;
+
+    UrlToCheck := Trim(ConfigPage.Values[1]);
+    if not IsValidServiceUrl(UrlToCheck) then
+    begin
+      MsgBox('Service URL must be in the format http://hostname:port or https://hostname:port.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+
+    if IsPortInUse(ExtractPortFromUrl(UrlToCheck)) then
+    begin
+      if MsgBox('The selected port appears to already be in use. Continue anyway?', mbConfirmation, MB_YESNO) = IDNO then
+      begin
+        Result := False;
+        Exit;
+      end;
+    end;
   end;
 end;
 
@@ -106,4 +131,167 @@ end;
 function GetConfiguredUrl(Value: string): string;
 begin
   Result := ConfigPage.Values[1];
+end;
+
+function IsDigits(const Value: string): Boolean;
+var
+  I: Integer;
+begin
+  Result := Length(Value) > 0;
+  if not Result then
+    Exit;
+  for I := 1 to Length(Value) do
+  begin
+    if (Value[I] < '0') or (Value[I] > '9') then
+    begin
+      Result := False;
+      Exit;
+    end;
+  end;
+end;
+
+function LastColonPos(const Value: string): Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := Length(Value) downto 1 do
+  begin
+    if Value[I] = ':' then
+    begin
+      Result := I;
+      Exit;
+    end;
+  end;
+end;
+
+function ExtractPortFromUrl(const Url: string): Integer;
+var
+  PrefixPos: Integer;
+  HostAndPort: string;
+  ColonPos: Integer;
+  PortText: string;
+begin
+  Result := 0;
+  PrefixPos := Pos('://', Url);
+  if PrefixPos = 0 then
+    Exit;
+  HostAndPort := Copy(Url, PrefixPos + 3, MaxInt);
+  ColonPos := LastColonPos(HostAndPort);
+  if ColonPos = 0 then
+    Exit;
+  PortText := Copy(HostAndPort, ColonPos + 1, MaxInt);
+  if (Pos('/', PortText) > 0) or (not IsDigits(PortText)) then
+    Exit;
+  Result := StrToInt(PortText);
+end;
+
+function IsValidServiceUrl(const Url: string): Boolean;
+var
+  LowerUrl: string;
+  PrefixPos: Integer;
+  HostAndPort: string;
+  ColonPos: Integer;
+  HostText: string;
+  PortValue: Integer;
+begin
+  Result := False;
+  LowerUrl := LowerCase(Trim(Url));
+  if (Pos('http://', LowerUrl) <> 1) and (Pos('https://', LowerUrl) <> 1) then
+    Exit;
+
+  PrefixPos := Pos('://', LowerUrl);
+  HostAndPort := Copy(LowerUrl, PrefixPos + 3, MaxInt);
+  if Pos('/', HostAndPort) > 0 then
+    Exit;
+
+  ColonPos := LastColonPos(HostAndPort);
+  if ColonPos = 0 then
+    Exit;
+
+  HostText := Copy(HostAndPort, 1, ColonPos - 1);
+  if Trim(HostText) = '' then
+    Exit;
+
+  PortValue := ExtractPortFromUrl(LowerUrl);
+  if (PortValue < 1) or (PortValue > 65535) then
+    Exit;
+
+  Result := True;
+end;
+
+function IsPortInUse(PortValue: Integer): Boolean;
+var
+  CmdResult: Integer;
+  OutputFile: string;
+  OutputText: AnsiString;
+begin
+  Result := False;
+  if PortValue <= 0 then
+    Exit;
+
+  OutputFile := ExpandConstant('{tmp}\port-check.txt');
+  if FileExists(OutputFile) then
+    DeleteFile(OutputFile);
+
+  Exec(
+    ExpandConstant('{cmd}'),
+    '/C netstat -ano | findstr /R /C:":' + IntToStr(PortValue) + ' .*LISTENING" > "' + OutputFile + '"',
+    '',
+    SW_HIDE,
+    ewWaitUntilTerminated,
+    CmdResult
+  );
+
+  if CmdResult = 0 then
+  begin
+    if LoadStringFromFile(OutputFile, OutputText) then
+      Result := Trim(String(OutputText)) <> '';
+  end;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  Result := True;
+  RemoveAllDataOnUninstall := False;
+  if not UninstallSilent then
+  begin
+    RemoveAllDataOnUninstall :=
+      MsgBox(
+        'Do you want to remove all local application data (database files) as well?',
+        mbConfirmation,
+        MB_YESNO
+      ) = IDYES;
+  end;
+end;
+
+function GetUninstallParams(Value: string): string;
+begin
+  Result := '--silent';
+  if RemoveAllDataOnUninstall then
+    Result := Result + ' --remove-all-data';
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  StatusFile: string;
+  StatusText: AnsiString;
+begin
+  if CurStep <> ssPostInstall then
+    Exit;
+
+  StatusFile := ExpandConstant('{app}\_setup\install.status');
+  if not FileExists(StatusFile) then
+    Exit;
+
+  if LoadStringFromFile(StatusFile, StatusText) then
+  begin
+    if Pos('WARNING', UpperCase(String(StatusText))) > 0 then
+      MsgBox(
+        'Installation completed with warnings. Open "' +
+        ExpandConstant('{app}\_setup\install.log') + '" for details.',
+        mbInformation,
+        MB_OK
+      );
+  end;
 end;
