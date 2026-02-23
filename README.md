@@ -94,14 +94,17 @@ An Inno Setup script is available at `Setup/DottoressaIorioInstaller.iss`.
 Build the installer with:
 
 ```bat
-Setup\build-installer.bat "DOMAIN\\username" 1.0.0
+Setup\build-installer.bat 1.0.0
 ```
 
 This will:
 
 - Publish a self-contained `win-x64` service package
 - Generate `Setup\Service.7z`
-- Build `Setup\DottoressaIorioInstaller.exe` (requires Inno Setup 6 / `ISCC.exe`)
+- Build `Setup\Output\DottoressaIorioInstaller.exe` (requires Inno Setup 6 / `ISCC.exe`)
+- Prompt in the installer wizard for:
+  - Allowed Username (`DOMAIN\username`)
+  - Service URL (for example `http://localhost:5000`)
 
 ## Contributing
 

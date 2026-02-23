@@ -1,13 +1,11 @@
 @echo off
 setlocal EnableExtensions
 
-if "%~1"=="" (
-    echo Usage: build-installer.bat "AllowedUsername" [AppVersion]
-    exit /b 1
+set "appVersion=%~1"
+if not "%~2"=="" (
+    rem Backward compatibility: old command format was "AllowedUsername" [AppVersion].
+    set "appVersion=%~2"
 )
-
-set "allowedUsername=%~1"
-set "appVersion=%~2"
 if "%appVersion%"=="" set "appVersion=1.0.0"
 
 set "scriptDir=%~dp0"
@@ -40,7 +38,7 @@ if not exist "%iscc%" (
     exit /b 1
 )
 
-call "%publishScript%" "%allowedUsername%"
+call "%publishScript%"
 if errorlevel 1 (
     echo Publish failed. Installer was not created.
     exit /b 1

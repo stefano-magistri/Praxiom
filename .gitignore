@@ -402,4 +402,5 @@ FodyWeavers.xsd
 /Setup/Service
 /Setup/Service.7z
 /Setup/Output/
+/Setup/tmp/
 query
