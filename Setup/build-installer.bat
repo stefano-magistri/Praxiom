@@ -15,6 +15,8 @@ for %%I in ("%scriptDir%..") do set "repoDir=%%~fI"
 set "publishScript=%repoDir%\DottoressaIorio.App\publish.bat"
 set "issFile=%scriptDir%DottoressaIorioInstaller.iss"
 set "outputFile=%scriptDir%Output\DottoressaIorioInstaller.exe"
+set "tmpDir=%scriptDir%tmp"
+set "tmpArchive=%tmpDir%\Service.7z"
 
 if not exist "%publishScript%" (
     echo Missing publish script: "%publishScript%"
@@ -44,6 +46,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
+if not exist "%tmpArchive%" (
+    echo Publish completed but staging archive was not found: "%tmpArchive%"
+    exit /b 1
+)
+
 "%iscc%" /DAppVersion=%appVersion% "%issFile%"
 if errorlevel 1 (
     echo Installer build failed.
@@ -54,6 +61,10 @@ if not exist "%outputFile%" (
     echo Installer build completed but output file was not found: "%outputFile%"
     exit /b 1
 )
+
+rem Cleanup temporary staging artifacts after successful installer build.
+if exist "%tmpArchive%" del /q "%tmpArchive%"
+if exist "%tmpDir%" rd "%tmpDir%" 2>nul
 
 echo Installer build completed.
 echo Output: "%outputFile%"

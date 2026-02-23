@@ -12,8 +12,9 @@ rem Define publish and packaging paths.
 set "scriptDir=%~dp0"
 for %%I in ("%scriptDir%..\Setup") do set "setupDir=%%~fI"
 for %%I in ("%scriptDir%DottoressaIorio.App.csproj") do set "appProject=%%~fI"
+set "tmpDir=%setupDir%\tmp"
 set "destinationFolder=%setupDir%\Service"
-set "archiveFile=%setupDir%\Service.7z"
+set "archiveFile=%tmpDir%\Service.7z"
 set "sevenZipExe=%setupDir%\7z.exe"
 set "allowedUsername=%~1"
 
@@ -22,6 +23,7 @@ if not exist "%sevenZipExe%" (
     exit /b 1
 )
 
+if not exist "%tmpDir%" mkdir "%tmpDir%"
 if exist "%destinationFolder%" rmdir /s /q "%destinationFolder%"
 
 rem Publish a self-contained Windows package so runtime install is not required.

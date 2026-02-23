@@ -30,7 +30,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
 
 [Files]
-Source: "Service.7z"; DestDir: "{app}\_setup"; Flags: ignoreversion
+Source: "tmp\Service.7z"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "7z.exe"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "7z.dll"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "install.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
