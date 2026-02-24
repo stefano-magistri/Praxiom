@@ -1,4 +1,5 @@
 using DottoressaIorio.Services.SqlLiteEncryption;
+using System.IO;
 
 namespace DottoressaIorio.Services.Tests;
 
@@ -20,7 +21,8 @@ public class SqlLiteDbEncryptionServiceTests
         var cnStr = service.GetConnectionString();
 
         // Assert
-        Assert.Contains("Data Source=app_unencrypted.db", cnStr);
+        var dataSource = cnStr["Data Source=".Length..];
+        Assert.Equal("app_unencrypted.db", Path.GetFileName(dataSource));
     }
 
     /// <summary>
@@ -36,7 +38,8 @@ public class SqlLiteDbEncryptionServiceTests
         var cnStr = service.GetConnectionString();
 
         // Assert
-        Assert.Contains("Data Source=app.db", cnStr);
+        var dataSource = cnStr["Data Source=".Length..];
+        Assert.Equal("app.db", Path.GetFileName(dataSource));
     }
 
     /// <summary>
