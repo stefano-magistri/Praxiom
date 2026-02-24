@@ -79,7 +79,7 @@ cd /d "%scriptDir%"
 rem Define source file, destination folder, and service-related variables.
 set "sourceFile=%scriptDir%Service.7z"
 set "sevenZipExe=%scriptDir%7z.exe"
-set "destinationFolder=C:\Program Files\DottoressaIorio"
+set "destinationFolder=C:\ProgramData\DottoressaIorio"
 set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
 set "dbBackupFolder=_db_backup"
@@ -149,6 +149,20 @@ call :restoreDbFile "app.db-wal"
 call :restoreDbFile "app_unencrypted.db"
 call :restoreDbFile "app_unencrypted.db-shm"
 call :restoreDbFile "app_unencrypted.db-wal"
+
+rem Configure and install Playwright browser binaries in ProgramData for service account usage.
+set "PLAYWRIGHT_BROWSERS_PATH=C:\ProgramData\DottoressaIorio\ms-playwright"
+if not exist "%PLAYWRIGHT_BROWSERS_PATH%" mkdir "%PLAYWRIGHT_BROWSERS_PATH%"
+setx /M PLAYWRIGHT_BROWSERS_PATH "%PLAYWRIGHT_BROWSERS_PATH%" >nul 2>nul
+if exist "%destinationFolder%\playwright.ps1" (
+    >> "%logFile%" echo [%date% %time%] Installing Playwright chromium to "%PLAYWRIGHT_BROWSERS_PATH%".
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%destinationFolder%\playwright.ps1" install chromium >> "%logFile%" 2>&1
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Playwright browser installation failed.
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] WARNING: Playwright install script not found at "%destinationFolder%\playwright.ps1".
+)
 
 rem Apply installer wizard configuration to production settings.
 if not exist "%configFile%" (

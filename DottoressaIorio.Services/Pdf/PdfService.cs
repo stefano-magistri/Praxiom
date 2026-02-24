@@ -1,5 +1,6 @@
-﻿using DottoressaIorio.Models;
+using DottoressaIorio.Models;
 using Microsoft.Playwright;
+using System.Runtime.InteropServices;
 
 namespace DottoressaIorio.Services.Pdf;
 
@@ -7,6 +8,8 @@ public class PdfService(PdfHtmlBuilder builder)
 {
     public async Task<byte[]> GenerateTherapyPdfAsync(Therapy therapy)
     {
+        ConfigurePlaywrightBrowsersPath();
+
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync(new() { Headless = true });
 
@@ -15,8 +18,12 @@ public class PdfService(PdfHtmlBuilder builder)
         var html = builder.BuildHtml(therapy);
         await page.SetContentAsync(html);
 
-        var header = builder.BuildHeaderHtml(await File.ReadAllTextAsync("_pdf_therapy/header.html"), therapy);
-        var footer = builder.BuildFooterHtml(await File.ReadAllTextAsync("_pdf_therapy/footer.html"), therapy);
+        var templateRoot = Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
+        var headerPath = Path.Combine(templateRoot, "header.html");
+        var footerPath = Path.Combine(templateRoot, "footer.html");
+
+        var header = builder.BuildHeaderHtml(await File.ReadAllTextAsync(headerPath), therapy);
+        var footer = builder.BuildFooterHtml(await File.ReadAllTextAsync(footerPath), therapy);
 
         return await page.PdfAsync(new PagePdfOptions
         {
@@ -33,5 +40,15 @@ public class PdfService(PdfHtmlBuilder builder)
             HeaderTemplate = header,
             FooterTemplate = footer
         });
+    }
+
+    private static void ConfigurePlaywrightBrowsersPath()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return;
+
+        const string playwrightPath = @"C:\ProgramData\DottoressaIorio\ms-playwright";
+        Directory.CreateDirectory(playwrightPath);
+        Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", playwrightPath);
     }
 }

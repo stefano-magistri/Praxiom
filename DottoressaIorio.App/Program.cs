@@ -4,11 +4,13 @@ using DottoressaIorio.Repositories;
 using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting.WindowsServices;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
+var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
 
-if (OperatingSystem.IsWindows())
+if (isWindowsService)
 {
     builder.Host.UseWindowsService();
 }
@@ -52,7 +54,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!isWindowsService)
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.UseRouting();
 

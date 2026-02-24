@@ -31,7 +31,7 @@ if %errorlevel% neq 0 (
 )
 
 rem Define installation and service variables.
-set "destinationFolder=C:\Program Files\DottoressaIorio"
+set "destinationFolder=C:\ProgramData\DottoressaIorio"
 set "service=DottoressaIorio.App"
 set "dbBackupFolder=_db_backup"
 
