@@ -8,10 +8,9 @@
     </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this content.</p>
-        <p>Allowed Username: @Configuration["AllowedUsername"]</p>
+        <p>Allowed Username: @Configuration["Authentication:AllowedUsername"]</p>
         <p>Current Environment: @Environment.EnvironmentName</p>
-        @if (authenticationStateTask != null)
-        {
+        @{
             var authenticationState = authenticationStateTask.Result;
             var user = authenticationState.User;
             if (user.Identity?.IsAuthenticated == true)

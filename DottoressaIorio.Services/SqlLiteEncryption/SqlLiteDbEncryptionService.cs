@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
+using System.IO;
 
 namespace DottoressaIorio.Services.SqlLiteEncryption;
 
@@ -14,7 +15,7 @@ public class SqlLiteDbEncryptionService(string key)
     /// </summary>
     public string GetConnectionString()
     {
-        var dbPath = string.IsNullOrEmpty(key) ? UnencryptedDbPath : EncryptedDbPath;
+        var dbPath = GetDbPath();
         return $"Data Source={dbPath}";
     }
 
@@ -25,7 +26,7 @@ public class SqlLiteDbEncryptionService(string key)
     /// </summary>
     public SqliteConnection CreateConnection()
     {
-        var dbPath = string.IsNullOrEmpty(key) ? UnencryptedDbPath : EncryptedDbPath;
+        var dbPath = GetDbPath();
 
         var connection = new SqliteConnection($"Data Source={dbPath}");
         connection.Open();
@@ -39,5 +40,11 @@ public class SqlLiteDbEncryptionService(string key)
         }
 
         return connection;
+    }
+
+    private string GetDbPath()
+    {
+        var fileName = string.IsNullOrEmpty(key) ? UnencryptedDbPath : EncryptedDbPath;
+        return Path.Combine(AppContext.BaseDirectory, fileName);
     }
 }
