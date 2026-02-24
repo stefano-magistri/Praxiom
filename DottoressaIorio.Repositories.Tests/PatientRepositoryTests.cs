@@ -2,6 +2,7 @@ using DottoressaIorio.Data;
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
@@ -31,7 +32,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
             LastName = "Patient",
             Deleted = true,
             CreatedDate = DateTime.Now.AddMonths(-1),
-            DateOfBirth = DateTime.Parse("18/12/1990"),
+            DateOfBirth = DateTime.ParseExact("18/12/1990", "dd/MM/yyyy", CultureInfo.InvariantCulture),
             EditDate = DateTime.Now,
             Email = "s@s2.com"
         }
