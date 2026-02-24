@@ -31,7 +31,7 @@ public class PdfService(PdfHtmlBuilder builder)
             PrintBackground = true,
             Margin = new Margin
             {
-                Top = "220px",
+                Top = "235px",
                 Bottom = "60px",
                 Left = "33px",
                 Right = "33px"
