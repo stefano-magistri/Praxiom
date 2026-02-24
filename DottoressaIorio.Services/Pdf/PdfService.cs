@@ -31,10 +31,10 @@ public class PdfService(PdfHtmlBuilder builder)
             PrintBackground = true,
             Margin = new Margin
             {
-                Top = "170px",
+                Top = "220px",
                 Bottom = "60px",
-                Left = "15px",
-                Right = "15px"
+                Left = "33px",
+                Right = "33px"
             },
             DisplayHeaderFooter = true,
             HeaderTemplate = header,
