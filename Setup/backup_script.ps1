@@ -1,26 +1,68 @@
-$destinationFolder="C:\Program Files\DottoressaIorio\"
-$sourcePath = ".\app.db"
-$serviceName = "DottoressaIorio.App"
-$onedrivePath = [System.IO.Path]::Combine($env:USERPROFILE, "OneDrive")
-$vaultPath = [System.IO.Path]::Combine($onedrivePath, "Personal Vault")
-$backupPath = [System.IO.Path]::Combine($vaultPath, $serviceName)
+$ErrorActionPreference = "Stop"
 
-
-cd $destinationFolder
-
-# Check if the backup folder exists, create it if not
-if (-not (Test-Path $backupPath -PathType Container)) {
-    New-Item -Path $backupPath -ItemType Directory
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    throw "This script must run in an elevated PowerShell session (Run as Administrator)."
 }
 
-# Stop the service using NSSM
-.\nssm stop $serviceName
+$serviceName = "DottoressaIorio.App"
+$appRoot = "C:\ProgramData\DottoressaIorio"
+$sourcePath = Join-Path $appRoot "app.db"
+$localBackupRoot = Join-Path $appRoot "_db_backup"
+$retentionCount = 30
 
-# Copy the item with a timestamped backup file name
-Copy-Item $sourcePath ([System.IO.Path]::Combine($backupPath, "app_backup_$(Get-Date -Format 'yyyyMMddHHmmss').db"))
+$oneDrivePath = Join-Path $env:USERPROFILE "OneDrive"
+$vaultPath = Join-Path $oneDrivePath "Personal Vault"
+$vaultBackupRoot = Join-Path $vaultPath $serviceName
 
-# Copy the item with a timestamped backup file name 2
-Copy-Item $sourcePath "$backupPath\app_backup_$(Get-Date -Format 'yyyyMMddHHmmss').db"
+$timestamp = Get-Date -Format "yyyyMMddHHmmss"
+$backupFileName = "app_backup_$timestamp.db"
+$localBackupPath = Join-Path $localBackupRoot $backupFileName
+$vaultBackupPath = Join-Path $vaultBackupRoot $backupFileName
 
-# Start the installed service using NSSM
-.\nssm start $serviceName
+if (-not (Test-Path $sourcePath -PathType Leaf)) {
+    throw "Database file not found: $sourcePath"
+}
+
+if (-not (Test-Path $localBackupRoot -PathType Container)) {
+    New-Item -Path $localBackupRoot -ItemType Directory | Out-Null
+}
+
+$service = Get-Service -Name $serviceName
+$serviceWasRunning = $service.Status -ne "Stopped"
+
+try {
+    if ($serviceWasRunning) {
+        Stop-Service -Name $serviceName -Force
+        $service.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped, [TimeSpan]::FromSeconds(60))
+    }
+
+    Copy-Item -Path $sourcePath -Destination $localBackupPath
+    Get-ChildItem -Path $localBackupRoot -Filter "app_backup_*.db" -File |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -Skip $retentionCount |
+        Remove-Item -Force
+
+    if (Test-Path $vaultPath -PathType Container) {
+        if (-not (Test-Path $vaultBackupRoot -PathType Container)) {
+            New-Item -Path $vaultBackupRoot -ItemType Directory | Out-Null
+        }
+
+        Copy-Item -Path $sourcePath -Destination $vaultBackupPath
+        Get-ChildItem -Path $vaultBackupRoot -Filter "app_backup_*.db" -File |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -Skip $retentionCount |
+            Remove-Item -Force
+    }
+    else {
+        Write-Warning "Personal Vault path not available: $vaultPath. Local backup still created."
+    }
+}
+finally {
+    if ($serviceWasRunning) {
+        Start-Service -Name $serviceName
+        $service.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Running, [TimeSpan]::FromSeconds(60))
+    }
+}
+
+Write-Host "Backup completed: $localBackupPath"

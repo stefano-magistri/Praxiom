@@ -84,6 +84,11 @@ set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
 set "dbBackupFolder=_db_backup"
 set "configFile=%destinationFolder%\appsettings.Production.json"
+set "backupScriptSource=%scriptDir%backup_script.ps1"
+set "backupScriptDest=%destinationFolder%\backup_script.ps1"
+set "backupTaskName=DottoressaIorio Daily Backup"
+set "backupTaskTime=02:00"
+set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
 
 rem Stop and remove existing service before touching files.
 set "serviceDeleted=1"
@@ -150,6 +155,17 @@ call :restoreDbFile "app_unencrypted.db"
 call :restoreDbFile "app_unencrypted.db-shm"
 call :restoreDbFile "app_unencrypted.db-wal"
 
+if exist "%backupScriptSource%" (
+    copy /Y "%backupScriptSource%" "%backupScriptDest%" >nul
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to copy backup script to "%backupScriptDest%".
+    ) else (
+        >> "%logFile%" echo [%date% %time%] Backup script copied to "%backupScriptDest%".
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] WARNING: Backup script not found at "%backupScriptSource%".
+)
+
 rem Configure and install Playwright browser binaries in ProgramData for service account usage.
 set "PLAYWRIGHT_BROWSERS_PATH=C:\ProgramData\DottoressaIorio\ms-playwright"
 if not exist "%PLAYWRIGHT_BROWSERS_PATH%" mkdir "%PLAYWRIGHT_BROWSERS_PATH%"
@@ -207,6 +223,20 @@ if errorlevel 1 (
     echo You can inspect service logs and start it manually after installation.
     if "%interactive%"=="1" pause
     exit /b 0
+)
+
+if exist "%backupScriptDest%" (
+    >> "%logFile%" echo [%date% %time%] Configuring scheduled task "%backupTaskName%" for user "%backupTaskUser%".
+    schtasks /Delete /TN "%backupTaskName%" /F >> "%logFile%" 2>&1
+    schtasks /Create /TN "%backupTaskName%" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""%backupScriptDest%""" /SC DAILY /ST %backupTaskTime% /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to create scheduled backup task.
+        echo WARNING: Could not create scheduled backup task "%backupTaskName%".
+    ) else (
+        >> "%logFile%" echo [%date% %time%] Scheduled backup task created successfully.
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] WARNING: Skipping scheduled task creation because backup script is missing.
 )
 
 if "%interactive%"=="1" start "" "%appUrl%"

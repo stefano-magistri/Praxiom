@@ -35,6 +35,7 @@ Source: "7z.exe"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "7z.dll"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "install.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "uninstall.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
+Source: "backup_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
 
 [Run]
 Filename: "{app}\_setup\install.bat"; Parameters: "{code:GetInstallParams}"; Flags: runhidden waituntilterminated; StatusMsg: "Configuring Windows service..."
