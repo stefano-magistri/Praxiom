@@ -7,6 +7,7 @@ namespace DottoressaIorio.Services.Tests;
 public class PdfServiceIntegrationTests(ITestOutputHelper testOutputHelper)
 {
     [Fact]
+    [Trait("Category", "Integration")]
     public async Task GenerateRealPdf_ShouldCreatePdfFile()
     {
         // Arrange

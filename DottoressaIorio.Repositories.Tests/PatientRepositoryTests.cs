@@ -18,12 +18,12 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         new Patient
         {
             PatientId = 1, FirstName = "John", LastName = "Doe", CreatedDate = DateTime.Now,
-            DateOfBirth = DateTime.Parse("10/02/1981"), Email = "s@s.com"
+            DateOfBirth = DateTime.ParseExact("10/02/1981", "dd/MM/yyyy", CultureInfo.InvariantCulture), Email = "s@s.com"
         },
         new Patient
         {
             PatientId = 2, FirstName = "Jane", LastName = "Smith", CreatedDate = DateTime.Now,
-            DateOfBirth = DateTime.Parse("01/12/2002"), Email = "s@s1.com"
+            DateOfBirth = DateTime.ParseExact("01/12/2002", "dd/MM/yyyy", CultureInfo.InvariantCulture), Email = "s@s1.com"
         },
         new Patient
         {
@@ -121,7 +121,12 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     public async Task PatientExistsAsync_ShouldReturnExpectedResult(string firstName, string lastName, string dob,
         bool expectedResult)
     {
-        var patient = new Patient { FirstName = firstName, LastName = lastName, DateOfBirth = DateTime.Parse(dob) };
+        var patient = new Patient
+        {
+            FirstName = firstName,
+            LastName = lastName,
+            DateOfBirth = DateTime.ParseExact(dob, "dd/MM/yyyy", CultureInfo.InvariantCulture)
+        };
 
         var result = await PatientExistsAsync(patient);
 
