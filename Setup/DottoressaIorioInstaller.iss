@@ -45,8 +45,8 @@ Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}";
 
 [Icons]
 Name: "{group}\Dottoressa Iorio App"; Filename: "{app}\DottoressaIorio.App.exe"
-Name: "{group}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"
-Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; Tasks: desktopicon
+Name: "{group}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\wwwroot\favicon.ico"
+Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\wwwroot\favicon.ico"; Tasks: desktopicon
 
 [Code]
 var
