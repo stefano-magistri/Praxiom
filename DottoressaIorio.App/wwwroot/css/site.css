@@ -194,8 +194,26 @@ main img.img-fluid {
     flex-direction: column;
 }
 
+#sidebarMenu .sidebar-brand {
+    margin-bottom: 1rem;
+    padding: .2rem .35rem .65rem;
+}
+
+#sidebarMenu .sidebar-product-name {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #1b3347;
+    letter-spacing: .01em;
+}
+
+#sidebarMenu .sidebar-product-subtitle {
+    margin-top: .15rem;
+    font-size: .78rem;
+    color: #5b7286;
+}
+
 #sidebarMenu .nav {
-    gap: .2rem;
+    gap: .28rem;
 }
 
 .sidebar .nav-link {
@@ -384,17 +402,27 @@ main form.needs-validation {
     max-width: 500px;
 }
 
-.copyright {
+.sidebar-footer {
     margin-top: auto;
+    list-style: none;
+}
+
+.copyright {
     padding: .85rem .1rem .35rem .1rem;
-    background-color: transparent;
     text-align: left;
     color: #637a8e;
-    font-size: .83rem;
+    font-size: .8rem;
+    line-height: 1.45;
 }
 
 .copyright a {
     color: #1a5f8d;
+    text-decoration: none;
+}
+
+.copyright a:hover,
+.copyright a:focus {
+    text-decoration: underline;
 }
 
 @media (max-width: 767.98px) {

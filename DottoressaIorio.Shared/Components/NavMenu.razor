@@ -3,6 +3,10 @@
 <nav id="sidebarMenu"
      class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
     <div class="position-sticky p-3">
+        <div class="sidebar-brand">
+            <div class="sidebar-product-name">Dottoressa Iorio</div>
+            <div class="sidebar-product-subtitle">@StudioDisplayName</div>
+        </div>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CloseSidebar">
@@ -14,7 +18,6 @@
                     <span data-feather="plus-circle" aria-hidden="true"></span> Aggiungi Paziente
                 </NavLink>
             </li>
-            <li class="border-top my-1"></li>
             <li class="nav-item">
                 <NavLink class="nav-link" href="therapy-templates" @onclick="CloseSidebar">
                     <span data-feather="layers"></span> Terapie Precompilate
@@ -24,18 +27,16 @@
                 <NavLink class="nav-link" href="create-therapy-template" @onclick="CloseSidebar">
                     <span data-feather="plus-circle" aria-hidden="true"></span> Aggiungi Precompilato
                 </NavLink>
-            </li>            
-            <li class="border-top my-1"></li>
+            </li>
             <li class="nav-item">
                 <NavLink class="nav-link" aria-current="page" href="guide" Match="NavLinkMatch.All" @onclick="CloseSidebar">
                     <span data-feather="home"></span> Guida
                 </NavLink>
             </li>
-            <li class="border-top my-1">
+            <li class="sidebar-footer">
                 <div class="copyright">
-                    &copy; 2024 Alessandra Iorio.<br />
-                    All rights reserved.<br />
-                    <span data-feather="github" aria-hidden="true"></span> <a href="https://github.com/smagistri/DottoressaIorio" target="_blank">Stefano Magistri</a>
+                    <div>Version @AppVersion</div>
+                    <a target="_blank" href="mailto:stefanomagistri@gmail.com?subject=Dottoressa Iorio App%20Support%20Request">Support</a>
                 </div>
             </li>
         </ul>
@@ -43,6 +44,12 @@
 
 </nav>
 @code {
+    [Parameter]
+    public string AppVersion { get; set; } = "unknown";
+
+    [Parameter]
+    public string StudioDisplayName { get; set; } = "Studio: Alessandra Iorio";
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await jsRuntime.InvokeVoidAsync("jsLoadFeather");
