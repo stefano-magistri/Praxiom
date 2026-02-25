@@ -30,6 +30,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
 
 [Files]
+Source: "..\DottoressaIorio.App\wwwroot\favicon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "tmp\Service.7z"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "7z.exe"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "7z.dll"; DestDir: "{app}\_setup"; Flags: ignoreversion
@@ -45,8 +46,8 @@ Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}";
 
 [Icons]
 Name: "{group}\Dottoressa Iorio App"; Filename: "{app}\DottoressaIorio.App.exe"
-Name: "{group}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\wwwroot\favicon.ico"
-Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\wwwroot\favicon.ico"; Tasks: desktopicon
+Name: "{group}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"
+Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"; Tasks: desktopicon
 
 [Code]
 var
