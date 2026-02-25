@@ -441,6 +441,44 @@ body {
     box-shadow: 0 10px 28px rgba(22, 42, 64, .08);
 }
 
+.patient-summary-card,
+.therapies-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 10px 28px rgba(22, 42, 64, .08);
+}
+
+.patient-summary-list dt {
+    margin-bottom: .45rem;
+    color: #4c6076;
+    font-weight: 700;
+}
+
+.patient-summary-list dd {
+    margin-bottom: .45rem;
+    color: var(--ink);
+}
+
+.patient-notes {
+    white-space: pre-wrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.patient-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+.therapy-top-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 main .patients-table-wrapper {
     border: 1px solid #e6edf4;
     border-radius: 12px;
@@ -459,6 +497,11 @@ main .patients-table-wrapper {
 .patients-table > tbody > tr > td {
     padding-top: .95rem;
     padding-bottom: .95rem;
+    border-bottom: 1px solid #e8eef4;
+}
+
+.patients-table > tbody > tr:hover > * {
+    background: #f7fbfe;
 }
 
 .patient-link {
