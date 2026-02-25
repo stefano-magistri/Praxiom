@@ -12,9 +12,9 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
     {
         await using var context = await fixture.NewContextAsync();
         var page = await context.NewPageAsync();
-        await PerformLoginIfNeededAsync(page, fixture.Settings);
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await EnsureAuthorizedShellAsync(page);
         await page.Locator(".navbar-brand").ClickAsync();
 
         await page.GetByTestId("patients-nav-link").ClickAsync();
@@ -39,7 +39,6 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
     {
         await using var context = await fixture.NewContextAsync();
         var page = await context.NewPageAsync();
-        await PerformLoginIfNeededAsync(page, fixture.Settings);
         var seed = Guid.NewGuid().ToString("N")[..8];
         var addedTitle = $"AAA ADD TEST {seed}";
         var editedTitle = $"AAA MODIFICA TEST {seed}";
@@ -47,6 +46,7 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
         var editedDescription = $"MODIFICA TEST Descrizione: {seed}";
 
         await page.GotoAsync("/therapy-templates", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await EnsureAuthorizedShellAsync(page);
         await page.GetByTestId("create-therapy-template-nav-link").ClickAsync();
 
         await page.Locator("#Title").FillAsync(addedTitle);
@@ -86,12 +86,12 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
     {
         await using var context = await fixture.NewContextAsync();
         var page = await context.NewPageAsync();
-        await PerformLoginIfNeededAsync(page, fixture.Settings);
         var seed = Guid.NewGuid().ToString("N")[..8];
         var title = $"ADD TEMPLATE {seed}";
         var description = $"Template description {seed}";
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await EnsureAuthorizedShellAsync(page);
         await page.GetByTestId("create-therapy-template-nav-link").ClickAsync();
 
         await page.Locator("#Title").FillAsync(title);
@@ -108,7 +108,6 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
     {
         await using var context = await fixture.NewContextAsync();
         var page = await context.NewPageAsync();
-        await PerformLoginIfNeededAsync(page, fixture.Settings);
         var seed = Guid.NewGuid().ToString("N")[..8];
         var firstName = $"Nome{seed}";
         var lastName = $"Cognome{seed}";
@@ -119,6 +118,7 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
         var notes = $"Note test {seed}";
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await EnsureAuthorizedShellAsync(page);
         await page.GetByTestId("create-patient-nav-link").ClickAsync();
 
         var createFormRows = page.Locator("form .row.g-3");
@@ -144,33 +144,14 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
         await Expect(page.GetByText(notes)).ToBeVisibleAsync();
     }
 
-    private static async Task PerformLoginIfNeededAsync(IPage page, E2eSettings settings)
+    private static async Task EnsureAuthorizedShellAsync(IPage page)
     {
-        await page.GotoAsync("/guide", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-
-        var loginForm = page.GetByTestId("login-form");
-        if (await loginForm.IsVisibleAsync())
-        {
-            if (string.IsNullOrWhiteSpace(settings.Login.Username) || string.IsNullOrWhiteSpace(settings.Login.Password))
-            {
-                throw new InvalidOperationException(
-                    "Login form detected but E2E credentials are missing. Set E2E__Login__Username and E2E__Login__Password.");
-            }
-
-            await page.GetByTestId("login-username").FillAsync(settings.Login.Username);
-            await page.GetByTestId("login-password").FillAsync(settings.Login.Password);
-            await page.GetByTestId("login-submit").ClickAsync();
-        }
-
         var notAuthorized = page.GetByText("You are not authorized to view this content.");
         if (await notAuthorized.IsVisibleAsync())
         {
             throw new InvalidOperationException(
                 "App returned 'Not authorized'. For automated E2E, run the app with Authentication__UseNegotiate=false or configure CI authentication.");
         }
-
-        // With Authentication__UseNegotiate=false, the <AuthorizeView> in LoginDisplay
-        // may not render the greeting, but app navigation is still available.
         await Expect(page.GetByTestId("patients-nav-link")).ToBeVisibleAsync();
     }
 
