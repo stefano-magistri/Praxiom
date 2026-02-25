@@ -29,4 +29,42 @@ jobs:
         run: dotnet build DottoressaIorio.slnx --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test DottoressaIorio.slnx --configuration Release --no-build --verbosity normal --filter "Category!=Integration"
+        run: dotnet test DottoressaIorio.slnx --configuration Release --no-build --verbosity normal --filter "Category!=Integration&Category!=E2E"
+
+      - name: Install Playwright browsers
+        run: pwsh tests/DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Start app for E2E
+        shell: bash
+        run: |
+          export ASPNETCORE_ENVIRONMENT=Development
+          export Authentication__UseNegotiate=false
+          nohup dotnet run --project DottoressaIorio.App --configuration Release --no-build > app.log 2>&1 &
+          echo $! > app.pid
+
+      - name: Wait for app readiness
+        shell: bash
+        run: |
+          for i in {1..60}; do
+            if curl -kfsS https://localhost:7013/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become ready in time"
+          cat app.log || true
+          exit 1
+
+      - name: Run E2E tests
+        env:
+          E2E__BaseUrl: https://localhost:7013
+          E2E__Headless: true
+        run: dotnet test tests/DottoressaIorio.E2E/DottoressaIorio.E2E.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Stop app
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f app.pid ]]; then
+            kill "$(cat app.pid)" || true
+          fi

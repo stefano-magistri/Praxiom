@@ -120,6 +120,11 @@ ipch/
 
 # Visual Studio Trace Files
 *.e2e
+!tests/DottoressaIorio.E2E/
+!tests/DottoressaIorio.E2E/*.csproj
+!tests/DottoressaIorio.E2E/*.cs
+!tests/DottoressaIorio.E2E/*.json
+!tests/DottoressaIorio.E2E/*.md
 
 # TFS 2012 Local Workspace
 $tf/
@@ -404,3 +409,4 @@ FodyWeavers.xsd
 /Setup/Output/
 /Setup/tmp/
 query
+tests/DottoressaIorio.E2E/appsettings.Local.json

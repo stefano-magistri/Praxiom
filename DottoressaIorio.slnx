@@ -9,6 +9,7 @@
   <Folder Name="/tests/">
     <Project Path="DottoressaIorio.Repositories.Tests/DottoressaIorio.Repositories.Tests.csproj" />
     <Project Path="DottoressaIorio.Services.Tests/DottoressaIorio.Services.Tests.csproj" />
+    <Project Path="tests/DottoressaIorio.E2E/DottoressaIorio.E2E.csproj" />
   </Folder>
   <Project Path="DottoressaIorio.App/DottoressaIorio.App.csproj" />
 </Solution>

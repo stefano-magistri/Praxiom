@@ -9,7 +9,7 @@
         </div>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CloseSidebar">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All" data-testid="patients-nav-link" @onclick="CloseSidebar">
                     <span data-feather="users"></span> Pazienti
                 </NavLink>
             </li>
@@ -60,4 +60,3 @@
         await jsRuntime.InvokeVoidAsync("jsCloseNavbar");
     }
 }
-
