@@ -78,8 +78,18 @@ if exist "%destinationFolder%" (
         )
     ) else (
         for /F "delims=" %%i in ('dir /B /A:D "%destinationFolder%"') do (
+            attrib -R -S -H "%destinationFolder%\%%i" /S /D >nul 2>nul
             rmdir /S /Q "%destinationFolder%\%%i" >nul 2>nul
         )
+        rem Ensure backup folder is removed even if it was recreated or had protected attributes.
+        if exist "%destinationFolder%\%dbBackupFolder%" (
+            attrib -R -S -H "%destinationFolder%\%dbBackupFolder%" /S /D >nul 2>nul
+            rmdir /S /Q "%destinationFolder%\%dbBackupFolder%" >nul 2>nul
+        )
+        rem Remove application root when all data deletion is explicitly requested.
+        cd /d "%ProgramData%"
+        attrib -R -S -H "%destinationFolder%" /S /D >nul 2>nul
+        rmdir /S /Q "%destinationFolder%" >nul 2>nul
     )
 )
 

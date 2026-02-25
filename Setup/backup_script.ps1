@@ -9,16 +9,40 @@ $serviceName = "DottoressaIorio.App"
 $appRoot = "C:\ProgramData\DottoressaIorio"
 $sourcePath = Join-Path $appRoot "app.db"
 $localBackupRoot = Join-Path $appRoot "_db_backup"
-$retentionCount = 30
+$retentionCount = 360
 
-$oneDrivePath = Join-Path $env:USERPROFILE "OneDrive"
-$vaultPath = Join-Path $oneDrivePath "Personal Vault"
-$vaultBackupRoot = Join-Path $vaultPath $serviceName
+function Get-OneDriveRoot {
+    $candidates = @(
+        $env:OneDriveConsumer,
+        $env:OneDriveCommercial,
+        $env:OneDrive,
+        (Join-Path $env:USERPROFILE "OneDrive")
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+    foreach ($candidate in ($candidates | Select-Object -Unique)) {
+        if (Test-Path $candidate -PathType Container) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
+$oneDriveRoot = Get-OneDriveRoot
+$oneDriveBackupRoot = if ($null -ne $oneDriveRoot) {
+    Join-Path $oneDriveRoot "DottoressaIorio\_db_backup"
+} else {
+    $null
+}
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
 $backupFileName = "app_backup_$timestamp.db"
 $localBackupPath = Join-Path $localBackupRoot $backupFileName
-$vaultBackupPath = Join-Path $vaultBackupRoot $backupFileName
+$oneDriveBackupPath = if ($null -ne $oneDriveBackupRoot) {
+    Join-Path $oneDriveBackupRoot $backupFileName
+} else {
+    $null
+}
 
 if (-not (Test-Path $sourcePath -PathType Leaf)) {
     throw "Database file not found: $sourcePath"
@@ -43,19 +67,19 @@ try {
         Select-Object -Skip $retentionCount |
         Remove-Item -Force
 
-    if (Test-Path $vaultPath -PathType Container) {
-        if (-not (Test-Path $vaultBackupRoot -PathType Container)) {
-            New-Item -Path $vaultBackupRoot -ItemType Directory | Out-Null
+    if ($null -ne $oneDriveBackupRoot) {
+        if (-not (Test-Path $oneDriveBackupRoot -PathType Container)) {
+            New-Item -Path $oneDriveBackupRoot -ItemType Directory | Out-Null
         }
 
-        Copy-Item -Path $sourcePath -Destination $vaultBackupPath
-        Get-ChildItem -Path $vaultBackupRoot -Filter "app_backup_*.db" -File |
+        Copy-Item -Path $sourcePath -Destination $oneDriveBackupPath
+        Get-ChildItem -Path $oneDriveBackupRoot -Filter "app_backup_*.db" -File |
             Sort-Object LastWriteTime -Descending |
             Select-Object -Skip $retentionCount |
             Remove-Item -Force
     }
     else {
-        Write-Warning "Personal Vault path not available: $vaultPath. Local backup still created."
+        Write-Warning "OneDrive path not available. Local backup still created."
     }
 }
 finally {

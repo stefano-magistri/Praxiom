@@ -87,7 +87,6 @@ set "configFile=%destinationFolder%\appsettings.Production.json"
 set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
 set "backupTaskName=DottoressaIorio Daily Backup"
-set "backupTaskTime=02:00"
 set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
 
 rem Stop and remove existing service before touching files.
@@ -228,7 +227,7 @@ if errorlevel 1 (
 if exist "%backupScriptDest%" (
     >> "%logFile%" echo [%date% %time%] Configuring scheduled task "%backupTaskName%" for user "%backupTaskUser%".
     schtasks /Delete /TN "%backupTaskName%" /F >> "%logFile%" 2>&1
-    schtasks /Create /TN "%backupTaskName%" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""%backupScriptDest%""" /SC DAILY /ST %backupTaskTime% /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
+    schtasks /Create /TN "%backupTaskName%" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""%backupScriptDest%""" /SC HOURLY /MO 2 /ST 00:00 /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
     if errorlevel 1 (
         >> "%logFile%" echo [%date% %time%] WARNING: Failed to create scheduled backup task.
         echo WARNING: Could not create scheduled backup task "%backupTaskName%".

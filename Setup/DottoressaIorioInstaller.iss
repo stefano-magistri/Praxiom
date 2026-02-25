@@ -261,7 +261,7 @@ begin
       MsgBox(
         'Do you want to remove all local application data (database files) as well?',
         mbConfirmation,
-        MB_YESNO
+        MB_YESNO or MB_DEFBUTTON2
       ) = IDYES;
   end;
 end;
