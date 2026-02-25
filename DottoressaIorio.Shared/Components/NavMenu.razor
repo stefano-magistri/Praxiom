@@ -5,13 +5,7 @@
     <div class="position-sticky p-3">
         <ul class="nav flex-column">
             <li class="nav-item">
-                <NavLink class="nav-link" aria-current="page" href="" Match="NavLinkMatch.All" @onclick="CloseSidebar">
-                    <span data-feather="home"></span> Home
-                </NavLink>
-            </li>
-            <li class="border-top my-1"></li>
-            <li class="nav-item">
-                <NavLink class="nav-link" href="patients" @onclick="CloseSidebar">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CloseSidebar">
                     <span data-feather="users"></span> Pazienti
                 </NavLink>
             </li>
@@ -29,6 +23,12 @@
             <li class="nav-item">
                 <NavLink class="nav-link" href="create-therapy-template" @onclick="CloseSidebar">
                     <span data-feather="plus-circle" aria-hidden="true"></span> Aggiungi Precompilato
+                </NavLink>
+            </li>            
+            <li class="border-top my-1"></li>
+            <li class="nav-item">
+                <NavLink class="nav-link" aria-current="page" href="guide" Match="NavLinkMatch.All" @onclick="CloseSidebar">
+                    <span data-feather="home"></span> Guida
                 </NavLink>
             </li>
             <li class="border-top my-1">

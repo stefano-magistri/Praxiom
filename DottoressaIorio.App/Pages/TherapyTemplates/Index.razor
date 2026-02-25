@@ -12,13 +12,15 @@
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped table-sm">
+    <div class="card patients-card">
+        <div class="card-body p-4">
+            <div class="table-responsive patients-table-wrapper">
+                <table class="table table-sm table-hover align-middle mb-0 patients-table">
             <thead>
                 <tr>
                     <th>Titolo</th>
                     <th>Descrizione</th>
-                    <th>Azioni</th>
+                    <th class="text-end">Azioni</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,14 +31,18 @@ else
                         <td class="text-truncate truncate-big">
                             @template.Description
                         </td>
-                        <td>
-                            <ActionButton ButtonClass="primary" OnClick="() => NavigateToEdit(template.Id)" IconClass="oi oi-pencil"></ActionButton>
-                            <ActionButton ButtonClass="danger" OnClick="() => NavigateToDelete(template.Id)" IconClass="oi oi-trash"></ActionButton>
+                        <td class="text-end">
+                            <div class="table-row-actions">
+                                <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEdit(template.Id)" IconClass="oi oi-pencil"></ActionButton>
+                                <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDelete(template.Id)" IconClass="oi oi-trash"></ActionButton>
+                            </div>
                         </td>
                     </tr>
                 }
             </tbody>
-        </table>
+                </table>
+            </div>
+        </div>
     </div>
 }
 

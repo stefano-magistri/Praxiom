@@ -70,38 +70,42 @@ else
     <hr class="my-4">
     <h3>Terapie</h3>
 
-    <AnchorButton ButtonClass="outline-primary" Url="@($"/patient/{PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Aggiungi"></AnchorButton>
+    <AnchorButton ButtonClass="primary" Url="@($"/patient/{PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Aggiungi"></AnchorButton>
     
     @if (therapies != null && therapies.Any())
     {
         <hr class="my-4">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Data inizio terapia</th>
-                    <th>Descrizione</th>
-                    <th>Azioni</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var t in therapies)
-                {
+        <div class="table-responsive patients-table-wrapper">
+            <table class="table table-sm table-hover align-middle mb-0 patients-table">
+                <thead>
                     <tr>
-                        <td>
-                            @t.CreatedDate.ToString("dd/MM/yyyy")
-                        </td>
-                        <td class="text-truncate truncate-small">
-                            @t.Description
-                        </td>
-                        <td> 
-                            <ActionButton ButtonClass="dark" OnClick="() => PrintAsync(t.TherapyId)" IconClass="oi oi-data-transfer-download"></ActionButton>
-                            <ActionButton ButtonClass="primary" OnClick="() => NavigateToEditTherapy(t.TherapyId)" IconClass="oi oi-pencil"></ActionButton>
-                            <ActionButton ButtonClass="danger" OnClick="() => NavigateToDeleteTherapy(t.TherapyId)" IconClass="oi oi-trash"></ActionButton>
-                        </td>
+                        <th>Data inizio terapia</th>
+                        <th>Descrizione</th>
+                        <th class="text-end">Azioni</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var t in therapies)
+                    {
+                        <tr>
+                            <td>
+                                @t.CreatedDate.ToString("dd/MM/yyyy")
+                            </td>
+                            <td class="text-truncate truncate-small">
+                                @t.Description
+                            </td>
+                            <td class="text-end">
+                                <div class="table-row-actions">
+                                    <ActionButton ButtonClass="dark" OnClick="() => PrintAsync(t.TherapyId)" IconClass="oi oi-data-transfer-download"></ActionButton>
+                                    <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditTherapy(t.TherapyId)" IconClass="oi oi-pencil"></ActionButton>
+                                    <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDeleteTherapy(t.TherapyId)" IconClass="oi oi-trash"></ActionButton>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 }
 

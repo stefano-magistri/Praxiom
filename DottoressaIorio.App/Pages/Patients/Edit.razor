@@ -96,7 +96,7 @@ else
         </div>
         <hr class="my-4">
         <CancelButton Url="@($"/patient/{Id}/")" />
-        <AnchorButton ButtonText="Rimuovi" ButtonClass="danger" Url="@($"/patient/{Id}/delete/")"></AnchorButton>
+        <AnchorButton ButtonText="Rimuovi" ButtonClass="outline-danger btn-delete-soft" Url="@($"/patient/{Id}/delete/")"></AnchorButton>
         <SubmitButton />
     </EditForm>
 }

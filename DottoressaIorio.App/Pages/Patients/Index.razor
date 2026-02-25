@@ -1,61 +1,69 @@
-﻿@page "/patients"
+@page "/"
 @inherits PatientsBase
  
-<PageHeader Title="Pazienti" /> 
+<PageHeader Title="Pazienti" />
 
-<div class="mb-3">
-    <label for="search" class="form-label">Cerca il paziente <i>(nome, cognome or entrambi):</i></label>
-    <input type="text" class="form-control" id="search" @bind="SearchTerm" @oninput="SearchPatients" autocomplete="off" />
-</div>
+<p class="patients-subtitle">Ricerca un paziente e crea subito una nuova terapia.</p>
 
-@if (DisplayedPatients == null || DisplayedPatients.Count == 0)
-{
-    <hr class="my-4">
-    <p>Nessun paziente trovato.</p>
-}
-else
-{
-    <Pagination CurrentPage="CurrentPage"
-                TotalPages="TotalPages"
-                SelectedPage="HandleSelectedPage"
-                PreviousPage="PreviousPage"
-                NextPage="NextPage" />
-    <div class="table-responsive">
-        <table class="table table-striped table-sm">
-            <thead>
-                <tr>
-                    <th>Paziente</th>
-                    <th>Data di Nascita</th>
-                    <th>Visitato</th>
-                    <th>Azioni</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var patient in DisplayedPatients)
-                {
-                    <tr>
-                        <td>
-                            <span class="oi oi-eye px-2" aria-hidden="true"></span>
-                            <a href="/patient/@patient.PatientId/">@patient.Title @patient.FirstName @patient.LastName</a>
-                        </td>
-                        <td>
-                            @patient.DateOfBirth?.ToString("dd/MM/yyyy")
-                        </td>
-                        <td>
-                            @patient.CreatedDate.ToString("dd/MM/yyyy")
-                        </td>
-                        <td>
-                            <ActionButton ButtonClass="primary" OnClick="() => NavigateToEditPatient(patient.PatientId)" IconClass="oi oi-pencil"></ActionButton>
-                            <ActionButton ButtonClass="danger" OnClick="() => NavigateToDeletePatient(patient.PatientId)" IconClass="oi oi-trash"></ActionButton>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<div class="card patients-card">
+    <div class="card-body p-4">
+        <div class="mb-4">
+            <label for="search" class="form-label">Cerca il paziente <i>(nome, cognome o entrambi):</i></label>
+            <input type="text" class="form-control" id="search" @bind="SearchTerm" @oninput="SearchPatients" autocomplete="off" />
+        </div>
+
+        @if (DisplayedPatients == null || DisplayedPatients.Count == 0)
+        {
+            <p class="mb-0">Nessun paziente trovato.</p>
+        }
+        else
+        {
+            <Pagination CurrentPage="CurrentPage"
+                        TotalPages="TotalPages"
+                        SelectedPage="HandleSelectedPage"
+                        PreviousPage="PreviousPage"
+                        NextPage="NextPage" />
+            <div class="table-responsive patients-table-wrapper">
+                <table class="table table-sm table-hover align-middle mb-0 patients-table">
+                    <thead>
+                        <tr>
+                            <th>Paziente</th>
+                            <th>Data di Nascita</th>
+                            <th>Visitato</th>
+                            <th class="text-end">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var patient in DisplayedPatients)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="oi oi-eye px-2 text-muted" aria-hidden="true"></span>
+                                    <a class="patient-link" href="/patient/@patient.PatientId/">@patient.Title @patient.FirstName @patient.LastName</a>
+                                </td>
+                                <td>
+                                    @patient.DateOfBirth?.ToString("dd/MM/yyyy")
+                                </td>
+                                <td>
+                                    @patient.CreatedDate.ToString("dd/MM/yyyy")
+                                </td>
+                                <td class="text-end">
+                                    <div class="patient-row-actions">
+                                        <AnchorButton ButtonClass="primary btn-create-therapy" Url="@($"/patient/{patient.PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Crea terapia"></AnchorButton>
+                                        <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditPatient(patient.PatientId)" IconClass="oi oi-pencil"></ActionButton>
+                                        <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDeletePatient(patient.PatientId)" IconClass="oi oi-trash"></ActionButton>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <Pagination CurrentPage="CurrentPage"
+                        TotalPages="TotalPages"
+                        SelectedPage="HandleSelectedPage"
+                        PreviousPage="PreviousPage"
+                        NextPage="NextPage" />
+        }
     </div>
-    <Pagination CurrentPage="CurrentPage"
-                TotalPages="TotalPages"
-                SelectedPage="HandleSelectedPage"
-                PreviousPage="PreviousPage"
-                NextPage="NextPage" />
-}
+</div>
