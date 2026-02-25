@@ -53,26 +53,29 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
         await page.Locator("#Description").FillAsync(addedDescription);
         await SubmitTemplateFormAsync(page);
 
+        await FilterTemplatesAsync(page, addedTitle);
         var addedRow = page.Locator($"//tbody/tr[contains(., '{addedTitle}')]").First;
         await Expect(addedRow).ToBeVisibleAsync();
 
-        await addedRow.Locator("button.btn-outline-secondary").First.ClickAsync();
-        await page.WaitForURLAsync("**/therapy-template/*/edit");
+        await addedRow.Locator("button").First.ClickAsync();
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica Terapia Precompilata");
 
         await page.Locator("#Title").FillAsync(editedTitle);
         await page.Locator("#Description").FillAsync(editedDescription);
         await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
-        await page.WaitForURLAsync("**/therapy-templates");
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
 
+        await FilterTemplatesAsync(page, editedTitle);
         var editedRow = page.Locator($"//tbody/tr[contains(., '{editedTitle}')]").First;
         await Expect(editedRow).ToBeVisibleAsync();
 
-        await editedRow.Locator("button.btn-outline-danger").First.ClickAsync();
-        await page.WaitForURLAsync("**/therapy-template/*/delete");
+        await editedRow.Locator("button").Nth(1).ClickAsync();
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Terapia Precompilata");
 
         await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
-        await page.WaitForURLAsync("**/therapy-templates");
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
 
+        await FilterTemplatesAsync(page, editedTitle);
         await Expect(page.Locator($"//tbody/tr[contains(., '{editedTitle}')]"))
             .ToHaveCountAsync(0);
     }
@@ -95,6 +98,7 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
         await page.Locator("#Description").FillAsync(description);
         await SubmitTemplateFormAsync(page);
 
+        await FilterTemplatesAsync(page, title);
         await Expect(page.Locator($"//tbody/tr[contains(., '{title}')]").First).ToBeVisibleAsync();
     }
 
@@ -117,12 +121,12 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await page.GetByTestId("create-patient-nav-link").ClickAsync();
 
-        await page.Locator("input[type='text']").Nth(0).FillAsync(firstName);
-        await page.Locator("input[type='text']").Nth(1).FillAsync(lastName);
-        await page.Locator("input[type='date']").FillAsync(dateOfBirth);
-        await page.Locator("input[type='email']").FillAsync(email);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
-        await page.WaitForURLAsync("**/patient/*/");
+        var createFormRows = page.Locator("form .row.g-3");
+        await createFormRows.Nth(0).Locator("input.form-control").FillAsync(firstName);
+        await createFormRows.Nth(1).Locator("input.form-control").FillAsync(lastName);
+        await createFormRows.Nth(2).Locator("input.form-control[type='date']").FillAsync(dateOfBirth);
+        await createFormRows.Nth(3).Locator("input.form-control[type='email']").FillAsync(email);
+        await SubmitCreatePatientFormAsync(page);
 
         await page.GetByRole(AriaRole.Link, new() { Name = "Modifica" }).ClickAsync();
         await page.WaitForURLAsync("**/patient/*/edit/");
@@ -179,11 +183,64 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
             HasText = "Il titolo giá esiste"
         });
 
-        if (await duplicateTitleWarning.IsVisibleAsync())
+        for (var i = 0; i < 40; i++)
         {
-            await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+            if (page.Url.Contains("/therapy-templates", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (await duplicateTitleWarning.IsVisibleAsync())
+            {
+                await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+                await page.WaitForURLAsync("**/therapy-templates*");
+                return;
+            }
+
+            await page.WaitForTimeoutAsync(250);
         }
 
-        await page.WaitForURLAsync("**/therapy-templates");
+        throw new TimeoutException(
+            $"Template form did not navigate to /therapy-templates. Current URL: {page.Url}");
+    }
+
+    private static async Task FilterTemplatesAsync(IPage page, string term)
+    {
+        await page.Locator("#templateSearch").FillAsync(term);
+        await page.Locator("#templateSearch").PressAsync("Tab");
+    }
+
+    private static async Task SubmitCreatePatientFormAsync(IPage page)
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+
+        var duplicatePatientWarning = page.GetByRole(AriaRole.Alert).Filter(new()
+        {
+            HasText = "Il paziente giá esiste"
+        });
+
+        for (var i = 0; i < 40; i++)
+        {
+            if (System.Text.RegularExpressions.Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                return;
+            }
+
+            if (await duplicatePatientWarning.IsVisibleAsync())
+            {
+                await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+                await page.WaitForURLAsync("**/patient/*/");
+                return;
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        var warnings = await page.Locator(".alert").AllInnerTextsAsync();
+        var validation = await page.Locator(".validation-message").AllInnerTextsAsync();
+        var details = string.Join(" | ", warnings.Concat(validation).Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        throw new TimeoutException(
+            $"Patient form did not navigate to /patient/{{id}}/. Current URL: {page.Url}. Messages: {details}");
     }
 }
