@@ -6,7 +6,6 @@ if not "%~2"=="" (
     rem Backward compatibility: old command format was "AllowedUsername" [AppVersion].
     set "appVersion=%~2"
 )
-if "%appVersion%"=="" set "appVersion=1.0.0"
 
 set "scriptDir=%~dp0"
 for %%I in ("%scriptDir%..") do set "repoDir=%%~fI"
@@ -15,6 +14,7 @@ set "issFile=%scriptDir%DottoressaIorioInstaller.iss"
 set "outputFile=%scriptDir%Output\DottoressaIorioInstaller.exe"
 set "tmpDir=%scriptDir%tmp"
 set "tmpArchive=%tmpDir%\Service.7z"
+set "versionFile=%tmpDir%\Service.version"
 
 if not exist "%publishScript%" (
     echo Missing publish script: "%publishScript%"
@@ -49,6 +49,20 @@ if not exist "%tmpArchive%" (
     exit /b 1
 )
 
+if "%appVersion%"=="" (
+    if not exist "%versionFile%" (
+        echo Publish completed but version file was not found: "%versionFile%"
+        exit /b 1
+    )
+
+    set /p appVersion=<"%versionFile%"
+)
+
+if "%appVersion%"=="" (
+    echo Unable to determine app version.
+    exit /b 1
+)
+
 "%iscc%" /DAppVersion=%appVersion% "%issFile%"
 if errorlevel 1 (
     echo Installer build failed.
@@ -62,6 +76,7 @@ if not exist "%outputFile%" (
 
 rem Cleanup temporary staging artifacts after successful installer build.
 if exist "%tmpArchive%" del /q "%tmpArchive%"
+if exist "%versionFile%" del /q "%versionFile%"
 if exist "%tmpDir%" rd "%tmpDir%" 2>nul
 
 echo Installer build completed.
