@@ -18,11 +18,14 @@
         }
         else
         {
-            <Pagination CurrentPage="CurrentPage"
-                        TotalPages="TotalPages"
-                        SelectedPage="HandleSelectedPage"
-                        PreviousPage="PreviousPage"
-                        NextPage="NextPage" />
+            @if (TotalPages > 1)
+            {
+                <Pagination CurrentPage="CurrentPage"
+                            TotalPages="TotalPages"
+                            SelectedPage="HandleSelectedPage"
+                            PreviousPage="PreviousPage"
+                            NextPage="NextPage" />
+            }
             <div class="table-responsive patients-table-wrapper">
                 <table class="table table-sm table-hover align-middle mb-0 patients-table">
                     <thead>
@@ -59,11 +62,14 @@
                     </tbody>
                 </table>
             </div>
-            <Pagination CurrentPage="CurrentPage"
-                        TotalPages="TotalPages"
-                        SelectedPage="HandleSelectedPage"
-                        PreviousPage="PreviousPage"
-                        NextPage="NextPage" />
+            @if (TotalPages > 1)
+            {
+                <Pagination CurrentPage="CurrentPage"
+                            TotalPages="TotalPages"
+                            SelectedPage="HandleSelectedPage"
+                            PreviousPage="PreviousPage"
+                            NextPage="NextPage" />
+            }
         }
     </div>
 </div>
