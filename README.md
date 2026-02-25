@@ -1,116 +1,129 @@
 # Dottoressa Iorio Medical Management System
 
-A medical practice management application built with **ASP.NET Core Blazor Server** for managing patients, therapies, templates, and PDF exports.
+Blazor Server application for managing patients, therapies, precompiled therapy templates, and therapy PDF exports.
 
-## Overview
+## Solution Structure
 
-This repository is organized as a multi-project .NET solution:
-
-- `DottoressaIorio.App` – Blazor Server application (UI + hosting)
-- `DottoressaIorio.Models` – domain entities
-- `DottoressaIorio.Data` – EF Core `DbContext` + migrations
-- `DottoressaIorio.Repositories` – data access repositories
-- `DottoressaIorio.Services` – business/service layer (PDF + encryption)
-- `DottoressaIorio.Repositories.Tests` – repository tests
-- `DottoressaIorio.Services.Tests` – service tests
+- `DottoressaIorio.App`: Blazor Server host/UI, middleware, static assets.
+- `DottoressaIorio.Models`: domain entities (`Patient`, `Therapy`, `TherapyTemplate`).
+- `DottoressaIorio.Data`: EF Core `ApplicationDbContext` + migrations.
+- `DottoressaIorio.Repositories`: repository/data-access layer.
+- `DottoressaIorio.Services`: business services (PDF generation, SQLite encryption helper).
+- `DottoressaIorio.Repositories.Tests`: repository test suite.
+- `DottoressaIorio.Services.Tests`: service test suite.
+- `Setup`: Windows installer, service install/uninstall, backup scripts.
+- `Selenium IDE`: Selenium IDE `.side` UI test flows.
 
 ## Tech Stack
 
 - .NET `net10.0`
 - ASP.NET Core Blazor Server
-- Entity Framework Core + SQLite (SQLCipher)
-- Windows Authentication (Negotiate), configurable by environment
-- Serilog logging
-- xUnit / Moq for tests
+- Entity Framework Core + SQLite
+- Optional Negotiate (Windows) authentication
+- Serilog
+- xUnit + Moq
+- Microsoft Playwright (PDF rendering path)
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
+- .NET SDK 10.x
+- For Windows service packaging/installation: Windows x64 + Administrator permissions
+- For installer build: Inno Setup 6 (`ISCC.exe`)
 
-- .NET SDK supporting `net10.0`
-- A supported OS/runtime for ASP.NET Core and SQLite
-
-### Run the app
+## Run Locally
 
 ```bash
 dotnet restore DottoressaIorio.slnx
 dotnet run --project DottoressaIorio.App
 ```
 
+At startup the app applies EF migrations automatically (`Database.Migrate()`).
+
 ## Configuration
 
-Main settings are under:
+Configuration files:
 
 - `DottoressaIorio.App/appsettings.json`
 - `DottoressaIorio.App/appsettings.Development.json`
 - `DottoressaIorio.App/appsettings.Production.json`
 
-Example keys:
+Important keys:
 
 ```json
 {
+  "EncryptionKey": "<hex-or-password-key>",
   "Authentication": {
     "UseNegotiate": true,
     "AllowedUsername": "DOMAIN\\username"
-  },
-  "EncryptionKey": "your-encryption-key"
+  }
 }
 ```
 
-## Database
+Notes:
 
-On startup, the app applies migrations (`Database.Migrate()`) and uses the configured SQLite database.
+- `Authentication:UseNegotiate=false` disables Windows auth and allows all users.
+- `Authentication:UseNegotiate=true` requires authenticated Windows identity.
+- `Authentication:AllowedUsername` is enforced by the `SpecificUserOnly` policy used in layout.
+
+## Database and Files
+
+- Database files are created in the app base directory:
+  - Encrypted path: `app.db`
+  - Unencrypted path (when no encryption key): `app_unencrypted.db`
+- Windows installer deploys app files under `C:\ProgramData\DottoressaIorio`.
 
 ## Testing
 
-Run all tests from repository root:
+Run all tests:
 
 ```bash
 dotnet test DottoressaIorio.slnx
 ```
 
-Or run test projects individually:
+Run non-integration tests only (same filter used in CI):
+
+```bash
+dotnet test DottoressaIorio.slnx --configuration Release --no-build --filter "Category!=Integration"
+```
+
+Run per test project:
 
 ```bash
 dotnet test DottoressaIorio.Repositories.Tests
 dotnet test DottoressaIorio.Services.Tests
 ```
 
-Continuous Integration: tests are also executed automatically in GitHub Actions on every pull request (`.github/workflows/ci.yml`).
+CI workflow: `.github/workflows/ci.yml`
 
-## Deployment Notes
+## Windows Installer Workflow
 
-This repository includes helper scripts and binaries in:
+Main files:
 
-- `Setup/`
-- `Utility/`
+- `Setup/build-installer.bat`
+- `Setup/DottoressaIorioInstaller.iss`
+- `DottoressaIorio.App/publish.bat`
 
-Review and adapt these scripts for your target environment before production use.
-
-### User-Friendly Installer (In Progress)
-
-An Inno Setup script is available at `Setup/DottoressaIorioInstaller.iss`.
-
-Build the installer with:
+Build installer:
 
 ```bat
-Setup\build-installer.bat 1.0.0
+Setup\build-installer.bat
 ```
 
-This will:
+What this does:
 
-- Publish a self-contained `win-x64` service package
-- Generate `Setup\Service.7z`
-- Build `Setup\Output\DottoressaIorioInstaller.exe` (requires Inno Setup 6 / `ISCC.exe`)
-- Prompt in the installer wizard for:
+- Publishes self-contained `win-x64` app package.
+- Creates `Setup\tmp\Service.7z` staging archive.
+- Compiles Inno Setup installer to `Setup\Output\DottoressaIorioInstaller.exe`.
+- Installer prompts for:
   - Allowed Username (`DOMAIN\username`)
-  - Service URL (for example `http://localhost:5000`)
+  - Service URL (`http://host:port` or `https://host:port`)
 
-## Contributing
+Install-time behavior (from scripts):
 
-1. Create a feature/fix branch
-2. Make and validate changes
-3. Open a pull request with a clear summary and test results
+- Installs app as Windows service `DottoressaIorio.App`.
+- Writes configured username into `appsettings.Production.json`.
+- Attempts Playwright Chromium install into `C:\ProgramData\DottoressaIorio\ms-playwright`.
+- Creates scheduled backup task (`DottoressaIorio Daily Backup`) when possible.
 
 ## License
 

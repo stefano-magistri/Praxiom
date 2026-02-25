@@ -14,18 +14,16 @@
       "targets": [],
       "value": ""
     }, {
-      "id": "abc36284-6cc6-4824-827c-7a2d31641dd5",
+      "id": "db00da84-3564-444f-a6ea-02d0e6367e79",
       "comment": "",
       "command": "click",
-      "target": "linkText=Home",
+      "target": "linkText=Dottoressa Iorio v. 2.0.0",
       "targets": [
-        ["linkText=Home", "linkText"],
-        ["css=.nav-item:nth-child(1) > .nav-link", "css:finder"],
-        ["xpath=//a[contains(text(),'Home')]", "xpath:link"],
-        ["xpath=//nav[@id='sidebarMenu']/div/ul/li/a", "xpath:idRelative"],
-        ["xpath=(//a[contains(@href, '')])[2]", "xpath:href"],
-        ["xpath=//li/a", "xpath:position"],
-        ["xpath=//a[contains(.,' Home')]", "xpath:innerText"]
+        ["linkText=Dottoressa Iorio v. 2.0.0", "linkText"],
+        ["css=.navbar-brand", "css:finder"],
+        ["xpath=//a[contains(@href, '#')]", "xpath:href"],
+        ["xpath=//a", "xpath:position"],
+        ["xpath=//a[contains(.,'Dottoressa Iorio v. 2.0.0')]", "xpath:innerText"]
       ],
       "value": ""
     }, {
@@ -86,6 +84,21 @@
         ["xpath=//a[contains(@href, 'create-therapy-template')]", "xpath:href"],
         ["xpath=//li[7]/a", "xpath:position"],
         ["xpath=//a[contains(.,' Aggiungi Precompilato')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "1c697559-ff49-4deb-a834-3b77b8c57529",
+      "comment": "",
+      "command": "click",
+      "target": "linkText=Guida",
+      "targets": [
+        ["linkText=Guida", "linkText"],
+        ["css=.nav-item:nth-child(5) > .nav-link", "css:finder"],
+        ["xpath=//a[contains(text(),'Guida')]", "xpath:link"],
+        ["xpath=//nav[@id='sidebarMenu']/div/ul/li[5]/a", "xpath:idRelative"],
+        ["xpath=//a[contains(@href, 'guide')]", "xpath:href"],
+        ["xpath=//li[5]/a", "xpath:position"],
+        ["xpath=//a[contains(.,' Guida')]", "xpath:innerText"]
       ],
       "value": ""
     }]
@@ -371,29 +384,18 @@
       ],
       "value": ""
     }, {
-      "id": "7ecc07f3-58c2-4642-96ac-5c6f36a0b38d",
-      "comment": "",
-      "command": "mouseOver",
-      "target": "css=.btn-primary",
-      "targets": [
-        ["css=.btn-primary", "css:finder"],
-        ["xpath=//button[@type='submit']", "xpath:attributes"],
-        ["xpath=//form/button", "xpath:position"],
-        ["xpath=//button[contains(.,'Salva')]", "xpath:innerText"]
-      ],
-      "value": ""
-    }, {
-      "id": "3e58b752-9928-4fe5-977a-b0095c2bcf95",
+      "id": "a443cf00-21d9-4fd4-b447-8dded8e71354",
       "comment": "",
       "command": "click",
-      "target": "css=.oi-trash",
+      "target": "css=tr:nth-child(1) .btn-outline-danger",
       "targets": [
-        ["css=.oi-trash", "css:finder"],
-        ["xpath=//button[2]/span", "xpath:position"]
+        ["css=tr:nth-child(1) .btn-outline-danger", "css:finder"],
+        ["xpath=(//button[@type='button'])[3]", "xpath:attributes"],
+        ["xpath=//button[2]", "xpath:position"]
       ],
       "value": ""
     }, {
-      "id": "f06b911e-3ff2-4860-ba21-650ed81d8af4",
+      "id": "8fe3da8f-8e0c-4cf3-85af-6c411e31499f",
       "comment": "",
       "command": "click",
       "target": "css=.btn-danger",
@@ -793,23 +795,10 @@
       ],
       "value": ""
     }, {
-      "id": "10fb5ecf-a7d3-46bf-b755-ec06147d6693",
-      "comment": "",
-      "command": "click",
-      "target": "linkText=Aggiungi",
-      "targets": [
-        ["linkText=Aggiungi", "linkText"],
-        ["css=.btn-outline-primary", "css:finder"],
-        ["xpath=(//a[contains(text(),'Aggiungi')])[3]", "xpath:link"],
-        ["xpath=//a[contains(@href, '/patient/11/create-therapy/')]", "xpath:href"],
-        ["xpath=//a[3]", "xpath:position"]
-      ],
-      "value": ""
-    }, {
       "id": "5037119c-e727-48b4-83d4-38c50f55bf26",
       "comment": "",
       "command": "type",
-      "target": "id=Description",
+      "target": "css=.patient-notes",
       "targets": [
         ["id=Description", "id"],
         ["name=model.Description", "name"],
@@ -838,16 +827,6 @@
       "targets": [
         ["css=.col-md-9", "css:finder"],
         ["xpath=//main", "xpath:position"]
-      ],
-      "value": ""
-    }, {
-      "id": "dc14ceb1-7637-46d7-83fd-b14fb695fc08",
-      "comment": "",
-      "command": "click",
-      "target": "css=.oi-data-transfer-download",
-      "targets": [
-        ["css=.oi-data-transfer-download", "css:finder"],
-        ["xpath=//td[3]/button/span", "xpath:position"]
       ],
       "value": ""
     }]
