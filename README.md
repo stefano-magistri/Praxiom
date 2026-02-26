@@ -11,6 +11,7 @@ Blazor Server application for managing patients, therapies, precompiled therapy 
 - `DottoressaIorio.Services`: business services (PDF generation, SQLite encryption helper).
 - `DottoressaIorio.Repositories.Tests`: repository test suite.
 - `DottoressaIorio.Services.Tests`: service test suite.
+- `DottoressaIorio.E2E`: end-to-end test suite (Playwright + xUnit).
 - `Setup`: Windows installer, service install/uninstall, backup scripts.
 - `Selenium IDE`: Selenium IDE `.side` UI test flows.
 
@@ -91,6 +92,7 @@ Run per test project:
 ```bash
 dotnet test DottoressaIorio.Repositories.Tests
 dotnet test DottoressaIorio.Services.Tests
+dotnet test DottoressaIorio.E2E
 ```
 
 CI workflow: `.github/workflows/ci.yml`
