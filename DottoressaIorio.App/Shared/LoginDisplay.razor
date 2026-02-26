@@ -1,6 +1,6 @@
 ﻿@inject IWebHostEnvironment Environment
 <AuthorizeView>
-    <div class="px-4 auth">
+    <div class="px-4 auth" data-testid="user-greeting">
         Ciao, @context.User.Identity?.Name! 
         @if (!@Environment.IsProduction())
         {

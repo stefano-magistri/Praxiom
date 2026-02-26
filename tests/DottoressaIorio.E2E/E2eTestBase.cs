@@ -1,0 +1,178 @@
+using System.Text.RegularExpressions;
+using Microsoft.Playwright;
+using static Microsoft.Playwright.Assertions;
+
+namespace DottoressaIorio.E2E;
+
+public abstract class E2eTestBase(PlaywrightFixture fixture)
+{
+    protected PlaywrightFixture Fixture { get; } = fixture;
+
+    protected async Task<(IBrowserContext Context, IPage Page)> NewAuthorizedPageAsync(string path = "/")
+    {
+        var context = await Fixture.NewContextAsync();
+        var page = await context.NewPageAsync();
+        await page.GotoAsync(path, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await EnsureAuthorizedShellAsync(page);
+        return (context, page);
+    }
+
+    protected static async Task EnsureAuthorizedShellAsync(IPage page)
+    {
+        var notAuthorized = page.GetByText("You are not authorized to view this content.");
+        if (await notAuthorized.IsVisibleAsync())
+        {
+            throw new InvalidOperationException(
+                "App returned 'Not authorized'. For automated E2E, run the app with Authentication__UseNegotiate=false or configure CI authentication.");
+        }
+
+        await Expect(page.GetByTestId("patients-nav-link")).ToBeVisibleAsync();
+    }
+
+    protected static async Task<int> CreatePatientAsync(IPage page, string firstName, string lastName, string email, string dateOfBirth)
+    {
+        await page.GotoAsync("/create-patient", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        var createFormRows = page.Locator("form .row.g-3");
+        await createFormRows.Nth(0).Locator("input.form-control").FillAsync(firstName);
+        await createFormRows.Nth(1).Locator("input.form-control").FillAsync(lastName);
+        await createFormRows.Nth(2).Locator("input.form-control[type='date']").FillAsync(dateOfBirth);
+        await createFormRows.Nth(3).Locator("input.form-control[type='email']").FillAsync(email);
+        await SubmitCreatePatientFormAsync(page);
+
+        var match = Regex.Match(page.Url, @"/patient/(\d+)/?");
+        if (!match.Success)
+        {
+            throw new InvalidOperationException($"Could not extract patient id from URL: {page.Url}");
+        }
+
+        return int.Parse(match.Groups[1].Value);
+    }
+
+    protected static async Task CreateTherapyTemplateAsync(IPage page, string title, string description)
+    {
+        await page.GotoAsync("/create-therapy-template", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await page.Locator("#Title").FillAsync(title);
+        await page.Locator("#Description").FillAsync(description);
+        await SubmitTemplateFormAsync(page);
+    }
+
+    protected static async Task CreateTherapyAsync(IPage page, int patientId, string description)
+    {
+        await page.GotoAsync($"/patient/{patientId}/create-therapy", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await page.Locator("#Description").FillAsync(description);
+        await SubmitCreateTherapyFormAsync(page);
+    }
+
+    protected static async Task SubmitTemplateFormAsync(IPage page)
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+
+        var duplicateTitleWarning = page.GetByRole(AriaRole.Alert).Filter(new()
+        {
+            HasText = "Il titolo giá esiste"
+        });
+
+        for (var i = 0; i < 40; i++)
+        {
+            if (page.Url.Contains("/therapy-templates", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (await duplicateTitleWarning.IsVisibleAsync())
+            {
+                await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+                await page.WaitForURLAsync("**/therapy-templates*");
+                return;
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        throw new TimeoutException(
+            $"Template form did not navigate to /therapy-templates. Current URL: {page.Url}");
+    }
+
+    protected static async Task SubmitCreatePatientFormAsync(IPage page)
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+
+        var duplicatePatientWarning = page.GetByRole(AriaRole.Alert).Filter(new()
+        {
+            HasText = "Il paziente giá esiste"
+        });
+
+        for (var i = 0; i < 40; i++)
+        {
+            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                return;
+            }
+
+            if (await duplicatePatientWarning.IsVisibleAsync())
+            {
+                await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+                await page.WaitForURLAsync("**/patient/*/");
+                return;
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        var warnings = await page.Locator(".alert").AllInnerTextsAsync();
+        var validation = await page.Locator(".validation-message").AllInnerTextsAsync();
+        var details = string.Join(" | ", warnings.Concat(validation).Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        throw new TimeoutException(
+            $"Patient form did not navigate to /patient/{{id}}/. Current URL: {page.Url}. Messages: {details}");
+    }
+
+    protected static async Task SubmitCreateTherapyFormAsync(IPage page)
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+
+        for (var i = 0; i < 40; i++)
+        {
+            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                return;
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        var validation = await page.Locator(".validation-message").AllInnerTextsAsync();
+        var details = string.Join(" | ", validation.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        throw new TimeoutException(
+            $"Therapy form did not navigate to /patient/{{id}}/. Current URL: {page.Url}. Messages: {details}");
+    }
+
+    protected static async Task SubmitEditTherapyFormAsync(IPage page)
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+
+        for (var i = 0; i < 40; i++)
+        {
+            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                return;
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        var validation = await page.Locator(".validation-message").AllInnerTextsAsync();
+        var details = string.Join(" | ", validation.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        throw new TimeoutException(
+            $"Edit therapy form did not navigate to /patient/{{id}}/. Current URL: {page.Url}. Messages: {details}");
+    }
+
+    protected static async Task FilterTemplatesAsync(IPage page, string term)
+    {
+        await page.Locator("#templateSearch").FillAsync(term);
+        await page.Locator("#templateSearch").PressAsync("Tab");
+    }
+}
