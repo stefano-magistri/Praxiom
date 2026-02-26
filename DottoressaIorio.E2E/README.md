@@ -12,14 +12,16 @@ Playwright + xUnit end-to-end smoke tests for the Dottoressa Iorio app.
 From repository root:
 
 ```powershell
-dotnet restore tests/DottoressaIorio.E2E/DottoressaIorio.E2E.csproj
-dotnet build tests/DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release
-pwsh tests/DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+dotnet restore DottoressaIorio.E2E/DottoressaIorio.E2E.csproj
+dotnet build DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release
+pwsh DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 ```
+
+Note: tests auto-install Chromium on first run if binaries are missing.
 
 ## Configuration
 
-`tests/DottoressaIorio.E2E/appsettings.json` contains defaults.
+`DottoressaIorio.E2E/appsettings.json` contains defaults.
 
 Environment variables override appsettings:
 
@@ -42,14 +44,14 @@ dotnet run --project DottoressaIorio.App
 2. Run E2E tests:
 
 ```powershell
-dotnet test tests/DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release --logger "trx;LogFileName=e2e.trx"
+dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release --logger "trx;LogFileName=e2e.trx"
 ```
 
 To run headed:
 
 ```powershell
 $env:E2E__Headless = "false"
-dotnet test tests/DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release
+dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release
 ```
 
 ## CI run
@@ -59,4 +61,4 @@ Typical CI sequence:
 1. Build app + tests.
 2. Install Playwright browsers with `playwright.ps1 install --with-deps chromium`.
 3. Start app with `Authentication__UseNegotiate=false`.
-4. Run `dotnet test tests/DottoressaIorio.E2E/DottoressaIorio.E2E.csproj`.
+4. Run `dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj`.

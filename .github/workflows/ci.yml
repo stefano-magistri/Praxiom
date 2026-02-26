@@ -32,7 +32,7 @@ jobs:
         run: dotnet test DottoressaIorio.slnx --configuration Release --no-build --verbosity normal --filter "Category!=Integration&Category!=E2E"
 
       - name: Install Playwright browsers
-        run: pwsh tests/DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+        run: pwsh DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Run integration tests (PDF)
         run: dotnet test DottoressaIorio.Services.Tests/DottoressaIorio.Services.Tests.csproj --configuration Release --no-build --verbosity normal --filter "Category=Integration"
@@ -70,7 +70,7 @@ jobs:
         env:
           E2E__BaseUrl: https://localhost:7013
           E2E__Headless: true
-        run: dotnet test tests/DottoressaIorio.E2E/DottoressaIorio.E2E.csproj --configuration Release --no-build --verbosity normal
+        run: dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj --configuration Release --no-build --verbosity normal
 
       - name: Stop app
         if: always()
