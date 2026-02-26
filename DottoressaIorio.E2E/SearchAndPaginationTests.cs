@@ -41,6 +41,46 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
 
     [Fact]
     [Trait("Category", "E2E")]
+    public async Task Patients_PaginationPrevNext_ShouldMoveActivePage()
+    {
+        var setup = await NewAuthorizedPageAsync("/");
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..6];
+        var prefix = $"PAGNAV{seed}";
+
+        for (var i = 1; i <= 11; i++)
+        {
+            await CreatePatientAsync(
+                page,
+                $"{prefix}{i:D2}",
+                "LN",
+                $"{prefix.ToLowerInvariant()}{i:D2}@example.test",
+                "1980-01-01");
+        }
+
+        await page.GotoAsync("/", new Microsoft.Playwright.PageGotoOptions { WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle });
+        await page.Locator("#search").FillAsync(prefix);
+
+        var pagination = page.Locator("nav[aria-label='Patients Pagination']").First;
+        var prevButton = pagination.GetByTestId("pagination-prev");
+        var nextButton = pagination.GetByTestId("pagination-next");
+
+        await Expect(prevButton).ToBeDisabledAsync();
+        await Expect(pagination.Locator("li.page-item.active .page-link")).ToHaveTextAsync("1");
+
+        await nextButton.ClickAsync();
+        await Expect(pagination.Locator("li.page-item.active .page-link")).ToHaveTextAsync("2");
+        await Expect(page.GetByText($"{prefix}11")).ToBeVisibleAsync();
+
+        await prevButton.ClickAsync();
+        await Expect(pagination.Locator("li.page-item.active .page-link")).ToHaveTextAsync("1");
+        await Expect(prevButton).ToBeDisabledAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "E2E")]
     public async Task TherapyTemplates_SearchAndPagination_ShouldWork()
     {
         var setup = await NewAuthorizedPageAsync("/therapy-templates");

@@ -77,6 +77,33 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 
     [Fact]
     [Trait("Category", "E2E")]
+    public async Task DeletePatient_FromIndexAction_ShouldRemovePatient()
+    {
+        var setup = await NewAuthorizedPageAsync("/");
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var firstName = $"IdxDelNome{seed}";
+        var lastName = $"IdxDelCognome{seed}";
+        var email = $"{seed}.idxdel@example.test";
+
+        await CreatePatientAsync(page, firstName, lastName, email, "1984-04-04");
+
+        await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await page.Locator("#search").FillAsync(firstName);
+        await page.Locator(".patient-row-actions .btn-delete-soft").First.ClickAsync();
+
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
+        await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
+
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
+        await page.Locator("#search").FillAsync(firstName);
+        await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "E2E")]
     public async Task DeletePatient_Cancel_ShouldReturnToPatientPage()
     {
         var setup = await NewAuthorizedPageAsync("/");

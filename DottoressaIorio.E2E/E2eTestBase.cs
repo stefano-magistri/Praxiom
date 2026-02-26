@@ -70,7 +70,7 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
         var duplicateTitleWarning = page.GetByRole(AriaRole.Alert).Filter(new()
         {
-            HasText = "Il titolo giá esiste"
+            HasText = "Il titolo"
         });
 
         for (var i = 0; i < 40; i++)
@@ -82,9 +82,13 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
             if (await duplicateTitleWarning.IsVisibleAsync())
             {
-                await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
-                await page.WaitForURLAsync("**/therapy-templates*");
-                return;
+                var warningText = (await duplicateTitleWarning.InnerTextAsync()).ToLowerInvariant();
+                if (warningText.Contains("esiste"))
+                {
+                    await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+                    await page.WaitForURLAsync("**/therapy-templates*");
+                    return;
+                }
             }
 
             await page.WaitForTimeoutAsync(250);
