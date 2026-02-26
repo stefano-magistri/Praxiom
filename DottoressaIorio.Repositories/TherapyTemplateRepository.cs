@@ -38,7 +38,13 @@ public class TherapyTemplateRepository : GenericRepository<TherapyTemplate>
     /// <returns>True if a template with the specified title exists, false otherwise.</returns>
     public async Task<bool> TitleExistsAsync(string title)
     {
+        var normalizedTitle = NormalizeTitle(title);
         return await context.TherapyTemplates
-            .AnyAsync(x => x.Title == title);
+            .AnyAsync(x => x.Title.ToLower() == normalizedTitle);
+    }
+
+    private static string NormalizeTitle(string? title)
+    {
+        return (title ?? string.Empty).Trim().ToLower();
     }
 }

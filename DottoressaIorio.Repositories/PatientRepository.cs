@@ -47,17 +47,17 @@ public class PatientRepository : GenericRepository<Patient>
     /// <returns>A list of patients matching the search criteria.</returns>
     public async Task<IList<Patient>> SearchPatientsAsync(string searchTerm)
     {
-        if (string.IsNullOrEmpty(searchTerm)) return await BaseQuery().ToListAsync();
+        var normalizedSearchTerm = NormalizeSearchToken(searchTerm);
+        if (string.IsNullOrEmpty(normalizedSearchTerm)) return await BaseQuery().ToListAsync();
 
-        searchTerm = searchTerm.ToLower();
-        var names = searchTerm.Split(' ');
+        var names = normalizedSearchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         var query = BaseQuery();
 
         query = names.Aggregate(query,
             (current, name) => current.Where(p =>
                 p.FirstName.ToLower().Contains(name) || p.LastName.ToLower().Contains(name) ||
-                (p.FirstName.ToLower() + " " + p.LastName.ToLower()).Contains(searchTerm)));
+                (p.FirstName.ToLower() + " " + p.LastName.ToLower()).Contains(normalizedSearchTerm)));
 
         return await query.ToListAsync();
     }
@@ -69,9 +69,18 @@ public class PatientRepository : GenericRepository<Patient>
     /// <returns>True if a matching patient exists, false otherwise.</returns>
     public async Task<bool> PatientExistsAsync(Patient patient)
     {
-        var query = await GetAllOrderedAsync();
-        return query.Any(p => p.FirstName.Equals(patient.FirstName, StringComparison.InvariantCultureIgnoreCase) &&
-                              p.LastName.Equals(patient.LastName, StringComparison.InvariantCultureIgnoreCase) &&
-                              (p.DateOfBirth == patient.DateOfBirth));
+        var normalizedFirstName = NormalizeSearchToken(patient.FirstName);
+        var normalizedLastName = NormalizeSearchToken(patient.LastName);
+        var dateOfBirth = patient.DateOfBirth;
+
+        return await context.Patients.AnyAsync(p =>
+            p.FirstName.ToLower() == normalizedFirstName &&
+            p.LastName.ToLower() == normalizedLastName &&
+            p.DateOfBirth == dateOfBirth);
+    }
+
+    private static string NormalizeSearchToken(string? value)
+    {
+        return (value ?? string.Empty).Trim().ToLower();
     }
 }

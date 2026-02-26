@@ -98,6 +98,7 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
     /// <returns>A task representing the asynchronous operation.</returns>
     [Theory]
     [InlineData("Therapy Template 1", true)]
+    [InlineData("  therapy template 1 ", true)]
     [InlineData("Therapy Template 2", true)]
     [InlineData("Deleted Template", false)]
     [InlineData("NonExistent Template", false)]

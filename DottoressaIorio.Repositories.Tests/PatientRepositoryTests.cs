@@ -114,6 +114,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     /// <param name="expectedResult">The expected result of the existence check.</param>
     [Theory]
     [InlineData("John", "Doe", "10/02/1981", true)]
+    [InlineData("  john ", " doe  ", "10/02/1981", true)]
     [InlineData("John", "Doe", "10/02/1982", false)] // Wrong date of birth
     [InlineData("NonExistent", "Person", "01/01/2000", false)]
     [InlineData("Deleted", "Patient", "18/12/1990", false)]

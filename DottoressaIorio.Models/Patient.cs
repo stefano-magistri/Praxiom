@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using DottoressaIorio.Models.Abstract;
+using DottoressaIorio.Models.Validation;
 
 namespace DottoressaIorio.Models
 {
@@ -58,6 +59,7 @@ namespace DottoressaIorio.Models
         /// <summary>
         /// Gets or sets the email address of the patient.
         /// </summary>
+        [OptionalEmailAddress(ErrorMessage = "Il formato della email non é valido.")]
         public string? Email { get; set; }
 
         /// <summary>

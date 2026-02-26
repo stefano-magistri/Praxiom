@@ -2,6 +2,7 @@ using DottoressaIorio.Data;
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
@@ -209,5 +210,65 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
 
         Assert.Single(result);
         Assert.Equal("Active", result[0].FirstName);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_ShouldNormalizePatientData()
+    {
+        var patient = new Patient
+        {
+            DateOfBirth = DateTime.Now.AddYears(-40),
+            Email = "  USER@EXAMPLE.COM  ",
+            FirstName = "  Mario ",
+            LastName = " Rossi  ",
+            PhoneNumber = "   ",
+            PlaceOfBirth = " Roma "
+        };
+
+        await _repository.AddAsync(patient);
+        await _unitOfWork.SaveChangesAsync();
+
+        var result = await _repository.GetByIdAsync(patient.PatientId);
+        Assert.NotNull(result);
+        Assert.Equal("Mario", result.FirstName);
+        Assert.Equal("Rossi", result.LastName);
+        Assert.Equal("user@example.com", result.Email);
+        Assert.Equal("Roma", result.PlaceOfBirth);
+        Assert.Null(result.PhoneNumber);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_ShouldThrowValidationException_ForInvalidEmail()
+    {
+        var patient = new Patient
+        {
+            DateOfBirth = DateTime.Now.AddYears(-40),
+            Email = "not-an-email",
+            FirstName = "Mario",
+            LastName = "Rossi"
+        };
+
+        await _repository.AddAsync(patient);
+
+        await Assert.ThrowsAsync<ValidationException>(() => _unitOfWork.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_ShouldAllowBlankEmail()
+    {
+        var patient = new Patient
+        {
+            DateOfBirth = DateTime.Now.AddYears(-40),
+            Email = "",
+            FirstName = "Mario",
+            LastName = "Rossi"
+        };
+
+        await _repository.AddAsync(patient);
+        await _unitOfWork.SaveChangesAsync();
+
+        var result = await _repository.GetByIdAsync(patient.PatientId);
+        Assert.NotNull(result);
+        Assert.Null(result.Email);
     }
 }
