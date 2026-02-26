@@ -2,6 +2,7 @@
 
 @inject TherapyTemplateRepository templateRepository
 @inject PatientTherapyRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
 <PageHeader Title="Aggiungi Terapia" />
@@ -47,6 +48,7 @@
     {
         model.PatientId = Id;
         await repository.AddAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo($"/patient/{Id}");
     }
 

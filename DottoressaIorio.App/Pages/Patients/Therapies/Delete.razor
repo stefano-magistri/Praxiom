@@ -1,6 +1,7 @@
 ﻿@page "/patient/{id:int}/delete-therapy"
 
 @inject PatientTherapyRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
 <PageHeader Title="Rimuovi Terapia" /> 
@@ -22,6 +23,7 @@
     private async Task SaveAsync()
     {
         await repository.DeleteAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo($"/patient/{model.PatientId}/");
     }
 }

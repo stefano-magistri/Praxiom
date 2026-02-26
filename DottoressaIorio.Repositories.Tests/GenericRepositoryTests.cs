@@ -12,6 +12,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly GenericRepository<Patient> _repository;
+    private readonly IUnitOfWork _unitOfWork;
 
     /// <summary>
     /// Initializes a new instance of the GenericRepositoryTests class.
@@ -24,6 +25,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
             .Options;
         _context = new ApplicationDbContext(options);
         _repository = new GenericRepository<Patient>(_context);
+        _unitOfWork = new EfUnitOfWork(_context);
         _context.Database.EnsureCreated();
     }
 
@@ -58,6 +60,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
             LastName = "Doe"
         };
         await _repository.AddAsync(entityToAdd);
+        await _unitOfWork.SaveChangesAsync();
 
         // Act
         var result = await _repository.GetByIdAsync(entityToAdd.PatientId);
@@ -114,6 +117,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
             }
         };
         foreach (var entity in entitiesToAdd) await _repository.AddAsync(entity);
+        await _unitOfWork.SaveChangesAsync();
 
         // Act
         var result = await _repository.GetAllAsync();
@@ -138,10 +142,12 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
             LastName = "Doe"
         };
         await _repository.AddAsync(entityToAdd);
+        await _unitOfWork.SaveChangesAsync();
         entityToAdd.FirstName = "Updated";
 
         // Act
         await _repository.UpdateAsync(entityToAdd);
+        await _unitOfWork.SaveChangesAsync();
         var result = await _repository.GetByIdAsync(entityToAdd.PatientId);
 
         // Assert
@@ -164,9 +170,11 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
             LastName = "Doe"
         };
         await _repository.AddAsync(entityToAdd);
+        await _unitOfWork.SaveChangesAsync();
 
         // Act
         await _repository.DeleteAsync(entityToAdd);
+        await _unitOfWork.SaveChangesAsync();
         var result = await _repository.GetByIdAsync(entityToAdd.PatientId);
 
         // Assert
@@ -195,6 +203,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
 
         await _repository.AddAsync(active);
         await _repository.AddAsync(deleted);
+        await _unitOfWork.SaveChangesAsync();
 
         var result = await _repository.GetAllAsync();
 

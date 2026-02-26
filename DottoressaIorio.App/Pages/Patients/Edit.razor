@@ -1,5 +1,6 @@
 ﻿@page "/patient/{id:int}/edit/"
 @inject PatientRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
  
 <PageTitle>Modifica Paziente</PageTitle>
@@ -115,6 +116,7 @@ else
     private async Task SaveAsync()
     {
         await repository.UpdateAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo($"/patient/{Id}/");
     }
 }

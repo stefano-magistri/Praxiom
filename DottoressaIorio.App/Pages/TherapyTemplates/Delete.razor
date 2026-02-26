@@ -1,5 +1,6 @@
 ﻿@page "/therapy-template/{id:int}/delete"
 @inject TherapyTemplateRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
  
 <PageHeader Title="Rimuovi Terapia Precompilata" /> 
@@ -23,6 +24,7 @@
     private async Task SaveAsync()
     {
         await repository.DeleteAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo("/therapy-templates");
     }
 }

@@ -1,5 +1,6 @@
 ﻿@page "/therapy-template/{id:int}/edit"
 @inject TherapyTemplateRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
  
 <PageHeader Title="Modifica Terapia Precompilata" /> 
@@ -40,6 +41,7 @@
     private async Task SaveTask()
     {
         await repository.UpdateAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo("/therapy-templates");
     }
 }

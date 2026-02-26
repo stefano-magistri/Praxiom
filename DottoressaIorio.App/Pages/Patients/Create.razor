@@ -1,5 +1,6 @@
 ﻿@page "/create-patient"
 @inject PatientRepository repository 
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
 <PageHeader Title="Nuovo Paziente" /> 
@@ -58,7 +59,8 @@
             return;
         }
 
-        await repository.AddAsync(model); 
+        await repository.AddAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo($"/patient/{model.PatientId}/");
     }
 }

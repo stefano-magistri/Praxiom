@@ -6,6 +6,7 @@ public static class RepositoryExtensions
 {
     public static IServiceCollection AddDottoressaRepositories(this IServiceCollection services)
     {
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<TherapyTemplateRepository>();
         services.AddScoped<PatientTherapyRepository>();
         services.AddScoped<PatientRepository>();

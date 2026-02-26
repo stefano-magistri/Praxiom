@@ -1,6 +1,7 @@
 ﻿@page "/patient/{id:int}/edit-therapy"
 
 @inject PatientTherapyRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
 <PageHeader Title="Modifica Terapia" />
@@ -34,6 +35,7 @@
     private async Task SaveAsync()
     {
         await repository.UpdateAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo($"/patient/{model.PatientId}/");
     }
 }

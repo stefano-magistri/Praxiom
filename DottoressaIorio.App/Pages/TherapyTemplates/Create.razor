@@ -1,5 +1,6 @@
 ﻿@page "/create-therapy-template"
 @inject TherapyTemplateRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
  
 <PageHeader Title="Aggiungi Terapia Precompilata" /> 
@@ -46,6 +47,7 @@
 
         // If title doesn't exist, proceed with saving
         await repository.AddAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo("/therapy-templates");
     }
 }

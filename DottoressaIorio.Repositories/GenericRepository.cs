@@ -50,22 +50,22 @@ public class GenericRepository<T> where T : class, IDataHandler
     /// Adds a new entity to the database.
     /// </summary>
     /// <param name="entity">The entity to add.</param>
-    public async Task AddAsync(T entity)
+    public Task AddAsync(T entity)
     {
         entity.CreatedDate = DateTime.Now;
         _context.Set<T>().Add(entity);
-        await _context.SaveChangesAsync();
+        return Task.CompletedTask;
     }
 
     /// <summary>
     /// Updates an existing entity in the database.
     /// </summary>
     /// <param name="entity">The entity to update.</param>
-    public async Task UpdateAsync(T entity)
+    public Task UpdateAsync(T entity)
     {
         entity.EditDate = DateTime.Now;
         _context.Entry(entity).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
+        return Task.CompletedTask;
     }
 
     /// <summary>
