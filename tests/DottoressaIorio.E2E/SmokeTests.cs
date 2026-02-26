@@ -144,6 +144,50 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
         await Expect(page.GetByText(notes)).ToBeVisibleAsync();
     }
 
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task DownloadTherapyPdf_ShouldDownloadNonEmptyPdfFile()
+    {
+        await using var context = await fixture.NewContextAsync();
+        var page = await context.NewPageAsync();
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var firstName = $"PdfNome{seed}";
+        var lastName = $"PdfCognome{seed}";
+        var email = $"{seed}.pdf@example.test";
+        var therapyDescription = $"Terapia PDF E2E {seed}";
+        const string dateOfBirth = "1987-02-10";
+
+        await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await EnsureAuthorizedShellAsync(page);
+        await page.GetByTestId("create-patient-nav-link").ClickAsync();
+
+        var createFormRows = page.Locator("form .row.g-3");
+        await createFormRows.Nth(0).Locator("input.form-control").FillAsync(firstName);
+        await createFormRows.Nth(1).Locator("input.form-control").FillAsync(lastName);
+        await createFormRows.Nth(2).Locator("input.form-control[type='date']").FillAsync(dateOfBirth);
+        await createFormRows.Nth(3).Locator("input.form-control[type='email']").FillAsync(email);
+        await SubmitCreatePatientFormAsync(page);
+
+        await page.GetByRole(AriaRole.Link, new() { Name = "Nuova Terapia" }).ClickAsync();
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Aggiungi Terapia");
+
+        await page.Locator("#Description").FillAsync(therapyDescription);
+        await SubmitCreateTherapyFormAsync(page);
+        await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
+
+        var downloadTask = page.WaitForDownloadAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Scarica ultima terapia" }).ClickAsync();
+        var download = await downloadTask;
+
+        Assert.EndsWith(".pdf", download.SuggestedFilename, StringComparison.OrdinalIgnoreCase);
+
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.pdf");
+        await download.SaveAsAsync(tempFile);
+        var fileInfo = new FileInfo(tempFile);
+        Assert.True(fileInfo.Exists, "PDF file was not saved.");
+        Assert.True(fileInfo.Length > 0, "Downloaded PDF is empty.");
+    }
+
     private static async Task EnsureAuthorizedShellAsync(IPage page)
     {
         var notAuthorized = page.GetByText("You are not authorized to view this content.");
@@ -223,5 +267,26 @@ public sealed class SmokeTests(PlaywrightFixture fixture)
 
         throw new TimeoutException(
             $"Patient form did not navigate to /patient/{{id}}/. Current URL: {page.Url}. Messages: {details}");
+    }
+
+    private static async Task SubmitCreateTherapyFormAsync(IPage page)
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+
+        for (var i = 0; i < 40; i++)
+        {
+            if (System.Text.RegularExpressions.Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                return;
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        var validation = await page.Locator(".validation-message").AllInnerTextsAsync();
+        var details = string.Join(" | ", validation.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        throw new TimeoutException(
+            $"Therapy form did not navigate to /patient/{{id}}/. Current URL: {page.Url}. Messages: {details}");
     }
 }

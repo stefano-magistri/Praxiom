@@ -37,7 +37,8 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         return await _browser.NewContextAsync(new BrowserNewContextOptions
         {
             BaseURL = Settings.BaseUrl,
-            IgnoreHTTPSErrors = true
+            IgnoreHTTPSErrors = true,
+            AcceptDownloads = true
         });
     }
 
