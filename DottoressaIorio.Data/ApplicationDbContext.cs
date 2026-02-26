@@ -63,6 +63,11 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Patient>().HasQueryFilter(x => !x.Deleted);
         modelBuilder.Entity<Therapy>().HasQueryFilter(x => !x.Deleted);
         modelBuilder.Entity<TherapyTemplate>().HasQueryFilter(x => !x.Deleted);
+
+        modelBuilder.Entity<TherapyTemplate>()
+            .HasIndex(x => x.Title)
+            .HasFilter("\"Deleted\" = 0")
+            .IsUnique();
     }
 
     private void NormalizeAndValidateTrackedEntities()
@@ -88,7 +93,7 @@ public class ApplicationDbContext : DbContext
                 patient.LastName = NormalizeRequired(patient.LastName);
                 patient.PlaceOfBirth = NormalizeOptional(patient.PlaceOfBirth);
                 patient.Gender = NormalizeOptional(patient.Gender);
-                patient.PhoneNumber = NormalizeOptional(patient.PhoneNumber);
+                patient.PhoneNumber = NormalizePhoneNumber(patient.PhoneNumber);
                 patient.Email = NormalizeOptional(patient.Email)?.ToLowerInvariant();
                 patient.Notes = NormalizeOptional(patient.Notes);
                 break;
@@ -115,5 +120,23 @@ public class ApplicationDbContext : DbContext
         }
 
         return value.Trim();
+    }
+
+    private static string? NormalizePhoneNumber(string? value)
+    {
+        var normalized = NormalizeOptional(value);
+        if (normalized is null)
+        {
+            return null;
+        }
+
+        var hasLeadingPlus = normalized.StartsWith('+');
+        var digits = new string(normalized.Where(char.IsDigit).ToArray());
+        if (digits.Length == 0)
+        {
+            return null;
+        }
+
+        return hasLeadingPlus ? $"+{digits}" : digits;
     }
 }

@@ -271,4 +271,24 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         Assert.NotNull(result);
         Assert.Null(result.Email);
     }
+
+    [Fact]
+    public async Task SaveChangesAsync_ShouldNormalizePhoneNumberToDigits()
+    {
+        var patient = new Patient
+        {
+            DateOfBirth = DateTime.Now.AddYears(-40),
+            Email = "mario@example.com",
+            FirstName = "Mario",
+            LastName = "Rossi",
+            PhoneNumber = " +39 (333) 12-34 "
+        };
+
+        await _repository.AddAsync(patient);
+        await _unitOfWork.SaveChangesAsync();
+
+        var result = await _repository.GetByIdAsync(patient.PatientId);
+        Assert.NotNull(result);
+        Assert.Equal("+393331234", result.PhoneNumber);
+    }
 }

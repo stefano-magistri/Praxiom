@@ -15,7 +15,7 @@ namespace DottoressaIorio.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.31");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
 
             modelBuilder.Entity("DottoressaIorio.Models.Patient", b =>
                 {
@@ -26,8 +26,7 @@ namespace DottoressaIorio.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("DateOfBirth")
-                        .IsRequired()
+                    b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("Deleted")
@@ -120,6 +119,10 @@ namespace DottoressaIorio.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Title")
+                        .IsUnique()
+                        .HasFilter("\"Deleted\" = 0");
 
                     b.ToTable("TherapyTemplates");
                 });

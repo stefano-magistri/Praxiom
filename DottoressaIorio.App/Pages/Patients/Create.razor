@@ -59,8 +59,15 @@
             return;
         }
 
-        await repository.AddAsync(model);
-        await unitOfWork.SaveChangesAsync();
-        navigationManager.NavigateTo($"/patient/{model.PatientId}/");
+        try
+        {
+            await repository.AddAsync(model);
+            await unitOfWork.SaveChangesAsync();
+            navigationManager.NavigateTo($"/patient/{model.PatientId}/");
+        }
+        catch (Exception ex)
+        {
+            warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
+        }
     }
 }

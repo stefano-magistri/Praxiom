@@ -7,6 +7,12 @@
 
 <EditForm Model="@model" OnValidSubmit="@SaveTask" class="needs-validation" novalidate>
     <DataAnnotationsValidator />
+    @if (!string.IsNullOrEmpty(warningMessage))
+    {
+        <div class="alert alert-warning" role="alert">
+            @warningMessage
+        </div>
+    }
     <div class="row g-3">
         <div class="col-12">
             <label for="Title">Titolo:</label>
@@ -32,6 +38,7 @@
     public int Id { get; set; }
 
     private TherapyTemplate model;
+    private string warningMessage = "";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -40,8 +47,15 @@
 
     private async Task SaveTask()
     {
-        await repository.UpdateAsync(model);
-        await unitOfWork.SaveChangesAsync();
-        navigationManager.NavigateTo("/therapy-templates");
+        try
+        {
+            await repository.UpdateAsync(model);
+            await unitOfWork.SaveChangesAsync();
+            navigationManager.NavigateTo("/therapy-templates");
+        }
+        catch (Exception ex)
+        {
+            warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
+        }
     }
 }
