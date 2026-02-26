@@ -28,11 +28,14 @@ jobs:
       - name: Build
         run: dotnet build DottoressaIorio.slnx --configuration Release --no-restore
 
-      - name: Test
+      - name: Run unit tests
         run: dotnet test DottoressaIorio.slnx --configuration Release --no-build --verbosity normal --filter "Category!=Integration&Category!=E2E"
 
       - name: Install Playwright browsers
         run: pwsh tests/DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run integration tests (PDF)
+        run: dotnet test DottoressaIorio.Services.Tests/DottoressaIorio.Services.Tests.csproj --configuration Release --no-build --verbosity normal --filter "Category=Integration"
 
       - name: Start app for E2E
         shell: bash
