@@ -29,7 +29,7 @@ public class PatientTherapyRepository : GenericRepository<Therapy>
     {
         return await context.Therapies
             .Include(x => x.Patient)
-            .Where(t => !t.Deleted && t.PatientId == patientId)
+            .Where(t => t.PatientId == patientId)
             .OrderBy(t => t.CreatedDate)
             .ToListAsync();
     }

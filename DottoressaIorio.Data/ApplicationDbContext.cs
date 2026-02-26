@@ -28,4 +28,14 @@ public class ApplicationDbContext : DbContext
     /// Gets or sets the collection of <see cref="TherapyTemplate"/> entities.
     /// </summary>
     public DbSet<TherapyTemplate> TherapyTemplates { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Apply soft-delete behavior globally to keep query semantics consistent.
+        modelBuilder.Entity<Patient>().HasQueryFilter(x => !x.Deleted);
+        modelBuilder.Entity<Therapy>().HasQueryFilter(x => !x.Deleted);
+        modelBuilder.Entity<TherapyTemplate>().HasQueryFilter(x => !x.Deleted);
+    }
 }

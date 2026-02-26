@@ -23,6 +23,6 @@
     private async Task SaveAsync()
     {
         await repository.DeleteAsync(model);
-        navigationManager.NavigateTo("/patients");
+        navigationManager.NavigateTo("/");
     }
 }

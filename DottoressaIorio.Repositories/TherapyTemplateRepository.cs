@@ -27,7 +27,6 @@ public class TherapyTemplateRepository : GenericRepository<TherapyTemplate>
     public async Task<IList<TherapyTemplate>> GetAllOrderedAsync()
     {
         return await context.TherapyTemplates
-            .Where(x => !x.Deleted)
             .OrderBy(x => x.Title)
             .ToListAsync();
     }
@@ -40,6 +39,6 @@ public class TherapyTemplateRepository : GenericRepository<TherapyTemplate>
     public async Task<bool> TitleExistsAsync(string title)
     {
         return await context.TherapyTemplates
-            .AnyAsync(x => x.Title == title && !x.Deleted);
+            .AnyAsync(x => x.Title == title);
     }
 }

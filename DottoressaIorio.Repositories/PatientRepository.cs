@@ -27,7 +27,6 @@ public class PatientRepository : GenericRepository<Patient>
     private IQueryable<Patient> BaseQuery()
     {
         return context.Patients
-            .Where(p => !p.Deleted)
             .OrderBy(x => x.LastName)
             .ThenBy(x => x.FirstName);
     }

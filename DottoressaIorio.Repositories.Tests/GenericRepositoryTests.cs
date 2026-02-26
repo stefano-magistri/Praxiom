@@ -173,4 +173,32 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         Assert.NotNull(result);
         Assert.True(result.Deleted);
     }
+
+    [Fact]
+    public async Task GetAllAsync_ShouldExcludeSoftDeletedEntities()
+    {
+        var active = new Patient
+        {
+            DateOfBirth = DateTime.Now.AddYears(-40),
+            Email = "active@example.com",
+            FirstName = "Active",
+            LastName = "Patient"
+        };
+        var deleted = new Patient
+        {
+            DateOfBirth = DateTime.Now.AddYears(-50),
+            Email = "deleted@example.com",
+            FirstName = "Deleted",
+            LastName = "Patient",
+            Deleted = true
+        };
+
+        await _repository.AddAsync(active);
+        await _repository.AddAsync(deleted);
+
+        var result = await _repository.GetAllAsync();
+
+        Assert.Single(result);
+        Assert.Equal("Active", result[0].FirstName);
+    }
 }

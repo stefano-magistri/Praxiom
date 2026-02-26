@@ -67,7 +67,10 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
         await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
 
-        await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        // Wait for the app-side navigation after SaveAsync completes.
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
+        await Expect(page.Locator("#search")).ToBeVisibleAsync();
+
         await page.Locator("#search").FillAsync(firstName);
         await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
     }
