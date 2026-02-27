@@ -18,7 +18,7 @@ public static class ValidationExceptionMapper
             sqliteException.SqliteErrorCode == 19 &&
             sqliteException.Message.Contains("UNIQUE constraint failed: TherapyTemplates.Title",
                 StringComparison.OrdinalIgnoreCase))
-            return "Il titolo gia esiste.";
+            return "Il titolo giá esiste.";
 
         return "Impossibile salvare i dati. Controlla i campi inseriti.";
     }

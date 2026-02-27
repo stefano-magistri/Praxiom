@@ -5,6 +5,7 @@ using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting.WindowsServices;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -20,6 +21,14 @@ var useNegotiate = configuration.GetValue<bool>("Authentication:UseNegotiate");
 
 // Configure Serilog for logging
 builder.AddDottoressaLogging();
+
+if (useNegotiate && string.IsNullOrWhiteSpace(allowedUsername))
+    Log.Warning(
+        "Authentication:UseNegotiate is enabled but Authentication:AllowedUsername is empty. Access will be denied by SpecificUserOnly.");
+
+if (!useNegotiate && builder.Environment.IsProduction())
+    Log.Warning(
+        "Authentication:UseNegotiate is disabled in Production. SpecificUserOnly allows access when Negotiate is disabled.");
 
 // Configure authorization policies
 builder.Services.AddDottoressaIorioAuthorization(configuration, useNegotiate, allowedUsername);
