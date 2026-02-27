@@ -2,6 +2,25 @@
 
 This document describes only behavior implemented in this repository.
 
+## Scope and Security Context (Non-Negotiable)
+
+1. Target environment is a single doctor's personal PC running Windows 10 or Windows 11.
+2. Usage model is single-user (the doctor is the only person who uses/logs into the machine).
+3. Access control is Windows login only (local or AD account on that PC).
+4. The app is an internal admin tool for that single user; it is not multi-tenant and not public-facing.
+5. Current authentication/authorization behavior must remain unchanged:
+   - `Authentication:UseNegotiate`
+   - `Authentication:AllowedUsername`
+   - `SpecificUserOnly` policy
+6. No new authentication complexity is in scope:
+   - no new login screens
+   - no user management
+   - no roles
+   - no external identity providers
+   - no cloud authentication
+7. Any security improvements beyond this baseline must be discussed and approved first.
+8. Future commercialization is out of scope for current changes.
+
 ## 1. Startup Process
 
 1. The app builds configuration and checks whether it is running as a Windows Service.
