@@ -29,6 +29,14 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
                 DateOfBirth = DateTime.Parse("1981-02-10"),
                 Email = "s@s.com"
             }
+        },
+        new Therapy
+        {
+            TherapyId = 2,
+            PatientId = 1,
+            Description = "Therapy 2",
+            CreatedDate = DateTime.Now.AddMinutes(1),
+            Deleted = false
         }
     };
 
@@ -106,6 +114,66 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
         });
 
         Assert.Null(ex);
+    }
+
+    [Fact]
+    public async Task DeletePatientWithMultipleTherapies_ShouldSoftDeletePatientAndTherapies()
+    {
+        await SeedDataAsync();
+        _context.ChangeTracker.Clear();
+
+        var patientRepository = new PatientRepository(_context);
+        var therapyRepository = new PatientTherapyRepository(_context);
+
+        var patient = await patientRepository.GetByIdAsync(1);
+        Assert.NotNull(patient);
+
+        var therapies = await therapyRepository.GetAllAsync(1);
+        Assert.True(therapies.Count > 1);
+
+        foreach (var therapy in therapies)
+        {
+            await therapyRepository.DeleteAsync(therapy);
+        }
+        await patientRepository.DeleteAsync(patient!);
+
+        var ex = await Record.ExceptionAsync(() => _context.SaveChangesAsync());
+        Assert.Null(ex);
+
+        var activeTherapies = await therapyRepository.GetAllAsync(1);
+        Assert.Empty(activeTherapies);
+
+        var deletedPatient = await _context.Patients.IgnoreQueryFilters().SingleAsync(p => p.PatientId == 1);
+        Assert.True(deletedPatient.Deleted);
+    }
+
+    [Fact]
+    public async Task DeleteDetachedPatient_WithDetachedTherapyGraph_AndTrackedTherapies_ShouldNotThrowTrackingConflict()
+    {
+        await SeedDataAsync();
+        _context.ChangeTracker.Clear();
+
+        var patientRepository = new PatientRepository(_context);
+        var therapyRepository = new PatientTherapyRepository(_context);
+
+        var trackedTherapies = await therapyRepository.GetAllAsync(1);
+        Assert.True(trackedTherapies.Count > 1);
+
+        var detachedPatient = await patientRepository.GetByIdAsync(1);
+        Assert.NotNull(detachedPatient);
+        detachedPatient!.Therapies = trackedTherapies
+            .Select(t => new Therapy { TherapyId = t.TherapyId, PatientId = t.PatientId, Description = t.Description })
+            .ToList();
+
+        var ex = await Record.ExceptionAsync(async () =>
+        {
+            await patientRepository.DeleteAsync(detachedPatient);
+            await _context.SaveChangesAsync();
+        });
+
+        Assert.Null(ex);
+        var deletedPatient = await _context.Patients.IgnoreQueryFilters().SingleAsync(p => p.PatientId == 1);
+        Assert.True(deletedPatient.Deleted);
     }
 
     /// <summary>

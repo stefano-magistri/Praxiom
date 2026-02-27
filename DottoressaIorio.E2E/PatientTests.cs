@@ -41,8 +41,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await page.Locator("input[type='tel']").FillAsync(phone);
         await page.Locator("input[type='email']").FillAsync(email);
         await page.Locator("#Notes").FillAsync(notes);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
-        await page.WaitForURLAsync("**/patient/*/");
+        await SubmitEditPatientFormAsync(page);
 
         await Expect(page.GetByText(placeOfBirth)).ToBeVisibleAsync();
         await Expect(page.GetByText(notes)).ToBeVisibleAsync();
@@ -142,6 +141,37 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         var patientId = await CreatePatientAsync(page, firstName, lastName, email, "1981-01-01");
         await CreateTherapyAsync(page, patientId, therapyDescription);
         await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
+
+        await page.GetByRole(AriaRole.Link, new() { Name = "Rimuovi" }).ClickAsync();
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
+        await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
+
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
+        await page.Locator("#search").FillAsync(firstName);
+        await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task DeletePatient_WithMultipleTherapies_ShouldRemovePatientFromIndex()
+    {
+        var setup = await NewAuthorizedPageAsync("/");
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var firstName = $"TherMultiNome{seed}";
+        var lastName = $"TherMultiCognome{seed}";
+        var email = $"{seed}.thermulti@example.test";
+        var therapyDescription1 = $"Therapy before delete A {seed}";
+        var therapyDescription2 = $"Therapy before delete B {seed}";
+
+        var patientId = await CreatePatientAsync(page, firstName, lastName, email, "1981-01-01");
+        await CreateTherapyAsync(page, patientId, therapyDescription1);
+        await CreateTherapyAsync(page, patientId, therapyDescription2);
+
+        await Expect(page.GetByText(therapyDescription1)).ToBeVisibleAsync();
+        await Expect(page.GetByText(therapyDescription2)).ToBeVisibleAsync();
 
         await page.GetByRole(AriaRole.Link, new() { Name = "Rimuovi" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");

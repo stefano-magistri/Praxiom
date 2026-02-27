@@ -195,18 +195,35 @@ else
             return;
         }
 
-        var therapy = await repository.GetByIdAsync(id);
-        if (therapy == null)
+        var tabId = await jsRuntime.InvokeAsync<string?>("jsPreparePdfTab");
+
+        try
         {
-            return;
+            var therapy = await repository.GetByIdAsync(id);
+            if (therapy == null)
+            {
+                if (!string.IsNullOrWhiteSpace(tabId))
+                {
+                    await jsRuntime.InvokeVoidAsync("jsClosePreparedPdfTab", tabId);
+                }
+                return;
+            }
+
+            therapy.Patient ??= patient;
+
+            var pdfBytes = await pdfService.GenerateTherapyPdfAsync(therapy);
+            var pdfBase64 = Convert.ToBase64String(pdfBytes);
+            var filename = $"{patient.FirstName}_{patient.LastName}_{therapy.CreatedDate:yy_MM_dd}_{DateTime.Now.ToFileTimeUtc()}.pdf";
+            await jsRuntime.InvokeVoidAsync("jsSaveAsFile", tabId, filename, pdfBase64);
         }
-
-        therapy.Patient ??= patient;
-
-        var pdfBytes = await pdfService.GenerateTherapyPdfAsync(therapy);
-        var pdfBase64 = Convert.ToBase64String(pdfBytes);
-        var filename = $"{patient.FirstName}_{patient.LastName}_{therapy.CreatedDate:yy_MM_dd}_{DateTime.Now.ToFileTimeUtc()}.pdf";
-        await jsRuntime.InvokeVoidAsync("jsSaveAsFile", filename, pdfBase64);
+        catch
+        {
+            if (!string.IsNullOrWhiteSpace(tabId))
+            {
+                await jsRuntime.InvokeVoidAsync("jsClosePreparedPdfTab", tabId);
+            }
+            throw;
+        }
     }
 
     private void NavigateToDeleteTherapy(int id)

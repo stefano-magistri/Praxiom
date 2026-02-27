@@ -184,6 +184,33 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     [Fact]
+    public async Task DeleteAsync_ShouldAllowSoftDelete_WhenDetachedEntityContainsLegacyInvalidData()
+    {
+        var patient = new Patient
+        {
+            DateOfBirth = DateTime.Now.AddYears(-30),
+            Email = "valid@example.com",
+            FirstName = "John",
+            LastName = "Doe"
+        };
+
+        await _repository.AddAsync(patient);
+        await _unitOfWork.SaveChangesAsync();
+
+        var detachedPatient = await _repository.GetByIdAsync(patient.PatientId);
+        Assert.NotNull(detachedPatient);
+
+        detachedPatient!.Email = "invalid-email";
+
+        await _repository.DeleteAsync(detachedPatient);
+        await _unitOfWork.SaveChangesAsync();
+
+        var result = await _repository.GetByIdAsync(patient.PatientId);
+        Assert.NotNull(result);
+        Assert.True(result.Deleted);
+    }
+
+    [Fact]
     public async Task GetAllAsync_ShouldExcludeSoftDeletedEntities()
     {
         var active = new Patient

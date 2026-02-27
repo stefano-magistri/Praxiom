@@ -3,27 +3,58 @@ window.jsLoadFeather = () => {
     feather.replace({ 'aria-hidden': 'true' });
 }
 
-window.jsSaveAsFile = (filename, byteBase64) => {
-    var binary = atob(byteBase64);
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
+window._pdfTabs = window._pdfTabs || {};
+
+window.jsPreparePdfTab = () => {
+    var newTab = window.open('about:blank', '_blank');
+    if (!newTab) {
+        return null;
     }
 
-    var blob = new Blob([bytes], { type: 'application/pdf' });
-    var url = URL.createObjectURL(blob);
+    var id = 'pdf_' + Date.now().toString() + '_' + Math.floor(Math.random() * 1000000).toString();
+    window._pdfTabs[id] = newTab;
+    newTab.document.title = 'Generazione PDF...';
+    newTab.document.body.style.margin = '0';
+    newTab.document.body.innerHTML = "<div style='padding:24px;font-family:Arial,sans-serif;'>Generazione PDF in corso...</div>";
+    return id;
+}
 
-    var link = document.createElement('a');
-    link.download = filename;
-    link.href = url;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+window.jsClosePreparedPdfTab = (tabId) => {
+    if (!tabId || !window._pdfTabs[tabId]) {
+        return;
+    }
 
-    // Revoke asynchronously to avoid revoking before the browser starts the download.
-    setTimeout(function () {
-        URL.revokeObjectURL(url);
-    }, 100);
+    try {
+        if (!window._pdfTabs[tabId].closed) {
+            window._pdfTabs[tabId].close();
+        }
+    } finally {
+        delete window._pdfTabs[tabId];
+    }
+}
+
+window.jsSaveAsFile = (tabId, filename, byteBase64) => {
+    var pdfDataUrl = 'data:application/pdf;base64,' + byteBase64;
+    var targetTab = null;
+
+    if (tabId && window._pdfTabs[tabId] && !window._pdfTabs[tabId].closed) {
+        targetTab = window._pdfTabs[tabId];
+    } else {
+        targetTab = window.open('about:blank', '_blank');
+    }
+
+    if (!targetTab) {
+        return;
+    }
+
+    targetTab.document.title = filename;
+    targetTab.document.body.style.margin = '0';
+    targetTab.document.body.innerHTML =
+        "<iframe title='therapy-pdf' src='" + pdfDataUrl + "' style='border:0;width:100vw;height:100vh;'></iframe>";
+
+    if (tabId) {
+        delete window._pdfTabs[tabId];
+    }
 }
 
 window.jsCloseNavbar = () => {

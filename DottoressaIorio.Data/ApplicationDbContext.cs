@@ -72,15 +72,41 @@ public class ApplicationDbContext : DbContext
 
     private void NormalizeAndValidateTrackedEntities()
     {
-        var trackedEntities = ChangeTracker.Entries<IDataHandler>()
-            .Where(e => e.State is EntityState.Added or EntityState.Modified)
-            .Select(e => e.Entity);
+        var trackedEntries = ChangeTracker.Entries<IDataHandler>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified);
 
-        foreach (var entity in trackedEntities)
+        foreach (var entry in trackedEntries)
         {
+            if (IsSoftDeleteOnlyUpdate(entry))
+            {
+                continue;
+            }
+
+            var entity = entry.Entity;
             NormalizeEntity(entity);
             Validator.ValidateObject(entity, new ValidationContext(entity), validateAllProperties: true);
         }
+    }
+
+    private static bool IsSoftDeleteOnlyUpdate(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<IDataHandler> entry)
+    {
+        if (entry.State != EntityState.Modified || !entry.Entity.Deleted)
+        {
+            return false;
+        }
+
+        var modifiedPropertyNames = entry.Properties
+            .Where(p => p.IsModified)
+            .Select(p => p.Metadata.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        if (modifiedPropertyNames.Count == 0)
+        {
+            return false;
+        }
+
+        return modifiedPropertyNames.All(name =>
+            name is nameof(IDataHandler.Deleted) or nameof(IDataHandler.EditDate));
     }
 
     private static void NormalizeEntity(IDataHandler entity)

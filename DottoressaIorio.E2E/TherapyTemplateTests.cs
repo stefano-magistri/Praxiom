@@ -70,4 +70,31 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await FilterTemplatesAsync(page, title);
         await Expect(page.Locator($"//tbody/tr[contains(., '{title}')]").First).ToBeVisibleAsync();
     }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task AggiungiTerapiaPrecompilata_DuplicateTitle_ShouldStayOnCreateAndShowWarning()
+    {
+        var setup = await NewAuthorizedPageAsync("/create-therapy-template");
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var title = $"DUP TEMPLATE {seed}";
+        var description = $"Template description {seed}";
+
+        await page.Locator("#Title").FillAsync(title);
+        await page.Locator("#Description").FillAsync(description);
+        await SubmitTemplateFormAsync(page);
+
+        await page.GotoAsync("/create-therapy-template", new Microsoft.Playwright.PageGotoOptions
+        {
+            WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle
+        });
+        await page.Locator("#Title").FillAsync(title);
+        await page.Locator("#Description").FillAsync($"Another description {seed}");
+        await SubmitTemplateFormExpectDuplicateAsync(page);
+
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Aggiungi Terapia Precompilata");
+    }
 }

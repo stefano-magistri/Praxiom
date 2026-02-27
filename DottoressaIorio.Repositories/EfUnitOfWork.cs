@@ -5,16 +5,41 @@ namespace DottoressaIorio.Repositories;
 
 public class EfUnitOfWork(ApplicationDbContext context) : IUnitOfWork
 {
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            DetachFailedEntries(ex);
+            throw;
+        }
     }
 
     public async Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default)
     {
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         await action();
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            DetachFailedEntries(ex);
+            throw;
+        }
+
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    private static void DetachFailedEntries(DbUpdateException ex)
+    {
+        foreach (var entry in ex.Entries)
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 }

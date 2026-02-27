@@ -68,11 +68,6 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     {
         await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
 
-        var duplicateTitleWarning = page.GetByRole(AriaRole.Alert).Filter(new()
-        {
-            HasText = "Il titolo"
-        });
-
         for (var i = 0; i < 40; i++)
         {
             if (page.Url.Contains("/therapy-templates", StringComparison.OrdinalIgnoreCase))
@@ -80,22 +75,33 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
                 return;
             }
 
-            if (await duplicateTitleWarning.IsVisibleAsync())
-            {
-                var warningText = (await duplicateTitleWarning.InnerTextAsync()).ToLowerInvariant();
-                if (warningText.Contains("esiste"))
-                {
-                    await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
-                    await page.WaitForURLAsync("**/therapy-templates*");
-                    return;
-                }
-            }
-
             await page.WaitForTimeoutAsync(250);
         }
 
+        var warnings = await page.Locator(".alert").AllInnerTextsAsync();
+        var validation = await page.Locator(".validation-message").AllInnerTextsAsync();
+        var details = string.Join(" | ", warnings.Concat(validation).Where(x => !string.IsNullOrWhiteSpace(x)));
+
         throw new TimeoutException(
-            $"Template form did not navigate to /therapy-templates. Current URL: {page.Url}");
+            $"Template form did not navigate to /therapy-templates. Current URL: {page.Url}. Messages: {details}");
+    }
+
+    protected static async Task SubmitTemplateFormExpectDuplicateAsync(IPage page)
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+
+        var duplicateTitleWarning = page.GetByRole(AriaRole.Alert).Filter(new()
+        {
+            HasText = "Il titolo"
+        });
+
+        await Expect(duplicateTitleWarning).ToBeVisibleAsync();
+        await Expect(duplicateTitleWarning).ToContainTextAsync("esiste");
+
+        if (page.Url.Contains("/therapy-templates", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Duplicate template should not navigate to /therapy-templates.");
+        }
     }
 
     protected static async Task SubmitCreatePatientFormAsync(IPage page)
@@ -172,6 +178,28 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
         throw new TimeoutException(
             $"Edit therapy form did not navigate to /patient/{{id}}/. Current URL: {page.Url}. Messages: {details}");
+    }
+
+    protected static async Task SubmitEditPatientFormAsync(IPage page)
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+
+        for (var i = 0; i < 40; i++)
+        {
+            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                return;
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        var warnings = await page.Locator(".alert").AllInnerTextsAsync();
+        var validation = await page.Locator(".validation-message").AllInnerTextsAsync();
+        var details = string.Join(" | ", warnings.Concat(validation).Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        throw new TimeoutException(
+            $"Edit patient form did not navigate to /patient/{{id}}/. Current URL: {page.Url}. Messages: {details}");
     }
 
     protected static async Task FilterTemplatesAsync(IPage page, string term)

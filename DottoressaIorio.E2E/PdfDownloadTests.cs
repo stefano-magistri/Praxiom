@@ -8,7 +8,7 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
 {
     [Fact]
     [Trait("Category", "E2E")]
-    public async Task DownloadTherapyPdf_ShouldDownloadNonEmptyPdfFile()
+    public async Task DownloadTherapyPdf_ShouldOpenPdfInNewTab()
     {
         var setup = await NewAuthorizedPageAsync("/");
         await using var context = setup.Context;
@@ -26,16 +26,15 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
 
         await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
 
-        var downloadTask = page.WaitForDownloadAsync();
+        var popupTask = page.WaitForPopupAsync();
         await page.GetByRole(AriaRole.Button, new() { Name = "Scarica ultima terapia" }).ClickAsync();
-        var download = await downloadTask;
-
-        Assert.EndsWith(".pdf", download.SuggestedFilename, StringComparison.OrdinalIgnoreCase);
-
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.pdf");
-        await download.SaveAsAsync(tempFile);
-        var fileInfo = new FileInfo(tempFile);
-        Assert.True(fileInfo.Exists, "PDF file was not saved.");
-        Assert.True(fileInfo.Length > 0, "Downloaded PDF is empty.");
+        var popup = await popupTask;
+        
+        var frame = popup.Locator("iframe[title='therapy-pdf']");
+        await Expect(frame).ToHaveCountAsync(1);
+        var src = await frame.GetAttributeAsync("src");
+        Assert.NotNull(src);
+        Assert.StartsWith("data:application/pdf;base64,", src, StringComparison.OrdinalIgnoreCase);
+        await popup.CloseAsync();
     }
 }
