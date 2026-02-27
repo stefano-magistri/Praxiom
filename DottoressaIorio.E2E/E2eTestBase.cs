@@ -19,7 +19,7 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
     protected static async Task EnsureAuthorizedShellAsync(IPage page)
     {
-        var notAuthorized = page.GetByText("You are not authorized to view this content.");
+        var notAuthorized = page.GetByText("Non sei autorizzato a visualizzare questo contenuto.");
         if (await notAuthorized.IsVisibleAsync())
             throw new InvalidOperationException(
                 "App returned 'Not authorized'. For automated E2E, run the app with Authentication__UseNegotiate=false or configure CI authentication.");

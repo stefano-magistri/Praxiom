@@ -6,19 +6,19 @@
         @ChildContent
     </Authorized>
     <NotAuthorized>
-        <p>You are not authorized to view this content.</p>
+        <p>Non sei autorizzato a visualizzare questo contenuto.</p>
         @if (!Environment.IsProduction())
         {
             var authenticationState = authenticationStateTask.Result;
             var user = authenticationState.User;
-            <p>Current Environment: @Environment.EnvironmentName</p>
+            <p>Ambiente corrente: @Environment.EnvironmentName</p>
             @if (user.Identity?.IsAuthenticated == true)
             {
-                <p>User: @user.Identity.Name</p>
+                <p>Utente: @user.Identity.Name</p>
             }
             else
             {
-                <p>User: Not authenticated</p>
+                <p>Utente: non autenticato</p>
             }
         }
     </NotAuthorized>
