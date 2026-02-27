@@ -33,9 +33,17 @@ if %errorlevel% equ 0 (
     set "iscc=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 )
 
-if not exist "%iscc%" (
-    echo Inno Setup compiler not found. Install Inno Setup 6 first.
-    exit /b 1
+if /I "%iscc%"=="ISCC.exe" (
+    where ISCC.exe >nul 2>nul
+    if errorlevel 1 (
+        echo Inno Setup compiler not found in PATH.
+        exit /b 1
+    )
+) else (
+    if not exist "%iscc%" (
+        echo Inno Setup compiler not found at "%iscc%".
+        exit /b 1
+    )
 )
 
 call "%publishScript%"
