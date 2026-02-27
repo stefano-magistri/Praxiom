@@ -23,7 +23,8 @@ public static class LoggingExtensions
             .WriteTo.Console()
             .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day, shared: true)
             .CreateLogger();
-        builder.Host.UseSerilog();
+        builder.Host.UseSerilog(Log.Logger, dispose: true);
+        Log.Information("Serilog initialized. File sink path: {LogFilePath}", logFilePath);
 
         return builder;
     }
