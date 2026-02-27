@@ -181,7 +181,7 @@ This document describes only behavior implemented in this repository.
 ## 9. Validation Error Message Process
 
 1. `ValidationException` -> returns validation message.
-2. SQLite unique constraint failure on `TherapyTemplates.Title` -> `"Il titolo gia esiste."`
+2. SQLite unique constraint failure on `TherapyTemplates.Title` -> `"Il titolo giá esiste."`
 3. Other exceptions -> generic save failure message.
 
 ## 10. Build, Install, and Uninstall Process

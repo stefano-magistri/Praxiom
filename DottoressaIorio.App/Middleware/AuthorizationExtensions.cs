@@ -18,18 +18,21 @@ public static class AuthorizationExtensions
                 {
                     if (!useNegotiate)
                     {
-                        Log.Information("Negotiate authentication is disabled, allowing all access");
                         return true; // Allow all access when Negotiate is disabled
                     }
 
                     var identityName = context.User.Identity?.Name;
-                    Log.Information("User Identity Name: {IdentityName}", identityName);
-                    Log.Information("Allowed Username: {AllowedUsername}", allowedUsername);
-                    Log.Information("Is Authenticated: {IsAuthenticated}", context.User.Identity?.IsAuthenticated);
+                    var isAuthenticated = context.User.Identity?.IsAuthenticated == true;
+                    var isAllowedUser = !string.IsNullOrWhiteSpace(identityName) &&
+                                        !string.IsNullOrWhiteSpace(allowedUsername) &&
+                                        identityName.Equals(allowedUsername,
+                                            StringComparison.InvariantCultureIgnoreCase);
 
-                    return context.User.Identity?.Name != null &&
-                           context.User.Identity.Name
-                               .Equals(allowedUsername, StringComparison.InvariantCultureIgnoreCase);
+                    Log.Debug(
+                        "SpecificUserOnly evaluated. Authenticated={IsAuthenticated}, AllowedUserMatch={AllowedUserMatch}",
+                        isAuthenticated, isAllowedUser);
+
+                    return isAllowedUser;
                 }));
 
             // Set the fallback policy based on authentication configuration

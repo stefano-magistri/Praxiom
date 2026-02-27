@@ -1,5 +1,4 @@
-﻿@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IConfiguration Configuration
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IWebHostEnvironment Environment
 
 <AuthorizeView Policy="SpecificUserOnly">
@@ -8,12 +7,12 @@
     </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this content.</p>
-        <p>Allowed Username: @Configuration["Authentication:AllowedUsername"]</p>
-        <p>Current Environment: @Environment.EnvironmentName</p>
-        @{
+        @if (!Environment.IsProduction())
+        {
             var authenticationState = authenticationStateTask.Result;
             var user = authenticationState.User;
-            if (user.Identity?.IsAuthenticated == true)
+            <p>Current Environment: @Environment.EnvironmentName</p>
+            @if (user.Identity?.IsAuthenticated == true)
             {
                 <p>User: @user.Identity.Name</p>
             }
@@ -35,5 +34,4 @@
         authenticationStateTask = AuthenticationStateProvider.GetAuthenticationStateAsync();
         await authenticationStateTask;
     }
-
 }
