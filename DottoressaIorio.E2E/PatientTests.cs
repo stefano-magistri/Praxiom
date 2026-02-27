@@ -10,7 +10,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
     [Trait("Category", "E2E")]
     public async Task AggiungiPaziente_ShouldCreateAndEditPatient()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -32,7 +32,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await createFormRows.Nth(3).Locator("input.form-control[type='email']").FillAsync(email);
         await SubmitCreatePatientFormAsync(page);
 
-        await page.GetByRole(AriaRole.Link, new() { Name = "Modifica" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Modifica" }).ClickAsync();
         await page.WaitForURLAsync("**/patient/*/edit/");
 
         await page.Locator("#Title").SelectOptionAsync(new SelectOptionValue { Label = "Dottoressa" });
@@ -51,7 +51,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
     [Trait("Category", "E2E")]
     public async Task DeletePatient_ShouldRemovePatientFromIndex()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -62,9 +62,9 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 
         await CreatePatientAsync(page, firstName, lastName, email, "1982-02-02");
 
-        await page.GetByRole(AriaRole.Link, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
-        await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
 
         // Wait for the app-side navigation after SaveAsync completes.
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
@@ -78,7 +78,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
     [Trait("Category", "E2E")]
     public async Task DeletePatient_FromIndexAction_ShouldRemovePatient()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -94,7 +94,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await page.Locator(".patient-row-actions .btn-delete-soft").First.ClickAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
-        await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
         await page.Locator("#search").FillAsync(firstName);
@@ -105,7 +105,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
     [Trait("Category", "E2E")]
     public async Task DeletePatient_Cancel_ShouldReturnToPatientPage()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -116,19 +116,19 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 
         await CreatePatientAsync(page, firstName, lastName, email, "1983-03-03");
 
-        await page.GetByRole(AriaRole.Link, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
-        await page.GetByRole(AriaRole.Link, new() { Name = "Annulla" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Annulla" }).ClickAsync();
 
         await Expect(page.GetByText(firstName)).ToBeVisibleAsync();
-        await Expect(page.GetByRole(AriaRole.Link, new() { Name = "Modifica" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Modifica" })).ToBeVisibleAsync();
     }
 
     [Fact]
     [Trait("Category", "E2E")]
     public async Task DeletePatient_WithTherapies_ShouldRemovePatientFromIndex()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -142,9 +142,9 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await CreateTherapyAsync(page, patientId, therapyDescription);
         await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
 
-        await page.GetByRole(AriaRole.Link, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
-        await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
         await page.Locator("#search").FillAsync(firstName);
@@ -155,7 +155,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
     [Trait("Category", "E2E")]
     public async Task DeletePatient_WithMultipleTherapies_ShouldRemovePatientFromIndex()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -173,9 +173,9 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await Expect(page.GetByText(therapyDescription1)).ToBeVisibleAsync();
         await Expect(page.GetByText(therapyDescription2)).ToBeVisibleAsync();
 
-        await page.GetByRole(AriaRole.Link, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
-        await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
         await page.Locator("#search").FillAsync(firstName);

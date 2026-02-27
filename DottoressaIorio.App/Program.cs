@@ -10,10 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
 
-if (isWindowsService)
-{
-    builder.Host.UseWindowsService();
-}
+if (isWindowsService) builder.Host.UseWindowsService();
 
 var encryptionKey = configuration["EncryptionKey"];
 var allowedUsername = configuration["Authentication:AllowedUsername"];
@@ -54,10 +51,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-if (!isWindowsService)
-{
-    app.UseHttpsRedirection();
-}
+if (!isWindowsService) app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 

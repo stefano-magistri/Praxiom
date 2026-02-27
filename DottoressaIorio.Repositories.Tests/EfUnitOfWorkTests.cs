@@ -26,6 +26,12 @@ public sealed class EfUnitOfWorkTests : IDisposable
         _unitOfWork = new EfUnitOfWork(_context);
     }
 
+    public void Dispose()
+    {
+        _context.Dispose();
+        _connection.Dispose();
+    }
+
     [Fact]
     public async Task SaveChangesAsync_AfterUniqueConstraintFailure_ShouldAllowSubsequentUnrelatedSave()
     {
@@ -57,11 +63,5 @@ public sealed class EfUnitOfWorkTests : IDisposable
 
         var ex = await Record.ExceptionAsync(() => _unitOfWork.SaveChangesAsync());
         Assert.Null(ex);
-    }
-
-    public void Dispose()
-    {
-        _context.Dispose();
-        _connection.Dispose();
     }
 }

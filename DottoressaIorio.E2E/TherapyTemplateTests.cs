@@ -1,3 +1,4 @@
+using Microsoft.Playwright;
 using static Microsoft.Playwright.Assertions;
 
 namespace DottoressaIorio.E2E;
@@ -33,7 +34,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
 
         await page.Locator("#Title").FillAsync(editedTitle);
         await page.Locator("#Description").FillAsync(editedDescription);
-        await page.GetByRole(Microsoft.Playwright.AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
 
         await FilterTemplatesAsync(page, editedTitle);
@@ -43,7 +44,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await editedRow.Locator("button").Nth(1).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Terapia Precompilata");
 
-        await page.GetByRole(Microsoft.Playwright.AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
 
         await FilterTemplatesAsync(page, editedTitle);
@@ -54,7 +55,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
     [Trait("Category", "E2E")]
     public async Task AggiungiTerapiaPrecompilata_ShouldCreateTemplate()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -87,9 +88,9 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await page.Locator("#Description").FillAsync(description);
         await SubmitTemplateFormAsync(page);
 
-        await page.GotoAsync("/create-therapy-template", new Microsoft.Playwright.PageGotoOptions
+        await page.GotoAsync("/create-therapy-template", new PageGotoOptions
         {
-            WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle
+            WaitUntil = WaitUntilState.NetworkIdle
         });
         await page.Locator("#Title").FillAsync(title);
         await page.Locator("#Description").FillAsync($"Another description {seed}");

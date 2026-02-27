@@ -2,11 +2,11 @@
 @inject TherapyTemplateRepository repository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
- 
-<PageHeader Title="Modifica Terapia Precompilata" /> 
+
+<PageHeader Title="Modifica Terapia Precompilata"/>
 
 <EditForm Model="@model" OnValidSubmit="@SaveTask" class="needs-validation" novalidate>
-    <DataAnnotationsValidator />
+    <DataAnnotationsValidator/>
     @if (!string.IsNullOrEmpty(warningMessage))
     {
         <div class="alert alert-warning" role="alert">
@@ -16,26 +16,25 @@
     <div class="row g-3">
         <div class="col-12">
             <label for="Title">Titolo:</label>
-            <InputText id="Title" @bind-Value="model.Title" class="form-control" autocomplete="off" />
-            <ValidationMessage For="@(() => model.Title)" />
+            <InputText id="Title" @bind-Value="model.Title" class="form-control" autocomplete="off"/>
+            <ValidationMessage For="@(() => model.Title)"/>
         </div>
     </div>
     <div class="row g-3">
         <div class="col-12">
             <label for="Description">Descrizione:</label>
-            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control" />
-            <ValidationMessage For="@(() => model.Description)" />
+            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control"/>
+            <ValidationMessage For="@(() => model.Description)"/>
         </div>
     </div>
     <hr class="my-4">
-    <CancelButton Url="/therapy-templates" />
+    <CancelButton Url="/therapy-templates"/>
     <AnchorButton ButtonText="Rimuovi" ButtonClass="outline-danger btn-delete-soft" Url="@($"/therapy-template/{Id}/delete/")"></AnchorButton>
-    <SubmitButton />
+    <SubmitButton/>
 </EditForm>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private TherapyTemplate model;
     private string warningMessage = "";
@@ -58,4 +57,5 @@
             warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
         }
     }
+
 }

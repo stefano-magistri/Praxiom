@@ -9,7 +9,7 @@ public sealed class NavigationTests(PlaywrightFixture fixture) : E2eTestBase(fix
     [Trait("Category", "E2E")]
     public async Task Navigazione_ShouldMatchSeleniumFlow()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 

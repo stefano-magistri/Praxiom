@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
 /// <summary>
-/// Contains unit tests for the <see cref="TherapyTemplateRepository"/> class.
+///     Contains unit tests for the <see cref="TherapyTemplateRepository" /> class.
 /// </summary>
 public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
 {
@@ -41,8 +41,8 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
     };
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TherapyTemplateRepositoryTests"/> class.
-    /// Sets up an in-memory database for testing purposes.
+    ///     Initializes a new instance of the <see cref="TherapyTemplateRepositoryTests" /> class.
+    ///     Sets up an in-memory database for testing purposes.
     /// </summary>
     public TherapyTemplateRepositoryTests()
     {
@@ -54,7 +54,7 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously disposes of the test resources.
+    ///     Asynchronously disposes of the test resources.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
@@ -62,7 +62,7 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Disposes of the test resources.
+    ///     Disposes of the test resources.
     /// </summary>
     public void Dispose()
     {
@@ -70,7 +70,7 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the GetAllOrderedAsync method returns all non-deleted therapy templates ordered by title.
+    ///     Tests that the GetAllOrderedAsync method returns all non-deleted therapy templates ordered by title.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
@@ -91,7 +91,7 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the TitleExistsAsync method correctly identifies whether a therapy template with a given title exists.
+    ///     Tests that the TitleExistsAsync method correctly identifies whether a therapy template with a given title exists.
     /// </summary>
     /// <param name="title">The title to check for existence.</param>
     /// <param name="expectedResult">The expected result of the existence check.</param>
@@ -116,7 +116,7 @@ public class TherapyTemplateRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Seeds the test database with initial data.
+    ///     Seeds the test database with initial data.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task SeedDataAsync()

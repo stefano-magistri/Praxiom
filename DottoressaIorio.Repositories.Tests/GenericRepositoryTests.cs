@@ -1,13 +1,13 @@
+using System.ComponentModel.DataAnnotations;
 using DottoressaIorio.Data;
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
 /// <summary>
-/// Contains unit tests for the GenericRepository class, testing basic CRUD operations.
+///     Contains unit tests for the GenericRepository class, testing basic CRUD operations.
 /// </summary>
 public class GenericRepositoryTests : IDisposable, IAsyncDisposable
 {
@@ -16,8 +16,8 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     private readonly IUnitOfWork _unitOfWork;
 
     /// <summary>
-    /// Initializes a new instance of the GenericRepositoryTests class.
-    /// Sets up an in-memory database for testing.
+    ///     Initializes a new instance of the GenericRepositoryTests class.
+    ///     Sets up an in-memory database for testing.
     /// </summary>
     public GenericRepositoryTests()
     {
@@ -31,7 +31,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously disposes of the test resources.
+    ///     Asynchronously disposes of the test resources.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
@@ -39,7 +39,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Disposes of the test resources.
+    ///     Disposes of the test resources.
     /// </summary>
     public void Dispose()
     {
@@ -47,7 +47,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the GetByIdAsync method correctly retrieves an entity by its ID.
+    ///     Tests that the GetByIdAsync method correctly retrieves an entity by its ID.
     /// </summary>
     [Fact]
     public async Task GetByIdAsync_ShouldReturnEntityById()
@@ -72,7 +72,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the GetByIdAsync method returns null when the entity does not exist.
+    ///     Tests that the GetByIdAsync method returns null when the entity does not exist.
     /// </summary>
     [Fact]
     public async Task GetByIdAsync_ShouldReturnNullWhenEntityDoesNotExist()
@@ -85,7 +85,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the GetAllAsync method returns all entities in the database.
+    ///     Tests that the GetAllAsync method returns all entities in the database.
     /// </summary>
     [Fact]
     public async Task GetAllAsync_ShouldReturnAllEntities()
@@ -129,7 +129,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the UpdateAsync method correctly updates an existing entity.
+    ///     Tests that the UpdateAsync method correctly updates an existing entity.
     /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldUpdateEntity()
@@ -157,7 +157,7 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the DeleteAsync method correctly performs a soft delete on an entity.
+    ///     Tests that the DeleteAsync method correctly performs a soft delete on an entity.
     /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldSoftDeleteEntity()
@@ -318,5 +318,4 @@ public class GenericRepositoryTests : IDisposable, IAsyncDisposable
         Assert.NotNull(result);
         Assert.Equal("+393331234", result.PhoneNumber);
     }
-
 }

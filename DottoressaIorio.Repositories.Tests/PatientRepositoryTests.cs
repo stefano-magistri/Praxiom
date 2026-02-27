@@ -1,13 +1,13 @@
+using System.Globalization;
 using DottoressaIorio.Data;
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
 /// <summary>
-/// Contains unit tests for the PatientRepository class, testing patient-specific repository operations.
+///     Contains unit tests for the PatientRepository class, testing patient-specific repository operations.
 /// </summary>
 public class PatientRepositoryTests : IDisposable, IAsyncDisposable
 {
@@ -18,12 +18,14 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         new Patient
         {
             PatientId = 1, FirstName = "John", LastName = "Doe", CreatedDate = DateTime.Now,
-            DateOfBirth = DateTime.ParseExact("10/02/1981", "dd/MM/yyyy", CultureInfo.InvariantCulture), Email = "s@s.com"
+            DateOfBirth = DateTime.ParseExact("10/02/1981", "dd/MM/yyyy", CultureInfo.InvariantCulture),
+            Email = "s@s.com"
         },
         new Patient
         {
             PatientId = 2, FirstName = "Jane", LastName = "Smith", CreatedDate = DateTime.Now,
-            DateOfBirth = DateTime.ParseExact("01/12/2002", "dd/MM/yyyy", CultureInfo.InvariantCulture), Email = "s@s1.com"
+            DateOfBirth = DateTime.ParseExact("01/12/2002", "dd/MM/yyyy", CultureInfo.InvariantCulture),
+            Email = "s@s1.com"
         },
         new Patient
         {
@@ -39,8 +41,8 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     };
 
     /// <summary>
-    /// Initializes a new instance of the PatientRepositoryTests class.
-    /// Sets up an in-memory database for testing.
+    ///     Initializes a new instance of the PatientRepositoryTests class.
+    ///     Sets up an in-memory database for testing.
     /// </summary>
     public PatientRepositoryTests()
     {
@@ -52,7 +54,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously disposes of the test resources.
+    ///     Asynchronously disposes of the test resources.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
@@ -60,7 +62,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Disposes of the test resources.
+    ///     Disposes of the test resources.
     /// </summary>
     public void Dispose()
     {
@@ -68,7 +70,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the SearchPatientsAsync method returns the expected number of results for various search terms.
+    ///     Tests that the SearchPatientsAsync method returns the expected number of results for various search terms.
     /// </summary>
     /// <param name="searchTerm">The term to search for.</param>
     /// <param name="expectedCount">The expected number of results.</param>
@@ -87,7 +89,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the GetAllOrderedAsync method returns all non-deleted patients ordered by last name and first name.
+    ///     Tests that the GetAllOrderedAsync method returns all non-deleted patients ordered by last name and first name.
     /// </summary>
     [Fact]
     public async Task GetAllOrderedAsync_ShouldReturnAllPatientsOrdered()
@@ -106,7 +108,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the PatientExistsAsync method correctly identifies whether a patient exists based on their details.
+    ///     Tests that the PatientExistsAsync method correctly identifies whether a patient exists based on their details.
     /// </summary>
     /// <param name="firstName">The first name to check.</param>
     /// <param name="lastName">The last name to check.</param>
@@ -135,7 +137,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Helper method to test patient search functionality.
+    ///     Helper method to test patient search functionality.
     /// </summary>
     /// <param name="searchTerm">The term to search for.</param>
     /// <returns>A list of patients matching the search criteria.</returns>
@@ -151,7 +153,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Helper method to test retrieving all ordered patients.
+    ///     Helper method to test retrieving all ordered patients.
     /// </summary>
     /// <returns>A list of all non-deleted patients ordered by last name and first name.</returns>
     private async Task<IList<Patient>> GetAllOrderedAsync()
@@ -166,7 +168,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Helper method to test patient existence check.
+    ///     Helper method to test patient existence check.
     /// </summary>
     /// <param name="patient">The patient to check for existence.</param>
     /// <returns>True if the patient exists, false otherwise.</returns>

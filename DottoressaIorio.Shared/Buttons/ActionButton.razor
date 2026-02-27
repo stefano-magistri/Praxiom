@@ -3,15 +3,11 @@
 </button>
 
 @code {
-    [Parameter, EditorRequired]
-    public EventCallback OnClick { get; set; }
+    [Parameter] [EditorRequired] public EventCallback OnClick { get; set; }
 
-    [Parameter]
-    public string ButtonText { get; set; }
+    [Parameter] public string ButtonText { get; set; }
 
-    [Parameter, EditorRequired]
-    public string ButtonClass { get; set; }
+    [Parameter] [EditorRequired] public string ButtonClass { get; set; }
 
-    [Parameter, EditorRequired]
-    public string IconClass { get; set; }
+    [Parameter] [EditorRequired] public string IconClass { get; set; }
 }

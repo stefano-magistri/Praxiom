@@ -1,33 +1,37 @@
+using System.ComponentModel.DataAnnotations;
 using DottoressaIorio.Models;
 using DottoressaIorio.Models.Abstract;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace DottoressaIorio.Data;
 
 /// <summary>
-/// Entity Framework Core database context for the application.
-/// Manages entity sets and database access.
+///     Entity Framework Core database context for the application.
+///     Manages entity sets and database access.
 /// </summary>
 public class ApplicationDbContext : DbContext
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="ApplicationDbContext"/> class.
+    ///     Initializes a new instance of the <see cref="ApplicationDbContext" /> class.
     /// </summary>
     /// <param name="options">The database context configuration options.</param>
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
     }
+
     /// <summary>
-    /// Gets or sets the collection of <see cref="Patient"/> entities.
+    ///     Gets or sets the collection of <see cref="Patient" /> entities.
     /// </summary>
     public DbSet<Patient> Patients { get; set; }
+
     /// <summary>
-    /// Gets or sets the collection of <see cref="Therapy"/> entities.
+    ///     Gets or sets the collection of <see cref="Therapy" /> entities.
     /// </summary>
     public DbSet<Therapy> Therapies { get; set; }
+
     /// <summary>
-    /// Gets or sets the collection of <see cref="TherapyTemplate"/> entities.
+    ///     Gets or sets the collection of <see cref="TherapyTemplate" /> entities.
     /// </summary>
     public DbSet<TherapyTemplate> TherapyTemplates { get; set; }
 
@@ -49,7 +53,8 @@ public class ApplicationDbContext : DbContext
         return base.SaveChangesAsync(cancellationToken);
     }
 
-    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
     {
         NormalizeAndValidateTrackedEntities();
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
@@ -77,33 +82,24 @@ public class ApplicationDbContext : DbContext
 
         foreach (var entry in trackedEntries)
         {
-            if (IsSoftDeleteOnlyUpdate(entry))
-            {
-                continue;
-            }
+            if (IsSoftDeleteOnlyUpdate(entry)) continue;
 
             var entity = entry.Entity;
             NormalizeEntity(entity);
-            Validator.ValidateObject(entity, new ValidationContext(entity), validateAllProperties: true);
+            Validator.ValidateObject(entity, new ValidationContext(entity), true);
         }
     }
 
-    private static bool IsSoftDeleteOnlyUpdate(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<IDataHandler> entry)
+    private static bool IsSoftDeleteOnlyUpdate(EntityEntry<IDataHandler> entry)
     {
-        if (entry.State != EntityState.Modified || !entry.Entity.Deleted)
-        {
-            return false;
-        }
+        if (entry.State != EntityState.Modified || !entry.Entity.Deleted) return false;
 
         var modifiedPropertyNames = entry.Properties
             .Where(p => p.IsModified)
             .Select(p => p.Metadata.Name)
             .ToHashSet(StringComparer.Ordinal);
 
-        if (modifiedPropertyNames.Count == 0)
-        {
-            return false;
-        }
+        if (modifiedPropertyNames.Count == 0) return false;
 
         return modifiedPropertyNames.All(name =>
             name is nameof(IDataHandler.Deleted) or nameof(IDataHandler.EditDate));
@@ -140,10 +136,7 @@ public class ApplicationDbContext : DbContext
 
     private static string? NormalizeOptional(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(value)) return null;
 
         return value.Trim();
     }
@@ -151,17 +144,11 @@ public class ApplicationDbContext : DbContext
     private static string? NormalizePhoneNumber(string? value)
     {
         var normalized = NormalizeOptional(value);
-        if (normalized is null)
-        {
-            return null;
-        }
+        if (normalized is null) return null;
 
         var hasLeadingPlus = normalized.StartsWith('+');
         var digits = new string(normalized.Where(char.IsDigit).ToArray());
-        if (digits.Length == 0)
-        {
-            return null;
-        }
+        if (digits.Length == 0) return null;
 
         return hasLeadingPlus ? $"+{digits}" : digits;
     }

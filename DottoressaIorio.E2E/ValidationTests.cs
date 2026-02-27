@@ -14,7 +14,7 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
         await using var context = setup.Context;
         var page = setup.Page;
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
         var validationTexts = await page.Locator(".validation-message").AllInnerTextsAsync();
         Assert.Contains(validationTexts, text => text.Contains("Nome", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(validationTexts, text => text.Contains("Cognome", StringComparison.OrdinalIgnoreCase));
@@ -29,7 +29,7 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
         var page = setup.Page;
 
         await page.Locator("#Title").FillAsync($"VAL-TPL-{Guid.NewGuid():N}");
-        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
 
         await Expect(page.Locator(".validation-message")).ToContainTextAsync("descrizione");
     }
@@ -38,15 +38,17 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
     [Trait("Category", "E2E")]
     public async Task CreateTherapy_EmptyDescription_ShouldShowValidation()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
         var seed = Guid.NewGuid().ToString("N")[..8];
-        var patientId = await CreatePatientAsync(page, $"ValNome{seed}", $"ValCog{seed}", $"{seed}.val@example.test", "1988-08-08");
+        var patientId = await CreatePatientAsync(page, $"ValNome{seed}", $"ValCog{seed}", $"{seed}.val@example.test",
+            "1988-08-08");
 
-        await page.GotoAsync($"/patient/{patientId}/create-therapy", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.GetByRole(AriaRole.Button, new() { Name = "Salva" }).ClickAsync();
+        await page.GotoAsync($"/patient/{patientId}/create-therapy",
+            new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
 
         await Expect(page.Locator(".validation-message")).ToContainTextAsync("descrizione");
     }

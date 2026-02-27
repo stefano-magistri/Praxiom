@@ -37,9 +37,6 @@ public class EfUnitOfWork(ApplicationDbContext context) : IUnitOfWork
 
     private static void DetachFailedEntries(DbUpdateException ex)
     {
-        foreach (var entry in ex.Entries)
-        {
-            entry.State = EntityState.Detached;
-        }
+        foreach (var entry in ex.Entries) entry.State = EntityState.Detached;
     }
 }

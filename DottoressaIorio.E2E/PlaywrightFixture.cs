@@ -1,6 +1,6 @@
-using Microsoft.Playwright;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.Playwright;
 
 namespace DottoressaIorio.E2E;
 
@@ -25,12 +25,16 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         _browser = await LaunchBrowserWithInstallFallbackAsync();
     }
 
+    public async Task DisposeAsync()
+    {
+        if (_browser is not null) await _browser.DisposeAsync();
+
+        Playwright.Dispose();
+    }
+
     public async Task<IBrowserContext> NewContextAsync()
     {
-        if (_browser is null)
-        {
-            throw new InvalidOperationException("Browser is not initialized.");
-        }
+        if (_browser is null) throw new InvalidOperationException("Browser is not initialized.");
 
         return await _browser.NewContextAsync(new BrowserNewContextOptions
         {
@@ -40,23 +44,14 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         });
     }
 
-    public async Task DisposeAsync()
-    {
-        if (_browser is not null)
-        {
-            await _browser.DisposeAsync();
-        }
-
-        Playwright.Dispose();
-    }
-
     private async Task<IBrowser> LaunchBrowserWithInstallFallbackAsync()
     {
         try
         {
             return await LaunchBrowserAsync();
         }
-        catch (PlaywrightException ex) when (ex.Message.Contains("Executable doesn't exist", StringComparison.OrdinalIgnoreCase))
+        catch (PlaywrightException ex) when (ex.Message.Contains("Executable doesn't exist",
+                                                 StringComparison.OrdinalIgnoreCase))
         {
             await InstallPlaywrightBrowsersAsync();
             return await LaunchBrowserAsync();
@@ -107,7 +102,8 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         if (process.ExitCode != 0)
         {
             var error = await process.StandardError.ReadToEndAsync();
-            throw new InvalidOperationException($"Failed to install Playwright browsers. Exit code: {process.ExitCode}. {error}".Trim());
+            throw new InvalidOperationException(
+                $"Failed to install Playwright browsers. Exit code: {process.ExitCode}. {error}".Trim());
         }
     }
 }

@@ -6,8 +6,8 @@ namespace DottoressaIorio.Services.SqlLiteEncryption;
 public static class SqlLiteEncryptionExtensions
 {
     /// <summary>
-    /// Registers SqlLiteDbEncryptionService and configures ApplicationDbContext
-    /// with either encrypted or unencrypted SQLite.
+    ///     Registers SqlLiteDbEncryptionService and configures ApplicationDbContext
+    ///     with either encrypted or unencrypted SQLite.
     /// </summary>
     public static IServiceCollection AddSqlLiteDbEncryption<TContext>(
         this IServiceCollection services,

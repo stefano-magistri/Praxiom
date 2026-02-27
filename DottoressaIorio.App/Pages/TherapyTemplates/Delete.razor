@@ -2,17 +2,16 @@
 @inject TherapyTemplateRepository repository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
- 
-<PageHeader Title="Rimuovi Terapia Precompilata" /> 
+
+<PageHeader Title="Rimuovi Terapia Precompilata"/>
 
 <p>Vuoi rimuovere questa terapia precompilata?</p>
- 
-<CancelButton Url="/therapy-templates" />
-<RemoveButton OnClick="@SaveAsync" /> 
+
+<CancelButton Url="/therapy-templates"/>
+<RemoveButton OnClick="@SaveAsync"/>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private TherapyTemplate model;
 
@@ -27,4 +26,5 @@
         await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo("/therapy-templates");
     }
+
 }

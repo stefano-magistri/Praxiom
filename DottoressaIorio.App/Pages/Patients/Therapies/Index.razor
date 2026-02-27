@@ -96,7 +96,7 @@ else
                        value="@TherapySearchTerm"
                        @oninput="SearchTherapies"
                        placeholder="Cerca nella descrizione o per data (gg/MM/aaaa)"
-                       autocomplete="off" />
+                       autocomplete="off"/>
             </div>
 
             @if (DisplayedTherapies.Any())
@@ -107,33 +107,33 @@ else
                                 TotalPages="TherapyTotalPages"
                                 SelectedPage="HandleTherapySelectedPage"
                                 PreviousPage="PreviousTherapyPage"
-                                NextPage="NextTherapyPage" />
+                                NextPage="NextTherapyPage"/>
                 }
 
                 <div class="table-responsive patients-table-wrapper mt-0 mb-0">
                     <table class="table table-sm align-middle mb-0 patients-table">
                         <thead>
-                            <tr>
-                                <th>Data inizio terapia</th>
-                                <th>Descrizione</th>
-                                <th class="text-end">Azioni</th>
-                            </tr>
+                        <tr>
+                            <th>Data inizio terapia</th>
+                            <th>Descrizione</th>
+                            <th class="text-end">Azioni</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            @foreach (var t in DisplayedTherapies)
-                            {
-                                <tr>
-                                    <td>@t.CreatedDate.ToString("dd/MM/yyyy")</td>
-                                    <td class="text-truncate truncate-small">@t.Description</td>
-                                    <td class="text-end">
-                                        <div class="table-row-actions">
-                                            <ActionButton ButtonClass="primary" ButtonText="PDF" OnClick="() => PrintAsync(t.TherapyId)" IconClass="oi oi-data-transfer-download"></ActionButton>
-                                            <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditTherapy(t.TherapyId)" IconClass="oi oi-pencil"></ActionButton>
-                                            <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDeleteTherapy(t.TherapyId)" IconClass="oi oi-trash"></ActionButton>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
+                        @foreach (var t in DisplayedTherapies)
+                        {
+                            <tr>
+                                <td>@t.CreatedDate.ToString("dd/MM/yyyy")</td>
+                                <td class="text-truncate truncate-small">@t.Description</td>
+                                <td class="text-end">
+                                    <div class="table-row-actions">
+                                        <ActionButton ButtonClass="primary" ButtonText="PDF" OnClick="() => PrintAsync(t.TherapyId)" IconClass="oi oi-data-transfer-download"></ActionButton>
+                                        <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditTherapy(t.TherapyId)" IconClass="oi oi-pencil"></ActionButton>
+                                        <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDeleteTherapy(t.TherapyId)" IconClass="oi oi-trash"></ActionButton>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                         </tbody>
                     </table>
                 </div>
@@ -144,7 +144,7 @@ else
                                 TotalPages="TherapyTotalPages"
                                 SelectedPage="HandleTherapySelectedPage"
                                 PreviousPage="PreviousTherapyPage"
-                                NextPage="NextTherapyPage" />
+                                NextPage="NextTherapyPage"/>
                 }
             }
             else
@@ -206,6 +206,7 @@ else
                 {
                     await jsRuntime.InvokeVoidAsync("jsClosePreparedPdfTab", tabId);
                 }
+
                 return;
             }
 
@@ -222,6 +223,7 @@ else
             {
                 await jsRuntime.InvokeVoidAsync("jsClosePreparedPdfTab", tabId);
             }
+
             throw;
         }
     }
@@ -291,4 +293,5 @@ else
 
         return Task.CompletedTask;
     }
+
 }

@@ -21,20 +21,14 @@ public class PaginationBase : ComponentBase
 
     protected Task PreviousPageAsync()
     {
-        if (IsPreviousDisabled || !PreviousPage.HasDelegate)
-        {
-            return Task.CompletedTask;
-        }
+        if (IsPreviousDisabled || !PreviousPage.HasDelegate) return Task.CompletedTask;
 
         return PreviousPage.InvokeAsync();
     }
 
     protected Task NextPageAsync()
     {
-        if (IsNextDisabled || !NextPage.HasDelegate)
-        {
-            return Task.CompletedTask;
-        }
+        if (IsNextDisabled || !NextPage.HasDelegate) return Task.CompletedTask;
 
         return NextPage.InvokeAsync();
     }

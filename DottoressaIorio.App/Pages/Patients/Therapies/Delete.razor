@@ -4,12 +4,13 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
-<PageHeader Title="Rimuovi Terapia" /> 
+<PageHeader Title="Rimuovi Terapia"/>
 
 <p>Vuoi rimuovere questa terapia?</p>
- 
-<CancelButton Url="@($"/patient/{model.PatientId}/")" />
-<RemoveButton OnClick="@SaveAsync" />
+
+<CancelButton Url="@($"/patient/{model.PatientId}/")"/>
+<RemoveButton OnClick="@SaveAsync"/>
+
 @code {
     [Parameter] public int Id { get; set; }
 
@@ -26,4 +27,5 @@
         await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo($"/patient/{model.PatientId}/");
     }
+
 }

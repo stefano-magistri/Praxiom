@@ -43,12 +43,11 @@
     </div>
 
 </nav>
-@code {
-    [Parameter]
-    public string AppVersion { get; set; } = "unknown";
 
-    [Parameter]
-    public string StudioDisplayName { get; set; } = "Studio: Alessandra Iorio";
+@code {
+    [Parameter] public string AppVersion { get; set; } = "unknown";
+
+    [Parameter] public string StudioDisplayName { get; set; } = "Studio: Alessandra Iorio";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -59,4 +58,5 @@
     {
         await jsRuntime.InvokeVoidAsync("jsCloseNavbar");
     }
+
 }

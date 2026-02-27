@@ -8,17 +8,11 @@ public sealed class OptionalEmailAddressAttribute : ValidationAttribute
 
     public override bool IsValid(object? value)
     {
-        if (value is null)
-        {
-            return true;
-        }
+        if (value is null) return true;
 
         if (value is string email)
         {
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                return true;
-            }
+            if (string.IsNullOrWhiteSpace(email)) return true;
 
             return EmailValidator.IsValid(email.Trim());
         }

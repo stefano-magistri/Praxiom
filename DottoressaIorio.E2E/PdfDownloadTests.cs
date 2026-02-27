@@ -10,7 +10,7 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
     [Trait("Category", "E2E")]
     public async Task DownloadTherapyPdf_ShouldOpenPdfInNewTab()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -27,9 +27,10 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
         await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
 
         var popupTask = page.WaitForPopupAsync();
-        await page.GetByRole(AriaRole.Button, new() { Name = "Scarica ultima terapia" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" })
+            .ClickAsync();
         var popup = await popupTask;
-        
+
         var frame = popup.Locator("iframe[title='therapy-pdf']");
         await Expect(frame).ToHaveCountAsync(1);
         var src = await frame.GetAttributeAsync("src");

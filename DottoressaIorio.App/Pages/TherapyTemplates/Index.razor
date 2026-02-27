@@ -4,7 +4,7 @@
 @inject NavigationManager navigationManager
 
 
-<PageHeader Title="Terapie Precompilate" />
+<PageHeader Title="Terapie Precompilate"/>
 
 <div class="card patients-card">
     <div class="card-body p-4">
@@ -16,7 +16,7 @@
                    value="@SearchTerm"
                    @oninput="SearchTemplates"
                    placeholder="Cerca per titolo o descrizione"
-                   autocomplete="off" />
+                   autocomplete="off"/>
         </div>
 
         @if (DisplayedTemplates.Count == 0)
@@ -31,32 +31,32 @@
                             TotalPages="TotalPages"
                             SelectedPage="HandleSelectedPage"
                             PreviousPage="PreviousPage"
-                            NextPage="NextPage" />
+                            NextPage="NextPage"/>
             }
 
             <div class="table-responsive patients-table-wrapper">
                 <table class="table table-sm table-hover align-middle mb-0 patients-table">
                     <thead>
-                        <tr>
-                            <th>Titolo</th>
-                            <th>Descrizione</th>
-                            <th class="text-end">Azioni</th>
-                        </tr>
+                    <tr>
+                        <th>Titolo</th>
+                        <th>Descrizione</th>
+                        <th class="text-end">Azioni</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        @foreach (var template in DisplayedTemplates)
-                        {
-                            <tr>
-                                <td class="text-truncate truncate-small">@template.Title</td>
-                                <td class="text-truncate truncate-big">@template.Description</td>
-                                <td class="text-end">
-                                    <div class="table-row-actions">
-                                        <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEdit(template.Id)" IconClass="oi oi-pencil"></ActionButton>
-                                        <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDelete(template.Id)" IconClass="oi oi-trash"></ActionButton>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
+                    @foreach (var template in DisplayedTemplates)
+                    {
+                        <tr>
+                            <td class="text-truncate truncate-small">@template.Title</td>
+                            <td class="text-truncate truncate-big">@template.Description</td>
+                            <td class="text-end">
+                                <div class="table-row-actions">
+                                    <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEdit(template.Id)" IconClass="oi oi-pencil"></ActionButton>
+                                    <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDelete(template.Id)" IconClass="oi oi-trash"></ActionButton>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                     </tbody>
                 </table>
             </div>
@@ -67,7 +67,7 @@
                             TotalPages="TotalPages"
                             SelectedPage="HandleSelectedPage"
                             PreviousPage="PreviousPage"
-                            NextPage="NextPage" />
+                            NextPage="NextPage"/>
             }
         }
     </div>
@@ -153,4 +153,5 @@
     {
         navigationManager.NavigateTo($"/therapy-template/{id}/delete");
     }
+
 }

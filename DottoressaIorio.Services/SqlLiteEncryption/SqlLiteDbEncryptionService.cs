@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using System.IO;
 
 namespace DottoressaIorio.Services.SqlLiteEncryption;
 
@@ -10,8 +9,8 @@ public class SqlLiteDbEncryptionService(string key)
 
 
     /// <summary>
-    /// Returns the *raw* connection string that EF Core will use.
-    /// No PRAGMA applied here — this is for testing / debugging / DI config.
+    ///     Returns the *raw* connection string that EF Core will use.
+    ///     No PRAGMA applied here — this is for testing / debugging / DI config.
     /// </summary>
     public string GetConnectionString()
     {

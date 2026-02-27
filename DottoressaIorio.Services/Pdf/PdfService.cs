@@ -1,6 +1,6 @@
+using System.Runtime.InteropServices;
 using DottoressaIorio.Models;
 using Microsoft.Playwright;
-using System.Runtime.InteropServices;
 
 namespace DottoressaIorio.Services.Pdf;
 
@@ -11,7 +11,8 @@ public class PdfService(PdfHtmlBuilder builder)
         ConfigurePlaywrightBrowsersPath();
 
         using var playwright = await Playwright.CreateAsync();
-        await using var browser = await playwright.Chromium.LaunchAsync(new() { Headless = true });
+        await using var browser =
+            await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
 
         var page = await browser.NewPageAsync();
 

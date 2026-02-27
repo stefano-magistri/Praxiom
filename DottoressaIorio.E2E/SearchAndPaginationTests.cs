@@ -1,3 +1,4 @@
+using Microsoft.Playwright;
 using static Microsoft.Playwright.Assertions;
 
 namespace DottoressaIorio.E2E;
@@ -9,7 +10,7 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
     [Trait("Category", "E2E")]
     public async Task Patients_SearchAndPagination_ShouldWork()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -17,16 +18,14 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         var prefix = $"PAGPAZ{seed}";
 
         for (var i = 1; i <= 11; i++)
-        {
             await CreatePatientAsync(
                 page,
                 $"{prefix}{i:D2}",
                 "LN",
                 $"{prefix.ToLowerInvariant()}{i:D2}@example.test",
                 "1980-01-01");
-        }
 
-        await page.GotoAsync("/", new Microsoft.Playwright.PageGotoOptions { WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle });
+        await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await page.Locator("#search").FillAsync(prefix);
 
         var pageTwoButton = page.Locator("//button[contains(@class,'page-link') and normalize-space()='2']").First;
@@ -43,7 +42,7 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
     [Trait("Category", "E2E")]
     public async Task Patients_PaginationPrevNext_ShouldMoveActivePage()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -51,16 +50,14 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         var prefix = $"PAGNAV{seed}";
 
         for (var i = 1; i <= 11; i++)
-        {
             await CreatePatientAsync(
                 page,
                 $"{prefix}{i:D2}",
                 "LN",
                 $"{prefix.ToLowerInvariant()}{i:D2}@example.test",
                 "1980-01-01");
-        }
 
-        await page.GotoAsync("/", new Microsoft.Playwright.PageGotoOptions { WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle });
+        await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await page.Locator("#search").FillAsync(prefix);
 
         var pagination = page.Locator("nav[aria-label='Patients Pagination']").First;
@@ -91,11 +88,9 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         var prefix = $"PAGTPL-{seed}";
 
         for (var i = 1; i <= 11; i++)
-        {
             await CreateTherapyTemplateAsync(page, $"{prefix}-{i:D2}", $"Descrizione {prefix}-{i:D2}");
-        }
 
-        await page.GotoAsync("/therapy-templates", new Microsoft.Playwright.PageGotoOptions { WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle });
+        await page.GotoAsync("/therapy-templates", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await page.Locator("#templateSearch").FillAsync(prefix);
 
         var pageTwoButton = page.Locator("//button[contains(@class,'page-link') and normalize-space()='2']").First;
@@ -112,7 +107,7 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
     [Trait("Category", "E2E")]
     public async Task PatientTherapies_SearchAndPagination_ShouldWork()
     {
-        var setup = await NewAuthorizedPageAsync("/");
+        var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -125,12 +120,9 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
             "1984-04-04");
 
         var prefix = $"PAGTH-{seed}";
-        for (var i = 1; i <= 9; i++)
-        {
-            await CreateTherapyAsync(page, patientId, $"{prefix}-{i:D2}");
-        }
+        for (var i = 1; i <= 9; i++) await CreateTherapyAsync(page, patientId, $"{prefix}-{i:D2}");
 
-        await page.GotoAsync($"/patient/{patientId}/", new Microsoft.Playwright.PageGotoOptions { WaitUntil = Microsoft.Playwright.WaitUntilState.NetworkIdle });
+        await page.GotoAsync($"/patient/{patientId}/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await page.Locator("#therapySearch").FillAsync(prefix);
 
         var pageTwoButton = page.Locator("//button[contains(@class,'page-link') and normalize-space()='2']").First;

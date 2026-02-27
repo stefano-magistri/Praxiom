@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace DottoressaIorio.Repositories;
 
 /// <summary>
-/// A generic repository implementation that provides common CRUD operations for entities.
+///     A generic repository implementation that provides common CRUD operations for entities.
 /// </summary>
 /// <typeparam name="T">The type of entity this repository handles. Must implement IDataHandler.</typeparam>
 public class GenericRepository<T> where T : class, IDataHandler
@@ -14,7 +14,7 @@ public class GenericRepository<T> where T : class, IDataHandler
     private readonly ApplicationDbContext _context;
 
     /// <summary>
-    /// Initializes a new instance of the GenericRepository class.
+    ///     Initializes a new instance of the GenericRepository class.
     /// </summary>
     /// <param name="context">The database context to use for operations.</param>
     public GenericRepository(ApplicationDbContext context)
@@ -23,7 +23,7 @@ public class GenericRepository<T> where T : class, IDataHandler
     }
 
     /// <summary>
-    /// Retrieves an entity by its unique identifier.
+    ///     Retrieves an entity by its unique identifier.
     /// </summary>
     /// <param name="id">The unique identifier of the entity to retrieve.</param>
     /// <returns>The entity if found, null otherwise.</returns>
@@ -31,17 +31,14 @@ public class GenericRepository<T> where T : class, IDataHandler
     {
         var entity = await _context.Set<T>().FindAsync(id);
 
-        if (entity is null)
-        {
-            return null;
-        }
+        if (entity is null) return null;
 
         _context.Entry(entity).State = EntityState.Detached;
         return entity;
     }
 
     /// <summary>
-    /// Retrieves all entities of type T from the database.
+    ///     Retrieves all entities of type T from the database.
     /// </summary>
     /// <returns>A list of all entities.</returns>
     public async Task<IList<T>> GetAllAsync()
@@ -50,7 +47,7 @@ public class GenericRepository<T> where T : class, IDataHandler
     }
 
     /// <summary>
-    /// Adds a new entity to the database.
+    ///     Adds a new entity to the database.
     /// </summary>
     /// <param name="entity">The entity to add.</param>
     public Task AddAsync(T entity)
@@ -61,7 +58,7 @@ public class GenericRepository<T> where T : class, IDataHandler
     }
 
     /// <summary>
-    /// Updates an existing entity in the database.
+    ///     Updates an existing entity in the database.
     /// </summary>
     /// <param name="entity">The entity to update.</param>
     public Task UpdateAsync(T entity)
@@ -72,28 +69,25 @@ public class GenericRepository<T> where T : class, IDataHandler
     }
 
     /// <summary>
-    /// Soft deletes an entity by marking it as deleted.
+    ///     Soft deletes an entity by marking it as deleted.
     /// </summary>
     /// <param name="entity">The entity to delete.</param>
     public Task DeleteAsync(T entity)
     {
         var entityType = _context.Model.FindEntityType(typeof(T))
-            ?? throw new InvalidOperationException($"Entity type {typeof(T).Name} is not mapped.");
+                         ?? throw new InvalidOperationException($"Entity type {typeof(T).Name} is not mapped.");
         var primaryKey = entityType.FindPrimaryKey()
-            ?? throw new InvalidOperationException($"Entity type {typeof(T).Name} has no primary key.");
+                         ?? throw new InvalidOperationException($"Entity type {typeof(T).Name} has no primary key.");
         var keyValues = GetKeyValues(entity, primaryKey.Properties);
 
         var target = FindTrackedEntityByKey(primaryKey.Properties, keyValues)
-            ?? CreateKeyOnlyEntity(primaryKey.Properties, keyValues);
+                     ?? CreateKeyOnlyEntity(primaryKey.Properties, keyValues);
 
         target.Deleted = true;
         target.EditDate = DateTime.Now;
 
         var entry = _context.Entry(target);
-        if (entry.State == EntityState.Detached)
-        {
-            _context.Set<T>().Attach(target);
-        }
+        if (entry.State == EntityState.Detached) _context.Set<T>().Attach(target);
 
         _context.Entry(target).Property(x => x.Deleted).IsModified = true;
         _context.Entry(target).Property(x => x.EditDate).IsModified = true;
@@ -122,10 +116,7 @@ public class GenericRepository<T> where T : class, IDataHandler
                 }
             }
 
-            if (allMatch)
-            {
-                return trackedEntry.Entity;
-            }
+            if (allMatch) return trackedEntry.Entity;
         }
 
         return null;
@@ -134,13 +125,13 @@ public class GenericRepository<T> where T : class, IDataHandler
     private static T CreateKeyOnlyEntity(IReadOnlyList<IProperty> keyProperties, object?[] keyValues)
     {
         var instance = Activator.CreateInstance<T>()
-            ?? throw new InvalidOperationException($"Could not create instance of {typeof(T).Name}.");
+                       ?? throw new InvalidOperationException($"Could not create instance of {typeof(T).Name}.");
 
         for (var i = 0; i < keyProperties.Count; i++)
         {
             var keyProperty = typeof(T).GetProperty(keyProperties[i].Name)
-                ?? throw new InvalidOperationException(
-                    $"Key property '{keyProperties[i].Name}' was not found on {typeof(T).Name}.");
+                              ?? throw new InvalidOperationException(
+                                  $"Key property '{keyProperties[i].Name}' was not found on {typeof(T).Name}.");
             keyProperty.SetValue(instance, keyValues[i]);
         }
 

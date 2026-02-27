@@ -9,7 +9,6 @@ public static class AuthorizationExtensions
         IConfiguration config,
         bool useNegotiate, string allowedUsername)
     {
-
         // Configure authorization policies
         services.AddAuthorization(options =>
         {
@@ -37,7 +36,7 @@ public static class AuthorizationExtensions
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAssertion(context => !useNegotiate || context.User.Identity?.IsAuthenticated == true)
                 .Build();
-        }); 
+        });
         return services;
     }
 }

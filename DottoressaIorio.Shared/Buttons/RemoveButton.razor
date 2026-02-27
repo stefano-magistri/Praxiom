@@ -1,6 +1,5 @@
-﻿<ActionButton ButtonText="Rimuovi" ButtonClass="danger" IconClass="oi oi-trash" OnClick="@OnClick" />
+﻿<ActionButton ButtonText="Rimuovi" ButtonClass="danger" IconClass="oi oi-trash" OnClick="@OnClick"/>
 
 @code {
-    [Parameter, EditorRequired]
-    public EventCallback OnClick { get; set; } 
+    [Parameter] [EditorRequired] public EventCallback OnClick { get; set; }
 }

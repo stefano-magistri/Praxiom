@@ -4,10 +4,10 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
-<PageHeader Title="Modifica Terapia" />
+<PageHeader Title="Modifica Terapia"/>
 
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
-    <DataAnnotationsValidator />
+    <DataAnnotationsValidator/>
     @if (!string.IsNullOrEmpty(warningMessage))
     {
         <div class="alert alert-warning" role="alert">
@@ -17,19 +17,18 @@
     <div class="row g-3">
         <div class="col-12">
             <label for="Description">Descrizione:</label>
-            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control" />
-            <ValidationMessage For="@(() => model.Description)" />
+            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control"/>
+            <ValidationMessage For="@(() => model.Description)"/>
         </div>
     </div>
 
-    <hr class="my-4"> 
-    <CancelButton Url="@($"/patient/{model.PatientId}/")" />
-    <SubmitButton /> 
+    <hr class="my-4">
+    <CancelButton Url="@($"/patient/{model.PatientId}/")"/>
+    <SubmitButton/>
 </EditForm>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private Therapy model;
     private string warningMessage = "";
@@ -52,4 +51,5 @@
             warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
         }
     }
+
 }

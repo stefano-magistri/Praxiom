@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
 /// <summary>
-/// Contains unit tests for the <see cref="PatientTherapyRepository"/> class.
+///     Contains unit tests for the <see cref="PatientTherapyRepository" /> class.
 /// </summary>
 public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
 {
@@ -41,8 +41,8 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
     };
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PatientTherapyRepositoryTests"/> class.
-    /// Sets up an in-memory database for testing purposes.
+    ///     Initializes a new instance of the <see cref="PatientTherapyRepositoryTests" /> class.
+    ///     Sets up an in-memory database for testing purposes.
     /// </summary>
     public PatientTherapyRepositoryTests()
     {
@@ -54,7 +54,7 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously disposes of the test resources.
+    ///     Asynchronously disposes of the test resources.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
@@ -62,7 +62,7 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Disposes of the test resources.
+    ///     Disposes of the test resources.
     /// </summary>
     public void Dispose()
     {
@@ -70,7 +70,7 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the GetAllAsync method returns all therapies for a specific patient.
+    ///     Tests that the GetAllAsync method returns all therapies for a specific patient.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
@@ -131,10 +131,7 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
         var therapies = await therapyRepository.GetAllAsync(1);
         Assert.True(therapies.Count > 1);
 
-        foreach (var therapy in therapies)
-        {
-            await therapyRepository.DeleteAsync(therapy);
-        }
+        foreach (var therapy in therapies) await therapyRepository.DeleteAsync(therapy);
         await patientRepository.DeleteAsync(patient!);
 
         var ex = await Record.ExceptionAsync(() => _context.SaveChangesAsync());
@@ -148,7 +145,8 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     [Fact]
-    public async Task DeleteDetachedPatient_WithDetachedTherapyGraph_AndTrackedTherapies_ShouldNotThrowTrackingConflict()
+    public async Task
+        DeleteDetachedPatient_WithDetachedTherapyGraph_AndTrackedTherapies_ShouldNotThrowTrackingConflict()
     {
         await SeedDataAsync();
         _context.ChangeTracker.Clear();
@@ -177,7 +175,7 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Seeds the test database with initial data.
+    ///     Seeds the test database with initial data.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task SeedDataAsync()

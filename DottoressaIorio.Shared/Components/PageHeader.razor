@@ -3,9 +3,7 @@
 <hr class="my-4">
 
 @code {
-    [Parameter, EditorRequired]
-    public string Title { get; set; }
+    [Parameter] [EditorRequired] public string Title { get; set; }
 
-    [Parameter]
-    public string? Heading { get; set; }
+    [Parameter] public string? Heading { get; set; }
 }

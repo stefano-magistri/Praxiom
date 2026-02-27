@@ -12,7 +12,7 @@ public sealed class E2eSettings
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.json", true)
             .AddEnvironmentVariables()
             .Build();
 
