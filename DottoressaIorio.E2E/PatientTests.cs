@@ -124,4 +124,31 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await Expect(page.GetByText(firstName)).ToBeVisibleAsync();
         await Expect(page.GetByRole(AriaRole.Link, new() { Name = "Modifica" })).ToBeVisibleAsync();
     }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task DeletePatient_WithTherapies_ShouldRemovePatientFromIndex()
+    {
+        var setup = await NewAuthorizedPageAsync("/");
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var firstName = $"TherDelNome{seed}";
+        var lastName = $"TherDelCognome{seed}";
+        var email = $"{seed}.therdel@example.test";
+        var therapyDescription = $"Therapy before delete {seed}";
+
+        var patientId = await CreatePatientAsync(page, firstName, lastName, email, "1981-01-01");
+        await CreateTherapyAsync(page, patientId, therapyDescription);
+        await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
+
+        await page.GetByRole(AriaRole.Link, new() { Name = "Rimuovi" }).ClickAsync();
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
+        await page.GetByRole(AriaRole.Button, new() { Name = "Rimuovi" }).ClickAsync();
+
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
+        await page.Locator("#search").FillAsync(firstName);
+        await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
+    }
 }

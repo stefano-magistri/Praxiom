@@ -4,12 +4,26 @@ window.jsLoadFeather = () => {
 }
 
 window.jsSaveAsFile = (filename, byteBase64) => {
+    var binary = atob(byteBase64);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+
+    var blob = new Blob([bytes], { type: 'application/pdf' });
+    var url = URL.createObjectURL(blob);
+
     var link = document.createElement('a');
     link.download = filename;
-    link.href = "data:application/pdf;base64," + byteBase64;
+    link.href = url;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Revoke asynchronously to avoid revoking before the browser starts the download.
+    setTimeout(function () {
+        URL.revokeObjectURL(url);
+    }, 100);
 }
 
 window.jsCloseNavbar = () => {

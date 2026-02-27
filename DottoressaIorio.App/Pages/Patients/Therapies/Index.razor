@@ -201,6 +201,8 @@ else
             return;
         }
 
+        therapy.Patient ??= patient;
+
         var pdfBytes = await pdfService.GenerateTherapyPdfAsync(therapy);
         var pdfBase64 = Convert.ToBase64String(pdfBytes);
         var filename = $"{patient.FirstName}_{patient.LastName}_{therapy.CreatedDate:yy_MM_dd}_{DateTime.Now.ToFileTimeUtc()}.pdf";

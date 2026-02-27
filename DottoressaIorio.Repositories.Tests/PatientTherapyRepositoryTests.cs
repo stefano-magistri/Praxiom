@@ -84,6 +84,30 @@ public class PatientTherapyRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(expectedTherapies.Select(t => t.TherapyId), result.Select(t => t.TherapyId));
     }
 
+    [Fact]
+    public async Task DeletePatientAfterLoadingTherapies_ShouldNotThrowTrackingConflict()
+    {
+        await SeedDataAsync();
+        _context.ChangeTracker.Clear();
+
+        var patientRepository = new PatientRepository(_context);
+        var therapyRepository = new PatientTherapyRepository(_context);
+
+        var patient = await patientRepository.GetByIdAsync(1);
+        Assert.NotNull(patient);
+
+        var therapies = await therapyRepository.GetAllAsync(1);
+        Assert.NotEmpty(therapies);
+
+        var ex = await Record.ExceptionAsync(async () =>
+        {
+            await patientRepository.DeleteAsync(patient!);
+            await _context.SaveChangesAsync();
+        });
+
+        Assert.Null(ex);
+    }
+
     /// <summary>
     /// Seeds the test database with initial data.
     /// </summary>

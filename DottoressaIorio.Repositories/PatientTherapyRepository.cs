@@ -28,7 +28,6 @@ public class PatientTherapyRepository : GenericRepository<Therapy>
     public async Task<IList<Therapy>> GetAllAsync(int patientId)
     {
         return await context.Therapies
-            .Include(x => x.Patient)
             .Where(t => t.PatientId == patientId)
             .OrderBy(t => t.CreatedDate)
             .ToListAsync();
