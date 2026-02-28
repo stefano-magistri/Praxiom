@@ -41,7 +41,7 @@
                         <tr>
                             <td>
                                 <span class="oi oi-eye px-2 text-muted" aria-hidden="true"></span>
-                                <a class="patient-link" href="/patient/@patient.PatientId/">@patient.Title @patient.FirstName @patient.LastName</a>
+                                <a class="patient-link" href="/patient/@patient.PatientId/">@patient.Title @FormatPatientDisplayName(patient.FirstName, patient.LastName)</a>
                             </td>
                             <td>
                                 @patient.DateOfBirth?.ToString("dd/MM/yyyy")
