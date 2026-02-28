@@ -60,7 +60,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await editedRow.Locator("button").Nth(2).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Terapia");
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
-        await Expect(page.GetByTestId("page-heading")).ToContainTextAsync("EditThNome",
+        await Expect(page.GetByTestId("page-heading")).ToContainTextAsync("Editthnome",
             new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
         await Expect(page.Locator($"//tbody/tr[contains(., '{editedDescription}')]")).ToHaveCountAsync(0);
     }

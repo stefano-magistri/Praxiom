@@ -3,14 +3,12 @@
 
 <PageHeader Title="Pazienti"/>
 
-<p class="patients-subtitle">Ricerca un paziente e crea subito una nuova terapia.</p>
-
 <div class="card patients-card" data-testid="patients-page">
     <div class="card-body p-4">
-        <div class="mb-4">
-            <label for="search" class="form-label">Cerca il paziente <i>(nome, cognome o entrambi):</i></label>
-            <input type="text" class="form-control" id="search" @bind="SearchTerm" @oninput="SearchPatients" autocomplete="off"/>
-        </div>
+        <SearchBox Id="search"
+                   Value="@SearchTerm"
+                   OnInput="SearchPatients"
+                   Placeholder="Cerca paziente per nome, cognome o entrambi"/>
 
         @if (DisplayedPatients == null || DisplayedPatients.Count == 0)
         {
@@ -43,7 +41,7 @@
                         <tr>
                             <td>
                                 <span class="oi oi-eye px-2 text-muted" aria-hidden="true"></span>
-                                <a class="patient-link" href="/patient/@patient.PatientId/">@patient.Title @patient.FirstName @patient.LastName</a>
+                                <a class="patient-link" href="/patient/@patient.PatientId/">@patient.Title @FormatPatientDisplayName(patient.FirstName, patient.LastName)</a>
                             </td>
                             <td>
                                 @patient.DateOfBirth?.ToString("dd/MM/yyyy")

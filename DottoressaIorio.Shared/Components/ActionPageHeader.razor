@@ -1,0 +1,13 @@
+<PageTitle>@Title</PageTitle>
+<h1 class="page-title h2 mb-1" data-testid="page-heading">@Title</h1>
+@if (!string.IsNullOrWhiteSpace(Subtitle))
+{
+    <div class="text-muted">@Subtitle</div>
+}
+<hr class="my-4">
+
+@code {
+    [Parameter] [EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public string? Subtitle { get; set; }
+}

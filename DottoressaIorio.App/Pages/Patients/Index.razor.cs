@@ -1,6 +1,7 @@
-﻿using DottoressaIorio.Models;
+using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
 using Microsoft.AspNetCore.Components;
+using System.Globalization;
 
 namespace DottoressaIorio.App.Pages.Patients;
 
@@ -155,4 +156,22 @@ public class PatientsBase : ComponentBase
             await UpdateDisplayedPatients();
         }
     }
+
+    protected static string FormatPatientDisplayName(string? firstName, string? lastName)
+    {
+        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
+        return FormatTitleCase(fullName);
+    }
+
+    protected static string FormatTitleCase(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+            value.ToLower(CultureInfo.CurrentCulture));
+    }
 }
+

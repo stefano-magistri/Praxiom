@@ -17,6 +17,8 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         var seed = Guid.NewGuid().ToString("N")[..8];
         var addedTitle = $"AAA ADD TEST {seed}";
         var editedTitle = $"AAA MODIFICA TEST {seed}";
+        var addedTitleDisplayed = FormatTitleCase(addedTitle);
+        var editedTitleDisplayed = FormatTitleCase(editedTitle);
         var addedDescription = $"AGGIUNGI TEST Descrizione: {seed}";
         var editedDescription = $"MODIFICA TEST Descrizione: {seed}";
 
@@ -26,7 +28,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await SubmitTemplateFormAsync(page);
 
         await FilterTemplatesAsync(page, addedTitle);
-        var addedRow = page.Locator($"//tbody/tr[contains(., '{addedTitle}')]").First;
+        var addedRow = page.Locator($"//tbody/tr[contains(., '{addedTitleDisplayed}')]").First;
         await Expect(addedRow).ToBeVisibleAsync();
 
         await addedRow.Locator("button").First.ClickAsync();
@@ -38,7 +40,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
 
         await FilterTemplatesAsync(page, editedTitle);
-        var editedRow = page.Locator($"//tbody/tr[contains(., '{editedTitle}')]").First;
+        var editedRow = page.Locator($"//tbody/tr[contains(., '{editedTitleDisplayed}')]").First;
         await Expect(editedRow).ToBeVisibleAsync();
 
         await editedRow.Locator("button").Nth(1).ClickAsync();
@@ -48,7 +50,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
 
         await FilterTemplatesAsync(page, editedTitle);
-        await Expect(page.Locator($"//tbody/tr[contains(., '{editedTitle}')]")).ToHaveCountAsync(0);
+        await Expect(page.Locator($"//tbody/tr[contains(., '{editedTitleDisplayed}')]")).ToHaveCountAsync(0);
     }
 
     [Fact]
@@ -61,6 +63,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
 
         var seed = Guid.NewGuid().ToString("N")[..8];
         var title = $"ADD TEMPLATE {seed}";
+        var titleDisplayed = FormatTitleCase(title);
         var description = $"Template description {seed}";
 
         await page.GetByTestId("create-therapy-template-nav-link").ClickAsync();
@@ -69,7 +72,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await SubmitTemplateFormAsync(page);
 
         await FilterTemplatesAsync(page, title);
-        await Expect(page.Locator($"//tbody/tr[contains(., '{title}')]").First).ToBeVisibleAsync();
+        await Expect(page.Locator($"//tbody/tr[contains(., '{titleDisplayed}')]").First).ToBeVisibleAsync();
     }
 
     [Fact]

@@ -5,10 +5,9 @@
 
 <PageHeader Title="Rimuovi Terapia Precompilata"/>
 
-<p>Vuoi rimuovere questa terapia precompilata?</p>
-
-<CancelButton Url="/therapy-templates"/>
-<RemoveButton OnClick="@SaveAsync"/>
+<ConfirmDeleteSection ConfirmationText="Vuoi rimuovere questa terapia precompilata?"
+                      CancelUrl="/therapy-templates"
+                      OnConfirm="@SaveAsync"/>
 
 @code {
     [Parameter] public int Id { get; set; }

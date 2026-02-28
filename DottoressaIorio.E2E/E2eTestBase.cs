@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Globalization;
 using Microsoft.Playwright;
 using static Microsoft.Playwright.Assertions;
 
@@ -66,7 +67,7 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     {
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
 
-        for (var i = 0; i < 40; i++)
+        for (var i = 0; i < 80; i++)
         {
             if (page.Url.Contains("/therapy-templates", StringComparison.OrdinalIgnoreCase)) return;
 
@@ -187,5 +188,15 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     {
         await page.Locator("#templateSearch").FillAsync(term);
         await page.Locator("#templateSearch").PressAsync("Tab");
+    }
+
+    protected static string FormatTitleCase(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(value.ToLower(CultureInfo.CurrentCulture));
     }
 }

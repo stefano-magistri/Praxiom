@@ -8,16 +8,10 @@
 
 <div class="card patients-card">
     <div class="card-body p-4">
-        <div class="mb-3">
-            <label for="templateSearch" class="form-label">Cerca terapia precompilata</label>
-            <input id="templateSearch"
-                   type="text"
-                   class="form-control"
-                   value="@SearchTerm"
-                   @oninput="SearchTemplates"
-                   placeholder="Cerca per titolo o descrizione"
-                   autocomplete="off"/>
-        </div>
+        <SearchBox Id="templateSearch"
+                   Value="@SearchTerm"
+                   OnInput="SearchTemplates"
+                   Placeholder="Cerca terapia precompilata per titolo o descrizione"/>
 
         @if (DisplayedTemplates.Count == 0)
         {
@@ -47,7 +41,7 @@
                     @foreach (var template in DisplayedTemplates)
                     {
                         <tr>
-                            <td class="text-truncate truncate-small">@template.Title</td>
+                            <td class="text-truncate truncate-small">@FormatTitleCase(template.Title)</td>
                             <td class="text-truncate truncate-big">@template.Description</td>
                             <td class="text-end">
                                 <div class="table-row-actions">
@@ -152,6 +146,17 @@
     private void NavigateToDelete(int id)
     {
         navigationManager.NavigateTo($"/therapy-template/{id}/delete");
+    }
+
+    private static string FormatTitleCase(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+            value.ToLower(System.Globalization.CultureInfo.CurrentCulture));
     }
 
 }
