@@ -88,16 +88,11 @@ else
                 </div>
             }
 
-            <div class="mb-3">
-                <label for="therapySearch" class="form-label">Cerca terapia</label>
-                <input id="therapySearch"
-                       type="text"
-                       class="form-control"
-                       value="@TherapySearchTerm"
-                       @oninput="SearchTherapies"
-                       placeholder="Cerca nella descrizione o per data (gg/MM/aaaa)"
-                       autocomplete="off"/>
-            </div>
+            <SearchBox Id="therapySearch"
+                       Label="Cerca terapia"
+                       Value="@TherapySearchTerm"
+                       OnInput="SearchTherapies"
+                       Placeholder="Cerca nella descrizione o per data (gg/MM/aaaa)"/>
 
             @if (DisplayedTherapies.Any())
             {

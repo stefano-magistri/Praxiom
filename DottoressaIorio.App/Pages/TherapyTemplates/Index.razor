@@ -8,16 +8,11 @@
 
 <div class="card patients-card">
     <div class="card-body p-4">
-        <div class="mb-3">
-            <label for="templateSearch" class="form-label">Cerca terapia precompilata</label>
-            <input id="templateSearch"
-                   type="text"
-                   class="form-control"
-                   value="@SearchTerm"
-                   @oninput="SearchTemplates"
-                   placeholder="Cerca per titolo o descrizione"
-                   autocomplete="off"/>
-        </div>
+        <SearchBox Id="templateSearch"
+                   Label="Cerca terapia precompilata"
+                   Value="@SearchTerm"
+                   OnInput="SearchTemplates"
+                   Placeholder="Cerca per titolo o descrizione"/>
 
         @if (DisplayedTemplates.Count == 0)
         {

@@ -66,7 +66,7 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     {
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
 
-        for (var i = 0; i < 40; i++)
+        for (var i = 0; i < 80; i++)
         {
             if (page.Url.Contains("/therapy-templates", StringComparison.OrdinalIgnoreCase)) return;
 

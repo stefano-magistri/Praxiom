@@ -6,10 +6,9 @@
 
 <ActionPageHeader Title="Rimuovi Paziente" Subtitle="@FormattedPatientName"/>
 
-<p>Vuoi rimuovere questo paziente?</p>
-
-<CancelButton Url="@($"/patient/{Id}/")"/>
-<RemoveButton OnClick="@SaveAsync"/>
+<ConfirmDeleteSection ConfirmationText="Vuoi rimuovere questo paziente?"
+                      CancelUrl="@($"/patient/{Id}/")"
+                      OnConfirm="@SaveAsync"/>
 
 @code {
     [Parameter] public int Id { get; set; }
