@@ -7,6 +7,7 @@
     <Project Path="DottoressaIorio.Shared/DottoressaIorio.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="DottoressaIorio.App.Tests/DottoressaIorio.App.Tests.csproj" />
     <Project Path="DottoressaIorio.E2E/DottoressaIorio.E2E.csproj" />
     <Project Path="DottoressaIorio.Repositories.Tests/DottoressaIorio.Repositories.Tests.csproj" />
     <Project Path="DottoressaIorio.Services.Tests/DottoressaIorio.Services.Tests.csproj" />
