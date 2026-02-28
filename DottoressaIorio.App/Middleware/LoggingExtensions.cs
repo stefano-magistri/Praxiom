@@ -5,20 +5,37 @@ namespace DottoressaIorio.App.Middleware;
 
 public static class LoggingExtensions
 {
-    public static IHostApplicationBuilder AddDottoressaLogging(this WebApplicationBuilder builder)
+    public static (LogEventLevel MinimumLevel, LogEventLevel MicrosoftLevel, string LogFilePath)
+        GetLoggingSettings(IHostEnvironment environment)
     {
-        var logsDirectory = Path.Combine(
+        if (environment.IsDevelopment())
+        {
+            var developmentLogFilePath = Path.Combine(
+                environment.ContentRootPath,
+                "logs",
+                "DottoressaIorio.App.log");
+            return (LogEventLevel.Debug, LogEventLevel.Information, developmentLogFilePath);
+        }
+
+        var productionLogFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "DottoressaIorio",
-            "logs");
-        Directory.CreateDirectory(logsDirectory);
+            "logs",
+            "DottoressaIorio.App.log");
+        return (LogEventLevel.Information, LogEventLevel.Warning, productionLogFilePath);
+    }
 
-        var logFilePath = Path.Combine(logsDirectory, "DottoressaIorio.App.log");
+    public static IHostApplicationBuilder AddDottoressaLogging(this WebApplicationBuilder builder)
+    {
+        var (minimumLevel, microsoftLevel, logFilePath) = GetLoggingSettings(builder.Environment);
+        var logsDirectory = Path.GetDirectoryName(logFilePath)
+            ?? throw new InvalidOperationException("Unable to resolve log directory path.");
+        Directory.CreateDirectory(logsDirectory);
 
         builder.Logging.ClearProviders();
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Is(minimumLevel)
+            .MinimumLevel.Override("Microsoft", microsoftLevel)
             .Enrich.FromLogContext()
             .WriteTo.Console()
             .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day, shared: true)
