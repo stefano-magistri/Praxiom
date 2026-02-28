@@ -9,10 +9,9 @@
 <div class="card patients-card">
     <div class="card-body p-4">
         <SearchBox Id="templateSearch"
-                   Label="Cerca terapia precompilata"
                    Value="@SearchTerm"
                    OnInput="SearchTemplates"
-                   Placeholder="Cerca per titolo o descrizione"/>
+                   Placeholder="Cerca terapia precompilata per titolo o descrizione"/>
 
         @if (DisplayedTemplates.Count == 0)
         {

@@ -1,5 +1,8 @@
 <div class="mb-3">
-    <label for="@Id" class="form-label">@Label</label>
+    @if (!string.IsNullOrEmpty(Label))
+    {        
+        <label for="@Id" class="form-label">@Label</label>
+    }
     <input id="@Id"
            type="text"
            class="form-control"
@@ -12,7 +15,7 @@
 @code {
     [Parameter] [EditorRequired] public string Id { get; set; } = string.Empty;
 
-    [Parameter] [EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Label { get; set; } = string.Empty;
 
     [Parameter] public string Value { get; set; } = string.Empty;
 

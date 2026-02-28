@@ -3,15 +3,12 @@
 
 <PageHeader Title="Pazienti"/>
 
-<p class="patients-subtitle">Ricerca un paziente e crea subito una nuova terapia.</p>
-
 <div class="card patients-card" data-testid="patients-page">
     <div class="card-body p-4">
         <SearchBox Id="search"
-                   Label="Cerca paziente"
                    Value="@SearchTerm"
                    OnInput="SearchPatients"
-                   Placeholder="Cerca per nome, cognome o entrambi"/>
+                   Placeholder="Cerca paziente per nome, cognome o entrambi"/>
 
         @if (DisplayedPatients == null || DisplayedPatients.Count == 0)
         {
