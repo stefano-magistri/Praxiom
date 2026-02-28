@@ -3,10 +3,7 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
-<PageTitle>Modifica Paziente</PageTitle>
-<h1>Modifica Paziente</h1>
-
-<hr class="my-4">
+<ActionPageHeader Title="Modifica Paziente" Subtitle="@FormattedPatientName"/>
 @if (model == null)
 {
     <p>ID paziente non valido o paziente non trovato.</p>
@@ -113,6 +110,9 @@ else
 
     private Patient model;
     private string warningMessage = "";
+    private string FormattedPatientName => model == null
+        ? string.Empty
+        : FormatFullName(model.FirstName, model.LastName);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -131,6 +131,18 @@ else
         {
             warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
         }
+    }
+
+    private static string FormatFullName(string? firstName, string? lastName)
+    {
+        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return string.Empty;
+        }
+
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
     }
 
 }

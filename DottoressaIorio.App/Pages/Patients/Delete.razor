@@ -4,7 +4,7 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
-<PageHeader Title="Rimuovi Paziente"/>
+<ActionPageHeader Title="Rimuovi Paziente" Subtitle="@FormattedPatientName"/>
 
 <p>Vuoi rimuovere questo paziente?</p>
 
@@ -15,6 +15,9 @@
     [Parameter] public int Id { get; set; }
 
     private Patient model;
+    private string FormattedPatientName => model == null
+        ? string.Empty
+        : FormatFullName(model.FirstName, model.LastName);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -34,6 +37,18 @@
             await repository.DeleteAsync(model);
         });
         navigationManager.NavigateTo("/");
+    }
+
+    private static string FormatFullName(string? firstName, string? lastName)
+    {
+        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return string.Empty;
+        }
+
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
     }
 
 }

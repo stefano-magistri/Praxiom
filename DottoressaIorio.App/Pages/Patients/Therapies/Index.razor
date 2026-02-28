@@ -169,7 +169,7 @@ else
 
     private string PatientPageTitle => patient == null
         ? "Paziente"
-        : $"{patient.Title} {patient.FirstName} {patient.LastName}";
+        : FormatFullName(patient.FirstName, patient.LastName);
 
     private Therapy? LatestTherapy => allTherapies
         .OrderByDescending(t => t.CreatedDate)
@@ -292,6 +292,18 @@ else
             .ToList();
 
         return Task.CompletedTask;
+    }
+
+    private static string FormatFullName(string? firstName, string? lastName)
+    {
+        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return string.Empty;
+        }
+
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
     }
 
 }

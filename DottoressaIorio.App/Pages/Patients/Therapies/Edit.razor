@@ -1,10 +1,11 @@
 ﻿@page "/patient/{id:int}/edit-therapy"
 
 @inject PatientTherapyRepository repository
+@inject PatientRepository patientRepository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
-<PageHeader Title="Modifica Terapia"/>
+<ActionPageHeader Title="Modifica Terapia" Subtitle="@FormattedPatientName"/>
 
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
     <DataAnnotationsValidator/>
@@ -30,12 +31,20 @@
 @code {
     [Parameter] public int Id { get; set; }
 
+    private Patient? patient;
     private Therapy model;
     private string warningMessage = "";
+    private string FormattedPatientName => patient == null
+        ? string.Empty
+        : FormatFullName(patient.FirstName, patient.LastName);
 
     protected override async Task OnParametersSetAsync()
     {
         model = await repository.GetByIdAsync(Id);
+        if (model != null)
+        {
+            patient = await patientRepository.GetByIdAsync(model.PatientId);
+        }
     }
 
     private async Task SaveAsync()
@@ -50,6 +59,18 @@
         {
             warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
         }
+    }
+
+    private static string FormatFullName(string? firstName, string? lastName)
+    {
+        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return string.Empty;
+        }
+
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
     }
 
 }
