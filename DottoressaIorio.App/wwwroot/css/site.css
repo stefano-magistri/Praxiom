@@ -35,6 +35,12 @@ h4 {
     color: #173248;
 }
 
+.page-title:focus,
+.page-title:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
 p,
 label,
 small,
