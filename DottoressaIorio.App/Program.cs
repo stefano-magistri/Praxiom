@@ -73,6 +73,8 @@ try
     if (useNegotiate) app.UseAuthentication();
     app.UseAuthorization();
 
+    app.MapDottoressaPdfEndpoints();
+
     app.MapBlazorHub();
     app.MapFallbackToPage("/_Host");
 
