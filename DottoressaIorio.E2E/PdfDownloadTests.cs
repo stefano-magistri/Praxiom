@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Playwright;
 using static Microsoft.Playwright.Assertions;
 
@@ -26,16 +27,42 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
 
         await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
 
+        var matchedPdfUrls = new ConcurrentQueue<string>();
+        void OnResponse(object? _, IResponse response)
+        {
+            if (response.Url.Contains("/pdf/therapy/", StringComparison.OrdinalIgnoreCase) && response.Status == 200)
+            {
+                matchedPdfUrls.Enqueue(response.Url);
+            }
+        }
+
+        context.Response += OnResponse;
+
         var popupTask = page.WaitForPopupAsync();
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" })
             .ClickAsync();
         var popup = await popupTask;
 
-        var frame = popup.Locator("iframe[title='therapy-pdf']");
-        await Expect(frame).ToHaveCountAsync(1);
-        var src = await frame.GetAttributeAsync("src");
-        Assert.NotNull(src);
-        Assert.StartsWith("data:application/pdf;base64,", src, StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            for (var i = 0; i < 120; i++)
+            {
+                if (!matchedPdfUrls.IsEmpty)
+                {
+                    break;
+                }
+
+                await page.WaitForTimeoutAsync(250);
+            }
+        }
+        finally
+        {
+            context.Response -= OnResponse;
+        }
+
+        Assert.False(matchedPdfUrls.IsEmpty, $"No /pdf/therapy response captured. Popup URL: {popup.Url}");
+        Assert.All(matchedPdfUrls, url => Assert.Contains("/pdf/therapy/", url, StringComparison.OrdinalIgnoreCase));
+
         await popup.CloseAsync();
     }
 }
