@@ -5,6 +5,7 @@ rem Define publish and packaging paths.
 set "scriptDir=%~dp0"
 for %%I in ("%scriptDir%..\Setup") do set "setupDir=%%~fI"
 for %%I in ("%scriptDir%DottoressaIorio.App.csproj") do set "appProject=%%~fI"
+for %%I in ("%scriptDir%..\DottoressaIorio.DbUpgradeBridge\DottoressaIorio.DbUpgradeBridge.csproj") do set "bridgeProject=%%~fI"
 set "tmpDir=%setupDir%\tmp"
 set "destinationFolder=%tmpDir%\Service"
 set "archiveFile=%tmpDir%\Service.7z"
@@ -12,6 +13,7 @@ set "archiveTemp=%tmpDir%\Service.%RANDOM%%RANDOM%.7z"
 set "sevenZipExe=%setupDir%\7z.exe"
 set "versionFile=%tmpDir%\Service.version"
 set "publishedExe=%destinationFolder%\DottoressaIorio.App.exe"
+set "bridgeExe=%destinationFolder%\DottoressaIorio.DbUpgradeBridge.exe"
 
 if not exist "%sevenZipExe%" (
     echo Missing archive tool: "%sevenZipExe%"
@@ -27,9 +29,18 @@ if errorlevel 1 (
     echo Publish failed.
     exit /b 1
 )
+dotnet publish "%bridgeProject%" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "%destinationFolder%"
+if errorlevel 1 (
+    echo Bridge publish failed.
+    exit /b 1
+)
 
 if not exist "%publishedExe%" (
     echo Publish completed but executable was not found: "%publishedExe%"
+    exit /b 1
+)
+if not exist "%bridgeExe%" (
+    echo Publish completed but bridge executable was not found: "%bridgeExe%"
     exit /b 1
 )
 

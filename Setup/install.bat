@@ -82,6 +82,7 @@ set "sevenZipExe=%scriptDir%7z.exe"
 set "destinationFolder=C:\ProgramData\DottoressaIorio"
 set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
+set "dbBridge=DottoressaIorio.DbUpgradeBridge.exe"
 set "dbBackupFolder=_db_backup"
 set "configFile=%destinationFolder%\appsettings.Production.json"
 set "backupScriptSource=%scriptDir%backup_script.ps1"
@@ -194,6 +195,15 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem Preflight database compatibility before creating the service.
+call :runLegacyBridgePreflight
+if errorlevel 1 (
+    > "%statusFile%" echo ERROR: Legacy bridge migration failed.
+    echo ERROR: Legacy bridge migration failed. Check "%logFile%" for details.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+
 rem Recreate the Windows service using native Service Control Manager.
 >> "%logFile%" echo [%date% %time%] Creating service "%service%" with URL "%appUrl%".
 sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
@@ -279,6 +289,20 @@ set "URL_TO_VALIDATE=%urlToValidate%"
 powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $u=$env:URL_TO_VALIDATE; if($u -notmatch '^(https?)://[^/:\s]+:\d{1,5}$'){ exit 1 }; $port=[int]($u.Split(':')[-1]); if($port -lt 1 -or $port -gt 65535){ exit 1 } else { exit 0 }"
 set "exitCode=%errorlevel%"
 endlocal & exit /b %exitCode%
+
+:runLegacyBridgePreflight
+>> "%logFile%" echo [%date% %time%] Running legacy DB bridge preflight.
+if not exist "%destinationFolder%\%dbBridge%" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing bridge executable "%destinationFolder%\%dbBridge%".
+    exit /b 1
+)
+"%destinationFolder%\%dbBridge%" --app-root "%destinationFolder%" >> "%logFile%" 2>&1
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Legacy DB bridge preflight failed.
+    exit /b 1
+)
+>> "%logFile%" echo [%date% %time%] Legacy DB bridge preflight passed.
+exit /b 0
 
 :logServiceDiagnostics
 >> "%logFile%" echo [%date% %time%] Collecting service diagnostics...
