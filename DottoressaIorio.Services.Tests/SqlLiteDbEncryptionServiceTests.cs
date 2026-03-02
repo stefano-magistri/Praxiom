@@ -1,4 +1,5 @@
 using DottoressaIorio.Services.SqlLiteEncryption;
+using Microsoft.Data.Sqlite;
 using System.IO;
 
 namespace DottoressaIorio.Services.Tests;
@@ -71,5 +72,61 @@ public class SqlLiteDbEncryptionServiceTests
         using var conn = service.CreateConnection();
         Assert.NotNull(conn);
         Assert.Equal(System.Data.ConnectionState.Open, conn.State);
+    }
+
+    [Fact]
+    public void CreateConnection_WithEncryptionKey_AndPlainAppDb_FallsBackToPlainDatabase()
+    {
+        var appDbPath = Path.Combine(AppContext.BaseDirectory, "app.db");
+        var backupPath = $"{appDbPath}.test_backup";
+
+        if (File.Exists(appDbPath))
+        {
+            if (File.Exists(backupPath))
+                File.Delete(backupPath);
+
+            File.Move(appDbPath, backupPath);
+        }
+
+        try
+        {
+            using (var seedConnection = new SqliteConnection($"Data Source={appDbPath}"))
+            {
+                seedConnection.Open();
+                using var command = seedConnection.CreateCommand();
+                command.CommandText = "CREATE TABLE IF NOT EXISTS __test (id INTEGER PRIMARY KEY);";
+                command.ExecuteNonQuery();
+            }
+
+            var service = new SqlLiteDbEncryptionService("key123");
+            using var conn = service.CreateConnection();
+            Assert.Equal(System.Data.ConnectionState.Open, conn.State);
+        }
+        finally
+        {
+            if (File.Exists(appDbPath))
+            {
+                try
+                {
+                    File.Delete(appDbPath);
+                }
+                catch (IOException)
+                {
+                    // Best effort cleanup: pooled SQLite handles can transiently lock the file.
+                }
+            }
+
+            if (File.Exists(backupPath))
+            {
+                try
+                {
+                    File.Move(backupPath, appDbPath);
+                }
+                catch (IOException)
+                {
+                    // Best effort cleanup for the same reason.
+                }
+            }
+        }
     }
 }

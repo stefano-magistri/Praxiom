@@ -63,7 +63,7 @@ foreach (var openStrategy in sourceStrategies)
     using var sourceConnection = openStrategy(sourceDbPath, key);
     if (sourceConnection is null) continue;
 
-    if (!TryExportEncryptedWithCompat3(sourceConnection, tempDbPath, key)) continue;
+    if (!TryExportPlainSqlite(sourceConnection, tempDbPath)) continue;
 
     migrated = true;
     break;
@@ -194,7 +194,7 @@ static SqliteConnection? TryOpenWithPragmaKeyCompat4(string dbPath, string key)
     }
 }
 
-static bool TryExportEncryptedWithCompat3(SqliteConnection sourceConnection, string targetPath, string key)
+static bool TryExportPlainSqlite(SqliteConnection sourceConnection, string targetPath)
 {
     try
     {
@@ -202,8 +202,7 @@ static bool TryExportEncryptedWithCompat3(SqliteConnection sourceConnection, str
 
         ExecuteNonQuery(
             sourceConnection,
-            $"ATTACH DATABASE '{EscapeSqlLiteral(targetPath)}' AS migrated KEY '{EscapeSqlLiteral(key)}';");
-        ExecuteNonQuery(sourceConnection, "PRAGMA migrated.cipher_compatibility = 3;");
+            $"ATTACH DATABASE '{EscapeSqlLiteral(targetPath)}' AS migrated KEY '';");
         ExecuteNonQuery(sourceConnection, "SELECT sqlcipher_export('migrated');");
         ExecuteNonQuery(sourceConnection, "DETACH DATABASE migrated;");
 
