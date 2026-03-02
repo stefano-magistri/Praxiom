@@ -37,6 +37,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DottoressaIorio.Services\DottoressaIorio.Services.csproj" />
     <ProjectReference Include="..\DottoressaIorio.Shared\DottoressaIorio.Shared.csproj" />
+    <ProjectReference Include="..\DottoressaIorio.DbUpgradeBridge\DottoressaIorio.DbUpgradeBridge.csproj" />
   </ItemGroup>
 
   <ItemGroup>

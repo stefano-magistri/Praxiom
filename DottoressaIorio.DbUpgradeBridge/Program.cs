@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using SQLitePCL;
 using System.Text.Json;
+using DottoressaIorio.DbUpgradeBridge;
 
 Batteries_V2.Init();
 
@@ -75,17 +76,17 @@ if (!migrated)
     return 1;
 }
 
-if (!TryMoveWithRetry(appDbPath, backupDbPath, overwrite: true))
+if (!BridgeFileOperations.TryBackupCurrentDbIfPresent(appDbPath, backupDbPath))
 {
     Console.Error.WriteLine("Bridge failed: could not backup existing app.db.");
     DeleteIfExists(tempDbPath);
     return 1;
 }
 
-if (!TryMoveWithRetry(tempDbPath, appDbPath, overwrite: true))
+if (!BridgeFileOperations.TryPromoteMigratedDb(tempDbPath, appDbPath))
 {
     Console.Error.WriteLine("Bridge failed: could not place migrated app.db.");
-    TryMoveWithRetry(backupDbPath, appDbPath, overwrite: true);
+    BridgeFileOperations.TryPromoteMigratedDb(backupDbPath, appDbPath);
     DeleteIfExists(tempDbPath);
     return 1;
 }
@@ -254,27 +255,4 @@ static void DeleteIfExists(string path)
             Thread.Sleep(200);
         }
     }
-}
-
-static bool TryMoveWithRetry(string source, string destination, bool overwrite)
-{
-    for (var i = 0; i < 10; i++)
-    {
-        try
-        {
-            if (overwrite && File.Exists(destination)) File.Delete(destination);
-            File.Move(source, destination);
-            return true;
-        }
-        catch (IOException)
-        {
-            Thread.Sleep(200);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            Thread.Sleep(200);
-        }
-    }
-
-    return false;
 }

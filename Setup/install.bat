@@ -213,25 +213,33 @@ if errorlevel 1 (
     timeout /t 2 /nobreak >nul
     sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
     if errorlevel 1 (
-        >> "%logFile%" echo [%date% %time%] WARNING: Failed to create service. Files remain installed.
-        > "%statusFile%" echo WARNING: Service creation failed.
-        echo WARNING: Failed to create service "%service%".
-        echo Application files were installed; service can be created manually.
+        >> "%logFile%" echo [%date% %time%] ERROR: Failed to create service after retry.
+        > "%statusFile%" echo ERROR: Service creation failed.
+        echo ERROR: Failed to create service "%service%". Check "%logFile%" for details.
         if "%interactive%"=="1" pause
-        exit /b 0
+        exit /b 1
     )
 )
 
 sc description "%service%" "Dottoressa Iorio medical management application" >> "%logFile%" 2>&1
 sc start "%service%" >> "%logFile%" 2>&1
 if errorlevel 1 (
-    >> "%logFile%" echo [%date% %time%] WARNING: Service created but failed to start.
+    >> "%logFile%" echo [%date% %time%] ERROR: Service start command failed.
     call :logServiceDiagnostics
-    > "%statusFile%" echo WARNING: Service start failed.
-    echo WARNING: Service "%service%" was created but failed to start.
-    echo You can inspect service logs and start it manually after installation.
+    > "%statusFile%" echo ERROR: Service start failed.
+    echo ERROR: Service "%service%" failed to start. Check "%logFile%" for details.
     if "%interactive%"=="1" pause
-    exit /b 0
+    exit /b 1
+)
+
+call :waitForServiceRunning
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Service did not reach RUNNING state.
+    call :logServiceDiagnostics
+    > "%statusFile%" echo ERROR: Service not running after start.
+    echo ERROR: Service "%service%" did not reach RUNNING state. Check "%logFile%" for details.
+    if "%interactive%"=="1" pause
+    exit /b 1
 )
 
 if exist "%backupScriptDest%" (
@@ -315,3 +323,11 @@ if exist "%scriptDir%service-diagnostics.tmp.log" (
     del /q "%scriptDir%service-diagnostics.tmp.log" >nul 2>nul
 )
 exit /b 0
+
+:waitForServiceRunning
+for /L %%I in (1,1,20) do (
+    sc query "%service%" | findstr /R /C:"STATE[ ]*:[ ]*[0-9][0-9]*[ ]*RUNNING" >nul
+    if not errorlevel 1 exit /b 0
+    timeout /t 1 /nobreak >nul
+)
+exit /b 1
