@@ -13,4 +13,5 @@
     <Project Path="DottoressaIorio.Services.Tests/DottoressaIorio.Services.Tests.csproj" />
   </Folder>
   <Project Path="DottoressaIorio.App/DottoressaIorio.App.csproj" />
+  <Project Path="DottoressaIorio.DbUpgradeBridge/DottoressaIorio.DbUpgradeBridge.csproj" />
 </Solution>

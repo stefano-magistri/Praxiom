@@ -82,7 +82,9 @@ set "sevenZipExe=%scriptDir%7z.exe"
 set "destinationFolder=C:\ProgramData\DottoressaIorio"
 set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
+set "dbBridge=DottoressaIorio.DbUpgradeBridge.exe"
 set "dbBackupFolder=_db_backup"
+set "legacyBackupDb=C:\Program Files\DottoressaIorio\_db_backup\app.db"
 set "configFile=%destinationFolder%\appsettings.Production.json"
 set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
@@ -194,6 +196,15 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem Preflight database compatibility before creating the service.
+call :runLegacyBridgePreflight
+if errorlevel 1 (
+    > "%statusFile%" echo ERROR: Legacy bridge migration failed.
+    echo ERROR: Legacy bridge migration failed. Check "%logFile%" for details.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+
 rem Recreate the Windows service using native Service Control Manager.
 >> "%logFile%" echo [%date% %time%] Creating service "%service%" with URL "%appUrl%".
 sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
@@ -203,25 +214,33 @@ if errorlevel 1 (
     timeout /t 2 /nobreak >nul
     sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
     if errorlevel 1 (
-        >> "%logFile%" echo [%date% %time%] WARNING: Failed to create service. Files remain installed.
-        > "%statusFile%" echo WARNING: Service creation failed.
-        echo WARNING: Failed to create service "%service%".
-        echo Application files were installed; service can be created manually.
+        >> "%logFile%" echo [%date% %time%] ERROR: Failed to create service after retry.
+        > "%statusFile%" echo ERROR: Service creation failed.
+        echo ERROR: Failed to create service "%service%". Check "%logFile%" for details.
         if "%interactive%"=="1" pause
-        exit /b 0
+        exit /b 1
     )
 )
 
 sc description "%service%" "Dottoressa Iorio medical management application" >> "%logFile%" 2>&1
 sc start "%service%" >> "%logFile%" 2>&1
 if errorlevel 1 (
-    >> "%logFile%" echo [%date% %time%] WARNING: Service created but failed to start.
+    >> "%logFile%" echo [%date% %time%] ERROR: Service start command failed.
     call :logServiceDiagnostics
-    > "%statusFile%" echo WARNING: Service start failed.
-    echo WARNING: Service "%service%" was created but failed to start.
-    echo You can inspect service logs and start it manually after installation.
+    > "%statusFile%" echo ERROR: Service start failed.
+    echo ERROR: Service "%service%" failed to start. Check "%logFile%" for details.
     if "%interactive%"=="1" pause
-    exit /b 0
+    exit /b 1
+)
+
+call :waitForServiceRunning
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Service did not reach RUNNING state.
+    call :logServiceDiagnostics
+    > "%statusFile%" echo ERROR: Service not running after start.
+    echo ERROR: Service "%service%" did not reach RUNNING state. Check "%logFile%" for details.
+    if "%interactive%"=="1" pause
+    exit /b 1
 )
 
 if exist "%backupScriptDest%" (
@@ -280,6 +299,24 @@ powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $u=$env:URL_TO_VA
 set "exitCode=%errorlevel%"
 endlocal & exit /b %exitCode%
 
+:runLegacyBridgePreflight
+if not exist "%legacyBackupDb%" (
+    >> "%logFile%" echo [%date% %time%] Legacy DB bridge preflight skipped. No legacy backup found at "%legacyBackupDb%".
+    exit /b 0
+)
+>> "%logFile%" echo [%date% %time%] Running legacy DB bridge preflight.
+if not exist "%destinationFolder%\%dbBridge%" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing bridge executable "%destinationFolder%\%dbBridge%".
+    exit /b 1
+)
+"%destinationFolder%\%dbBridge%" --app-root "%destinationFolder%" >> "%logFile%" 2>&1
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Legacy DB bridge preflight failed.
+    exit /b 1
+)
+>> "%logFile%" echo [%date% %time%] Legacy DB bridge preflight passed.
+exit /b 0
+
 :logServiceDiagnostics
 >> "%logFile%" echo [%date% %time%] Collecting service diagnostics...
 sc query "%service%" >> "%logFile%" 2>&1
@@ -291,3 +328,11 @@ if exist "%scriptDir%service-diagnostics.tmp.log" (
     del /q "%scriptDir%service-diagnostics.tmp.log" >nul 2>nul
 )
 exit /b 0
+
+:waitForServiceRunning
+for /L %%I in (1,1,20) do (
+    sc query "%service%" | findstr /R /C:"STATE[ ]*:[ ]*[0-9][0-9]*[ ]*RUNNING" >nul
+    if not errorlevel 1 exit /b 0
+    timeout /t 1 /nobreak >nul
+)
+exit /b 1
