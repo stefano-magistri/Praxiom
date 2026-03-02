@@ -30,6 +30,19 @@ if (!hasLegacyBackupDb)
 var sourceDbPath = legacyBackupDbPath;
 Console.WriteLine($"Detected legacy backup DB at '{legacyBackupDbPath}'. Forcing migration.");
 
+if (File.Exists(appDbPath))
+{
+    Console.WriteLine($"Current DB already exists at '{appDbPath}'. Skipping legacy backup import.");
+    if (!BridgeFileOperations.TryArchiveLegacyBackup(legacyBackupDbPath, out var archivedExistingLegacyPath))
+    {
+        Console.Error.WriteLine($"Bridge failed: could not archive unused legacy backup DB at '{legacyBackupDbPath}'.");
+        return 1;
+    }
+
+    Console.WriteLine($"Legacy backup archived to '{archivedExistingLegacyPath}'.");
+    return 0;
+}
+
 if (!File.Exists(appSettingsPath))
 {
     Console.Error.WriteLine($"Missing appsettings.json at '{appSettingsPath}'.");

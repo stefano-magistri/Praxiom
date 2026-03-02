@@ -55,6 +55,27 @@ public sealed class BridgeFileOperationsTests : IDisposable
     }
 
     [Fact]
+    public void TryPromoteMigratedDb_DeletesWalAndShmSidecars()
+    {
+        var tempDbPath = Path.Combine(_tempDir, "app.db.bridge_migrating");
+        var appDbPath = Path.Combine(_tempDir, "app.db");
+        var walPath = $"{appDbPath}-wal";
+        var shmPath = $"{appDbPath}-shm";
+
+        File.WriteAllText(tempDbPath, "migrated-db");
+        File.WriteAllText(appDbPath, "existing-db");
+        File.WriteAllText(walPath, "stale-wal");
+        File.WriteAllText(shmPath, "stale-shm");
+
+        var result = BridgeFileOperations.TryPromoteMigratedDb(tempDbPath, appDbPath);
+
+        Assert.True(result);
+        Assert.False(File.Exists(walPath));
+        Assert.False(File.Exists(shmPath));
+        Assert.Equal("migrated-db", File.ReadAllText(appDbPath));
+    }
+
+    [Fact]
     public void TryArchiveLegacyBackup_RenamesLegacyBackup_WhenSourceExists()
     {
         var legacyBackupPath = Path.Combine(_tempDir, "app.db");

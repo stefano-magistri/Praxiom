@@ -12,6 +12,9 @@ public static class BridgeFileOperations
 
     public static bool TryPromoteMigratedDb(string tempDbPath, string appDbPath)
     {
+        if (!TryDeleteSidecars(appDbPath))
+            return false;
+
         return TryMoveWithRetry(tempDbPath, appDbPath, overwrite: true);
     }
 
@@ -45,6 +48,37 @@ public static class BridgeFileOperations
                     File.Delete(destination);
 
                 File.Move(source, destination);
+                return true;
+            }
+            catch (IOException)
+            {
+                Thread.Sleep(200);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Thread.Sleep(200);
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryDeleteSidecars(string appDbPath)
+    {
+        return TryDeleteWithRetry($"{appDbPath}-wal")
+               && TryDeleteWithRetry($"{appDbPath}-shm");
+    }
+
+    private static bool TryDeleteWithRetry(string path)
+    {
+        if (!File.Exists(path))
+            return true;
+
+        for (var i = 0; i < 10; i++)
+        {
+            try
+            {
+                File.Delete(path);
                 return true;
             }
             catch (IOException)
