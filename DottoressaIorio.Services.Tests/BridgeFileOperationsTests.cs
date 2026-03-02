@@ -54,6 +54,32 @@ public sealed class BridgeFileOperationsTests : IDisposable
         Assert.Equal("migrated-db", File.ReadAllText(appDbPath));
     }
 
+    [Fact]
+    public void TryArchiveLegacyBackup_RenamesLegacyBackup_WhenSourceExists()
+    {
+        var legacyBackupPath = Path.Combine(_tempDir, "app.db");
+        File.WriteAllText(legacyBackupPath, "legacy-db");
+
+        var result = BridgeFileOperations.TryArchiveLegacyBackup(legacyBackupPath, out var archivedPath);
+
+        Assert.True(result);
+        Assert.False(File.Exists(legacyBackupPath));
+        Assert.True(File.Exists(archivedPath));
+        Assert.Contains(".migrated.", archivedPath);
+        Assert.Equal("legacy-db", File.ReadAllText(archivedPath));
+    }
+
+    [Fact]
+    public void TryArchiveLegacyBackup_ReturnsTrue_WhenSourceDoesNotExist()
+    {
+        var legacyBackupPath = Path.Combine(_tempDir, "missing-app.db");
+
+        var result = BridgeFileOperations.TryArchiveLegacyBackup(legacyBackupPath, out var archivedPath);
+
+        Assert.True(result);
+        Assert.Equal(string.Empty, archivedPath);
+    }
+
     public void Dispose()
     {
         if (!Directory.Exists(_tempDir))

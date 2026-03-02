@@ -91,6 +91,17 @@ if (!BridgeFileOperations.TryPromoteMigratedDb(tempDbPath, appDbPath))
     return 1;
 }
 
+if (hasLegacyBackupDb)
+{
+    if (!BridgeFileOperations.TryArchiveLegacyBackup(legacyBackupDbPath, out var archivedLegacyPath))
+    {
+        Console.Error.WriteLine($"Bridge failed: could not archive legacy backup DB at '{legacyBackupDbPath}'.");
+        return 1;
+    }
+
+    Console.WriteLine($"Legacy backup archived to '{archivedLegacyPath}'.");
+}
+
 DeleteIfExists(backupDbPath);
 DeleteIfExists(tempDbPath);
 Console.WriteLine("Legacy DB bridge migration completed successfully.");

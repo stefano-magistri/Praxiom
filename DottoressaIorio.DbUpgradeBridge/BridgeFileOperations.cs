@@ -15,6 +15,26 @@ public static class BridgeFileOperations
         return TryMoveWithRetry(tempDbPath, appDbPath, overwrite: true);
     }
 
+    public static bool TryArchiveLegacyBackup(string legacyBackupDbPath, out string archivedPath)
+    {
+        archivedPath = string.Empty;
+
+        if (!File.Exists(legacyBackupDbPath))
+            return true;
+
+        var suffix = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        var candidate = $"{legacyBackupDbPath}.migrated.{suffix}";
+        if (File.Exists(candidate))
+            candidate = $"{candidate}.{Guid.NewGuid():N}";
+
+        var moved = TryMoveWithRetry(legacyBackupDbPath, candidate, overwrite: false);
+        if (!moved)
+            return false;
+
+        archivedPath = candidate;
+        return true;
+    }
+
     private static bool TryMoveWithRetry(string source, string destination, bool overwrite)
     {
         for (var i = 0; i < 10; i++)
