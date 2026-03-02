@@ -88,7 +88,7 @@ set "legacyBackupDb=C:\Program Files\DottoressaIorio\_db_backup\app.db"
 set "configFile=%destinationFolder%\appsettings.Production.json"
 set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
-set "backupTaskName=DottoressaIorio Daily Backup"
+set "backupTaskName=DottoressaIorio Online Backup"
 set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
 
 rem Stop and remove existing service before touching files.
@@ -243,18 +243,18 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if exist "%backupScriptDest%" (
+if exist "%destinationFolder%\%app%" (
     >> "%logFile%" echo [%date% %time%] Configuring scheduled task "%backupTaskName%" for user "%backupTaskUser%".
     schtasks /Delete /TN "%backupTaskName%" /F >> "%logFile%" 2>&1
-    schtasks /Create /TN "%backupTaskName%" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""%backupScriptDest%""" /SC HOURLY /MO 2 /ST 00:00 /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
+    schtasks /Create /TN "%backupTaskName%" /TR "\"%destinationFolder%\%app%\" --online-backup" /SC HOURLY /MO 2 /ST 00:00 /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
     if errorlevel 1 (
-        >> "%logFile%" echo [%date% %time%] WARNING: Failed to create scheduled backup task.
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to create scheduled online backup task.
         echo WARNING: Could not create scheduled backup task "%backupTaskName%".
     ) else (
-        >> "%logFile%" echo [%date% %time%] Scheduled backup task created successfully.
+        >> "%logFile%" echo [%date% %time%] Scheduled online backup task created successfully.
     )
 ) else (
-    >> "%logFile%" echo [%date% %time%] WARNING: Skipping scheduled task creation because backup script is missing.
+    >> "%logFile%" echo [%date% %time%] WARNING: Skipping scheduled task creation because app executable is missing.
 )
 
 if "%interactive%"=="1" start "" "%appUrl%"

@@ -1,7 +1,8 @@
-﻿@page "/create-therapy-template"
+@page "/create-therapy-template"
 @inject TherapyTemplateRepository repository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
+@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
 <PageHeader Title="Aggiungi Terapia Precompilata"/>
 
@@ -43,6 +44,7 @@
         {
             await repository.AddAsync(model);
             await unitOfWork.SaveChangesAsync();
+            await onlineBackupService.TriggerBackupAsync("therapy-template-create");
             navigationManager.NavigateTo("/therapy-templates");
         }
         catch (Exception ex)
@@ -52,3 +54,4 @@
     }
 
 }
+

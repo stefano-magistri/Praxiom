@@ -1,7 +1,8 @@
-﻿@page "/patient/{id:int}/edit/"
+@page "/patient/{id:int}/edit/"
 @inject PatientRepository repository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
+@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
 <ActionPageHeader Title="Modifica Paziente" Subtitle="@FormattedPatientName"/>
 @if (model == null)
@@ -120,6 +121,7 @@ else
         {
             await repository.UpdateAsync(model);
             await unitOfWork.SaveChangesAsync();
+            await onlineBackupService.TriggerBackupAsync("patient-update");
             navigationManager.NavigateTo($"/patient/{Id}/");
         }
         catch (Exception ex)
@@ -141,3 +143,4 @@ else
     }
 
 }
+

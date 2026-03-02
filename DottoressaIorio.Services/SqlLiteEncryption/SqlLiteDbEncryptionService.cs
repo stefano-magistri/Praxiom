@@ -27,6 +27,11 @@ public class SqlLiteDbEncryptionService(string key)
     public SqliteConnection CreateConnection()
     {
         var dbPath = GetDbPath();
+        return CreateConnectionForPath(dbPath);
+    }
+
+    public SqliteConnection CreateConnectionForPath(string dbPath)
+    {
         var errors = new StringBuilder();
 
         if (string.IsNullOrEmpty(key))

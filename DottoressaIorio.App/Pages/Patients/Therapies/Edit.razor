@@ -1,9 +1,10 @@
-﻿@page "/patient/{id:int}/edit-therapy"
+@page "/patient/{id:int}/edit-therapy"
 
 @inject PatientTherapyRepository repository
 @inject PatientRepository patientRepository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
+@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
 <ActionPageHeader Title="Modifica Terapia" Subtitle="@FormattedPatientName"/>
 
@@ -48,6 +49,7 @@
         {
             await repository.UpdateAsync(model);
             await unitOfWork.SaveChangesAsync();
+            await onlineBackupService.TriggerBackupAsync("therapy-update");
             navigationManager.NavigateTo($"/patient/{model.PatientId}/");
         }
         catch (Exception ex)
@@ -69,3 +71,4 @@
     }
 
 }
+

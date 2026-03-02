@@ -1,4 +1,5 @@
 using DottoressaIorio.Repositories;
+using DottoressaIorio.Services.Backup;
 using DottoressaIorio.Services.Pdf;
 
 namespace DottoressaIorio.App.Middleware;
@@ -12,6 +13,7 @@ public static class PdfEndpointsExtensions
             PatientTherapyRepository therapyRepository,
             PatientRepository patientRepository,
             PdfService pdfService,
+            IOnlineBackupService onlineBackupService,
             HttpContext httpContext) =>
         {
             var therapy = await therapyRepository.GetByIdAsync(therapyId);
@@ -36,9 +38,12 @@ public static class PdfEndpointsExtensions
             httpContext.Response.Headers.ContentDisposition =
                 $"inline; filename=\"{quotedFilename}\"; filename*=UTF-8''{Uri.EscapeDataString(filename)}";
 
+            await onlineBackupService.TriggerBackupAsync("pdf-generate");
+
             return Results.File(pdfBytes, "application/pdf");
         });
 
         return app;
     }
 }
+
