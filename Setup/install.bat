@@ -84,6 +84,7 @@ set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
 set "dbBridge=DottoressaIorio.DbUpgradeBridge.exe"
 set "dbBackupFolder=_db_backup"
+set "legacyBackupDb=C:\Program Files\DottoressaIorio\_db_backup\app.db"
 set "configFile=%destinationFolder%\appsettings.Production.json"
 set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
@@ -299,6 +300,10 @@ set "exitCode=%errorlevel%"
 endlocal & exit /b %exitCode%
 
 :runLegacyBridgePreflight
+if not exist "%legacyBackupDb%" (
+    >> "%logFile%" echo [%date% %time%] Legacy DB bridge preflight skipped. No legacy backup found at "%legacyBackupDb%".
+    exit /b 0
+)
 >> "%logFile%" echo [%date% %time%] Running legacy DB bridge preflight.
 if not exist "%destinationFolder%\%dbBridge%" (
     >> "%logFile%" echo [%date% %time%] ERROR: Missing bridge executable "%destinationFolder%\%dbBridge%".

@@ -19,17 +19,16 @@ var legacyBackupDbPath = string.IsNullOrWhiteSpace(configuredLegacyBackupDbPath)
     ? defaultLegacyBackupDbPath
     : configuredLegacyBackupDbPath;
 var hasLegacyBackupDb = File.Exists(legacyBackupDbPath);
-var sourceDbPath = hasLegacyBackupDb ? legacyBackupDbPath : appDbPath;
 var appSettingsPath = Path.Combine(appRoot, "appsettings.json");
 
-if (!File.Exists(sourceDbPath))
+if (!hasLegacyBackupDb)
 {
-    Console.WriteLine("No source DB found. Skipping migration.");
+    Console.WriteLine($"No legacy backup DB found at '{legacyBackupDbPath}'. Skipping migration.");
     return 0;
 }
 
-if (hasLegacyBackupDb)
-    Console.WriteLine($"Detected legacy backup DB at '{legacyBackupDbPath}'. Forcing migration.");
+var sourceDbPath = legacyBackupDbPath;
+Console.WriteLine($"Detected legacy backup DB at '{legacyBackupDbPath}'. Forcing migration.");
 
 if (!File.Exists(appSettingsPath))
 {
