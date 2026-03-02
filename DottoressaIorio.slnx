@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="DottoressaIorio.App/DottoressaIorio.App.csproj" />
   <Folder Name="/src/">
     <Project Path="DottoressaIorio.Data/DottoressaIorio.Data.csproj" />
     <Project Path="DottoressaIorio.Models/DottoressaIorio.Models.csproj" />
@@ -6,12 +7,15 @@
     <Project Path="DottoressaIorio.Services/DottoressaIorio.Services.csproj" />
     <Project Path="DottoressaIorio.Shared/DottoressaIorio.Shared.csproj" />
   </Folder>
-  <Folder Name="/tests/">
+  <Folder Name="/tests/unit/">
     <Project Path="DottoressaIorio.App.Tests/DottoressaIorio.App.Tests.csproj" />
-    <Project Path="DottoressaIorio.E2E/DottoressaIorio.E2E.csproj" />
     <Project Path="DottoressaIorio.Repositories.Tests/DottoressaIorio.Repositories.Tests.csproj" />
     <Project Path="DottoressaIorio.Services.Tests/DottoressaIorio.Services.Tests.csproj" />
   </Folder>
-  <Project Path="DottoressaIorio.App/DottoressaIorio.App.csproj" />
-  <Project Path="DottoressaIorio.DbUpgradeBridge/DottoressaIorio.DbUpgradeBridge.csproj" />
+  <Folder Name="/tests/e2e/">
+    <Project Path="DottoressaIorio.E2E/DottoressaIorio.E2E.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="DottoressaIorio.DbUpgradeBridge/DottoressaIorio.DbUpgradeBridge.csproj" />
+  </Folder>
 </Solution>
