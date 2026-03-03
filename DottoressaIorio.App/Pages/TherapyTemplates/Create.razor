@@ -44,7 +44,15 @@
         {
             await repository.AddAsync(model);
             await unitOfWork.SaveChangesAsync();
-            await onlineBackupService.TriggerBackupAsync("therapy-template-create");
+            try
+            {
+                await onlineBackupService.TriggerBackupAsync("therapy-template-create");
+            }
+            catch
+            {
+                // Backup failures must not block the user save flow.
+            }
+
             navigationManager.NavigateTo("/therapy-templates");
         }
         catch (Exception ex)

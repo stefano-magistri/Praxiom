@@ -49,7 +49,15 @@
         {
             await repository.UpdateAsync(model);
             await unitOfWork.SaveChangesAsync();
-            await onlineBackupService.TriggerBackupAsync("therapy-update");
+            try
+            {
+                await onlineBackupService.TriggerBackupAsync("therapy-update");
+            }
+            catch
+            {
+                // Backup failures must not block the user save flow.
+            }
+
             navigationManager.NavigateTo($"/patient/{model.PatientId}/");
         }
         catch (Exception ex)

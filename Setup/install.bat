@@ -89,6 +89,7 @@ set "configFile=%destinationFolder%\appsettings.Production.json"
 set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
 set "backupTaskName=DottoressaIorio Online Backup"
+set "legacyBackupTaskName=DottoressaIorio Daily Backup"
 set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
 
 rem Stop and remove existing service before touching files.
@@ -245,6 +246,7 @@ if errorlevel 1 (
 
 if exist "%destinationFolder%\%app%" (
     >> "%logFile%" echo [%date% %time%] Configuring scheduled ONLINE backup task "%backupTaskName%" for user "%backupTaskUser%".
+    schtasks /Delete /TN "%legacyBackupTaskName%" /F >> "%logFile%" 2>&1
     schtasks /Delete /TN "%backupTaskName%" /F >> "%logFile%" 2>&1
     schtasks /Create /TN "%backupTaskName%" /TR "\"%destinationFolder%\%app%\" --online-backup" /SC HOURLY /MO 2 /ST 00:00 /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
     if errorlevel 1 (
