@@ -12,6 +12,7 @@ public sealed class OnlineBackupOptions
     public string BackupFilePrefix { get; init; } = "app_backup_";
     public string OneDriveBackupRelativePath { get; init; } = Path.Combine("DottoressaIorio", "_db_backup");
     public bool EnableOneDriveMirror { get; init; } = true;
+    public string? PreferredWindowsUsername { get; set; }
     public int RetentionCount { get; init; } = 360;
     public TimeSpan DebounceWindow { get; init; } = TimeSpan.FromMinutes(15);
     public TimeSpan StartupMinimumAge { get; init; } = TimeSpan.FromDays(1);

@@ -193,24 +193,114 @@ public sealed class OnlineBackupService(
 
     private string? ResolveOneDriveBackupRoot()
     {
-        var oneDriveCandidates = new[]
-            {
-                Environment.GetEnvironmentVariable("OneDriveConsumer"),
-                Environment.GetEnvironmentVariable("OneDriveCommercial"),
-                Environment.GetEnvironmentVariable("OneDrive"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive")
-            }
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
+        var oneDriveCandidates = new List<string?>();
 
-        foreach (var candidate in oneDriveCandidates)
+        var preferredConfiguredCandidate = BuildPreferredUserOneDriveCandidate(options.PreferredWindowsUsername);
+        if (!string.IsNullOrWhiteSpace(preferredConfiguredCandidate))
         {
-            if (Directory.Exists(candidate))
-            {
-                return Path.Combine(candidate, options.OneDriveBackupRelativePath);
-            }
+            oneDriveCandidates.Add(preferredConfiguredCandidate);
         }
 
-        return null;
+        oneDriveCandidates.AddRange(new[]
+        {
+            Environment.GetEnvironmentVariable("OneDriveConsumer"),
+            Environment.GetEnvironmentVariable("OneDriveCommercial"),
+            Environment.GetEnvironmentVariable("OneDrive"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive")
+        });
+
+        oneDriveCandidates.AddRange(GetUserProfileOneDriveCandidates());
+
+        var existingCandidates = oneDriveCandidates
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(path => path!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(Directory.Exists)
+            .ToList();
+
+        if (existingCandidates.Count == 0)
+        {
+            return null;
+        }
+
+        // Prefer candidate already containing the application backup folder.
+        var preferredWithBackupFolder = existingCandidates.FirstOrDefault(candidate =>
+            Directory.Exists(Path.Combine(candidate, options.OneDriveBackupRelativePath)));
+
+        if (!string.IsNullOrWhiteSpace(preferredWithBackupFolder))
+        {
+            return Path.Combine(preferredWithBackupFolder, options.OneDriveBackupRelativePath);
+        }
+
+        return Path.Combine(existingCandidates[0], options.OneDriveBackupRelativePath);
+    }
+
+    private static IEnumerable<string> GetUserProfileOneDriveCandidates()
+    {
+        var usersRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "..");
+        string normalizedUsersRoot;
+        try
+        {
+            normalizedUsersRoot = Path.GetFullPath(usersRoot);
+        }
+        catch
+        {
+            yield break;
+        }
+
+        if (!Directory.Exists(normalizedUsersRoot))
+        {
+            yield break;
+        }
+
+        var ignoredProfileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "All Users",
+            "Default",
+            "Default User",
+            "Public"
+        };
+
+        IEnumerable<string> profileDirectories;
+        try
+        {
+            profileDirectories = Directory.EnumerateDirectories(normalizedUsersRoot);
+        }
+        catch
+        {
+            yield break;
+        }
+
+        foreach (var profileDirectory in profileDirectories)
+        {
+            if (string.IsNullOrWhiteSpace(profileDirectory))
+            {
+                continue;
+            }
+
+            var profileName = Path.GetFileName(profileDirectory);
+            if (string.IsNullOrWhiteSpace(profileName) || ignoredProfileNames.Contains(profileName))
+            {
+                continue;
+            }
+
+            yield return Path.Combine(profileDirectory, "OneDrive");
+        }
+    }
+
+    private static string? BuildPreferredUserOneDriveCandidate(string? preferredWindowsUsername)
+    {
+        if (string.IsNullOrWhiteSpace(preferredWindowsUsername))
+        {
+            return null;
+        }
+
+        var username = preferredWindowsUsername.Trim();
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return null;
+        }
+
+        return Path.Combine("C:\\Users", username, "OneDrive");
     }
 }

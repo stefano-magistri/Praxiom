@@ -47,7 +47,10 @@ try
     builder.Services.AddDottoressaRepositories();
 
     builder.Services.AddPdfServices();
-    builder.Services.AddOnlineSqliteBackup();
+    builder.Services.AddOnlineSqliteBackup(options =>
+    {
+        options.PreferredWindowsUsername = ExtractUsername(allowedUsername);
+    });
 
     var app = builder.Build();
     var onlineBackupService = app.Services.GetRequiredService<IOnlineBackupService>();
@@ -136,4 +139,21 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static string? ExtractUsername(string? allowedUsername)
+{
+    if (string.IsNullOrWhiteSpace(allowedUsername))
+    {
+        return null;
+    }
+
+    var trimmed = allowedUsername.Trim();
+    var backslashIndex = trimmed.LastIndexOf('\\');
+    var slashIndex = trimmed.LastIndexOf('/');
+    var separatorIndex = Math.Max(backslashIndex, slashIndex);
+
+    return separatorIndex >= 0 && separatorIndex < trimmed.Length - 1
+        ? trimmed[(separatorIndex + 1)..]
+        : trimmed;
 }
