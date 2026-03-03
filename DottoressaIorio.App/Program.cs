@@ -1,6 +1,7 @@
 using DottoressaIorio.App.Middleware;
 using DottoressaIorio.Data;
 using DottoressaIorio.Repositories;
+using DottoressaIorio.Services.Backup;
 using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.EntityFrameworkCore;
@@ -46,8 +47,22 @@ try
     builder.Services.AddDottoressaRepositories();
 
     builder.Services.AddPdfServices();
+    builder.Services.AddOnlineSqliteBackup(options =>
+    {
+        options.PreferredWindowsUsername = ExtractUsername(allowedUsername);
+    });
 
     var app = builder.Build();
+    var onlineBackupService = app.Services.GetRequiredService<IOnlineBackupService>();
+    var onlineBackupOptions = app.Services.GetRequiredService<OnlineBackupOptions>();
+
+    var runOnlineBackup = args.Any(argument => argument.Equals("--online-backup", StringComparison.OrdinalIgnoreCase));
+    if (runOnlineBackup)
+    {
+        var result = await onlineBackupService.TriggerBackupAsync("scheduled-task");
+        Environment.ExitCode = result.Outcome == OnlineBackupOutcome.Failed ? 1 : 0;
+        return;
+    }
 
     using (var scope = app.Services.CreateScope())
     {
@@ -55,8 +70,44 @@ try
         dbContext.Database.Migrate();
     }
 
-    app.Lifetime.ApplicationStarted.Register(() => Log.Information("Application started."));
-    app.Lifetime.ApplicationStopping.Register(() => Log.Information("Application stopping."));
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        Log.Information("Application started.");
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await onlineBackupService.TriggerBackupAsync("application-startup", onlineBackupOptions.StartupMinimumAge);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to execute startup online backup.");
+            }
+        });
+    });
+
+    app.Lifetime.ApplicationStopping.Register(() =>
+    {
+        Log.Information("Application stopping.");
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            _ = onlineBackupService.TriggerBackupAsync(
+                    "application-stopping",
+                    onlineBackupOptions.ShutdownMinimumAge,
+                    cts.Token)
+                .GetAwaiter()
+                .GetResult();
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Warning("Application stopping backup timed out.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Application stopping online backup failed.");
+        }
+    });
     app.Lifetime.ApplicationStopped.Register(Log.CloseAndFlush);
 
     // Configure the HTTP request pipeline.
@@ -88,4 +139,21 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static string? ExtractUsername(string? allowedUsername)
+{
+    if (string.IsNullOrWhiteSpace(allowedUsername))
+    {
+        return null;
+    }
+
+    var trimmed = allowedUsername.Trim();
+    var backslashIndex = trimmed.LastIndexOf('\\');
+    var slashIndex = trimmed.LastIndexOf('/');
+    var separatorIndex = Math.Max(backslashIndex, slashIndex);
+
+    return separatorIndex >= 0 && separatorIndex < trimmed.Length - 1
+        ? trimmed[(separatorIndex + 1)..]
+        : trimmed;
 }

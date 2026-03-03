@@ -88,7 +88,8 @@ set "legacyBackupDb=C:\Program Files\DottoressaIorio\_db_backup\app.db"
 set "configFile=%destinationFolder%\appsettings.Production.json"
 set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
-set "backupTaskName=DottoressaIorio Daily Backup"
+set "backupTaskName=DottoressaIorio Online Backup"
+set "legacyBackupTaskName=DottoressaIorio Daily Backup"
 set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
 
 rem Stop and remove existing service before touching files.
@@ -159,12 +160,12 @@ call :restoreDbFile "app_unencrypted.db-wal"
 if exist "%backupScriptSource%" (
     copy /Y "%backupScriptSource%" "%backupScriptDest%" >nul
     if errorlevel 1 (
-        >> "%logFile%" echo [%date% %time%] WARNING: Failed to copy backup script to "%backupScriptDest%".
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to copy manual cold-copy fallback script to "%backupScriptDest%".
     ) else (
-        >> "%logFile%" echo [%date% %time%] Backup script copied to "%backupScriptDest%".
+        >> "%logFile%" echo [%date% %time%] Manual cold-copy fallback script copied to "%backupScriptDest%".
     )
 ) else (
-    >> "%logFile%" echo [%date% %time%] WARNING: Backup script not found at "%backupScriptSource%".
+    >> "%logFile%" echo [%date% %time%] WARNING: Manual cold-copy fallback script not found at "%backupScriptSource%".
 )
 
 rem Configure and install Playwright browser binaries in ProgramData for service account usage.
@@ -243,18 +244,20 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if exist "%backupScriptDest%" (
-    >> "%logFile%" echo [%date% %time%] Configuring scheduled task "%backupTaskName%" for user "%backupTaskUser%".
+if exist "%destinationFolder%\%app%" (
+    >> "%logFile%" echo [%date% %time%] Configuring scheduled ONLINE backup task "%backupTaskName%" for user "%backupTaskUser%".
+    schtasks /Delete /TN "%legacyBackupTaskName%" /F >> "%logFile%" 2>&1
     schtasks /Delete /TN "%backupTaskName%" /F >> "%logFile%" 2>&1
-    schtasks /Create /TN "%backupTaskName%" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""%backupScriptDest%""" /SC HOURLY /MO 2 /ST 00:00 /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
+    schtasks /Create /TN "%backupTaskName%" /TR "\"%destinationFolder%\%app%\" --online-backup" /SC HOURLY /MO 2 /ST 00:00 /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
     if errorlevel 1 (
-        >> "%logFile%" echo [%date% %time%] WARNING: Failed to create scheduled backup task.
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to create scheduled online backup task.
         echo WARNING: Could not create scheduled backup task "%backupTaskName%".
     ) else (
-        >> "%logFile%" echo [%date% %time%] Scheduled backup task created successfully.
+        >> "%logFile%" echo [%date% %time%] Scheduled online backup task created successfully.
+        >> "%logFile%" echo [%date% %time%] NOTE: "%backupScriptDest%" is retained only for manual cold-copy fallback.
     )
 ) else (
-    >> "%logFile%" echo [%date% %time%] WARNING: Skipping scheduled task creation because backup script is missing.
+    >> "%logFile%" echo [%date% %time%] WARNING: Skipping scheduled task creation because app executable is missing.
 )
 
 if "%interactive%"=="1" start "" "%appUrl%"

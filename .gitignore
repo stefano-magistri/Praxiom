@@ -261,6 +261,8 @@ Generated_Code/
 # because we have git ;-)
 _UpgradeReport_Files/
 Backup*/
+!DottoressaIorio.Services/Backup/
+!DottoressaIorio.Services/Backup/*.cs
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/

@@ -1,7 +1,8 @@
-﻿@page "/create-patient"
+@page "/create-patient"
 @inject PatientRepository repository 
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
+@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
 <PageHeader Title="Nuovo Paziente"/>
 
@@ -58,6 +59,15 @@
         {
             await repository.AddAsync(model);
             await unitOfWork.SaveChangesAsync();
+            try
+            {
+                await onlineBackupService.TriggerBackupAsync("patient-create");
+            }
+            catch
+            {
+                // Backup failures must not block the user save flow.
+            }
+
             navigationManager.NavigateTo($"/patient/{model.PatientId}/");
         }
         catch (Exception ex)
@@ -67,3 +77,4 @@
     }
 
 }
+
