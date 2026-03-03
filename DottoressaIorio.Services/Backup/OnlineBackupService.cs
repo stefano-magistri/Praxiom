@@ -53,6 +53,7 @@ public sealed class OnlineBackupService(
                 sourceConnection.BackupDatabase(destinationConnection);
 
                 ApplyRetention();
+                MirrorBackupToOneDrive(backupPath);
 
                 await stateStore.WriteSuccessAsync(nowUtc, cancellationToken);
                 stopwatch.Stop();
@@ -123,12 +124,23 @@ public sealed class OnlineBackupService(
 
     private void ApplyRetention()
     {
-        if (options.RetentionCount <= 0 || !Directory.Exists(options.BackupDirectoryPath))
+        ApplyRetentionForDirectory(options.BackupDirectoryPath);
+
+        var oneDriveBackupRoot = ResolveOneDriveBackupRoot();
+        if (!string.IsNullOrWhiteSpace(oneDriveBackupRoot))
+        {
+            ApplyRetentionForDirectory(oneDriveBackupRoot);
+        }
+    }
+
+    private void ApplyRetentionForDirectory(string backupDirectoryPath)
+    {
+        if (options.RetentionCount <= 0 || !Directory.Exists(backupDirectoryPath))
         {
             return;
         }
 
-        var files = new DirectoryInfo(options.BackupDirectoryPath)
+        var files = new DirectoryInfo(backupDirectoryPath)
             .GetFiles($"{options.BackupFilePrefix}*.db")
             .OrderByDescending(file => file.LastWriteTimeUtc)
             .Skip(options.RetentionCount);
@@ -148,5 +160,57 @@ public sealed class OnlineBackupService(
                 logger.LogWarning(ex, "Could not delete old backup file {BackupPath}.", file.FullName);
             }
         }
+    }
+
+    private void MirrorBackupToOneDrive(string localBackupPath)
+    {
+        if (!options.EnableOneDriveMirror)
+        {
+            return;
+        }
+
+        var oneDriveBackupRoot = ResolveOneDriveBackupRoot();
+        if (string.IsNullOrWhiteSpace(oneDriveBackupRoot))
+        {
+            logger.LogWarning("OneDrive path not available. Local backup still created at {BackupPath}.", localBackupPath);
+            return;
+        }
+
+        var backupFileName = Path.GetFileName(localBackupPath);
+        var oneDriveBackupPath = Path.Combine(oneDriveBackupRoot, backupFileName);
+
+        try
+        {
+            Directory.CreateDirectory(oneDriveBackupRoot);
+            File.Copy(localBackupPath, oneDriveBackupPath, overwrite: true);
+            logger.LogInformation("OneDrive mirror backup copied to {BackupPath}.", oneDriveBackupPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            logger.LogWarning(ex, "Could not mirror backup to OneDrive path {BackupPath}.", oneDriveBackupPath);
+        }
+    }
+
+    private string? ResolveOneDriveBackupRoot()
+    {
+        var oneDriveCandidates = new[]
+            {
+                Environment.GetEnvironmentVariable("OneDriveConsumer"),
+                Environment.GetEnvironmentVariable("OneDriveCommercial"),
+                Environment.GetEnvironmentVariable("OneDrive"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive")
+            }
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var candidate in oneDriveCandidates)
+        {
+            if (Directory.Exists(candidate))
+            {
+                return Path.Combine(candidate, options.OneDriveBackupRelativePath);
+            }
+        }
+
+        return null;
     }
 }

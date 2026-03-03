@@ -1,5 +1,10 @@
 $ErrorActionPreference = "Stop"
 
+# Manual/emergency fallback only.
+# Routine backups are online backups handled by:
+#   C:\ProgramData\DottoressaIorio\DottoressaIorio.App.exe --online-backup
+# This script performs stop-service cold copy and should not be used for routine daytime scheduling.
+
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
     throw "This script must run in an elevated PowerShell session (Run as Administrator)."

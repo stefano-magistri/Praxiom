@@ -169,7 +169,12 @@ Scripted installer behavior includes:
 - deployment to `C:\ProgramData\DottoressaIorio`,
 - Windows service setup/start,
 - Playwright Chromium installation attempt,
-- scheduled backup task setup attempt.
+- scheduled online backup task setup (`DottoressaIorio.App.exe --online-backup`).
+
+Backup modes:
+
+- Routine mode: online SQLite backup through the scheduled task and app-triggered actions (service stays running).
+- Fallback mode: `Setup/backup_script.ps1` performs stop-service cold copy and is retained for manual/emergency use only.
 
 ## Contributing and Maintenance
 
