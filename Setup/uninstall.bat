@@ -2,7 +2,6 @@
 setlocal EnableExtensions
 
 set "interactive=1"
-set "removeAllData=0"
 
 :parseArgs
 if "%~1"=="" goto argsDone
@@ -12,7 +11,7 @@ if /I "%~1"=="--silent" (
     goto parseArgs
 )
 if /I "%~1"=="--remove-all-data" (
-    set "removeAllData=1"
+    rem Deprecated: uninstall now always preserves backups/logs.
     shift
     goto parseArgs
 )
@@ -55,41 +54,23 @@ if %errorlevel% equ 0 (
 if exist "%destinationFolder%" (
     cd /d "%destinationFolder%"
 
-    if "%removeAllData%"=="0" (
-        rem Keep SQLite database files for future reinstalls.
-        if not exist "%dbBackupFolder%" mkdir "%dbBackupFolder%"
-        call :backupDbFile "app.db"
-        call :backupDbFile "app.db-shm"
-        call :backupDbFile "app.db-wal"
-        call :backupDbFile "app_unencrypted.db"
-        call :backupDbFile "app_unencrypted.db-shm"
-        call :backupDbFile "app_unencrypted.db-wal"
-    )
+    rem Keep SQLite database files for future reinstalls.
+    if not exist "%dbBackupFolder%" mkdir "%dbBackupFolder%"
+    call :backupDbFile "app.db"
+    call :backupDbFile "app.db-shm"
+    call :backupDbFile "app.db-wal"
+    call :backupDbFile "app_unencrypted.db"
+    call :backupDbFile "app_unencrypted.db-shm"
+    call :backupDbFile "app_unencrypted.db-wal"
 
-    rem Remove all files except the database backup directory.
+    rem Remove all top-level files (database backups and logs are directories).
     for /F "delims=" %%i in ('dir /B /A:-D "%destinationFolder%"') do (
         del /F /Q "%destinationFolder%\%%i" >nul 2>nul
     )
 
-    rem Remove all directories except the database backup directory.
-    if "%removeAllData%"=="0" (
-        for /F "delims=" %%i in ('dir /B /A:D "%destinationFolder%" ^| findstr /V /I /X /C:"%dbBackupFolder%"') do (
-            rmdir /S /Q "%destinationFolder%\%%i" >nul 2>nul
-        )
-    ) else (
-        for /F "delims=" %%i in ('dir /B /A:D "%destinationFolder%"') do (
-            attrib -R -S -H "%destinationFolder%\%%i" /S /D >nul 2>nul
-            rmdir /S /Q "%destinationFolder%\%%i" >nul 2>nul
-        )
-        rem Ensure backup folder is removed even if it was recreated or had protected attributes.
-        if exist "%destinationFolder%\%dbBackupFolder%" (
-            attrib -R -S -H "%destinationFolder%\%dbBackupFolder%" /S /D >nul 2>nul
-            rmdir /S /Q "%destinationFolder%\%dbBackupFolder%" >nul 2>nul
-        )
-        rem Remove application root when all data deletion is explicitly requested.
-        cd /d "%ProgramData%"
-        attrib -R -S -H "%destinationFolder%" /S /D >nul 2>nul
-        rmdir /S /Q "%destinationFolder%" >nul 2>nul
+    rem Keep database backups and logs; remove all other directories.
+    for /F "delims=" %%i in ('dir /B /A:D "%destinationFolder%" ^| findstr /V /I /X /C:"%dbBackupFolder%" ^| findstr /V /I /X /C:"logs"') do (
+        rmdir /S /Q "%destinationFolder%\%%i" >nul 2>nul
     )
 )
 

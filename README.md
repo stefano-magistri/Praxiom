@@ -161,6 +161,7 @@ Key scripts:
 - `Setup/install.bat`
 - `Setup/uninstall.bat`
 - `Setup/backup_script.ps1`
+- `Setup/restore_script.ps1`
 
 Scripted installer behavior includes:
 
@@ -175,6 +176,17 @@ Backup modes:
 
 - Routine mode: online SQLite backup through the scheduled task and app-triggered actions (service stays running).
 - Fallback mode: `Setup/backup_script.ps1` performs stop-service cold copy and is retained for manual/emergency use only.
+
+Restore mode:
+
+- `Setup/restore_script.ps1` restores `app.db` from a selected backup file path (local or OneDrive) by stopping the service, replacing the DB, and starting the service again.
+- It also creates a safety snapshot of current `app.db` into `_db_backup` as `app_pre_restore_yyyyMMddHHmmss.db`.
+
+Example:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\DottoressaIorio\restore_script.ps1" -BackupPath "C:\Users\<user>\OneDrive\DottoressaIorio\_db_backup\app_backup_20260303153000.db"
+```
 
 ## Contributing and Maintenance
 

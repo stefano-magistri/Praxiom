@@ -88,6 +88,8 @@ set "legacyBackupDb=C:\Program Files\DottoressaIorio\_db_backup\app.db"
 set "configFile=%destinationFolder%\appsettings.Production.json"
 set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
+set "restoreScriptSource=%scriptDir%restore_script.ps1"
+set "restoreScriptDest=%destinationFolder%\restore_script.ps1"
 set "backupTaskName=DottoressaIorio Online Backup"
 set "legacyBackupTaskName=DottoressaIorio Daily Backup"
 set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
@@ -166,6 +168,17 @@ if exist "%backupScriptSource%" (
     )
 ) else (
     >> "%logFile%" echo [%date% %time%] WARNING: Manual cold-copy fallback script not found at "%backupScriptSource%".
+)
+
+if exist "%restoreScriptSource%" (
+    copy /Y "%restoreScriptSource%" "%restoreScriptDest%" >nul
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to copy restore script to "%restoreScriptDest%".
+    ) else (
+        >> "%logFile%" echo [%date% %time%] Restore script copied to "%restoreScriptDest%".
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] WARNING: Restore script not found at "%restoreScriptSource%".
 )
 
 rem Configure and install Playwright browser binaries in ProgramData for service account usage.
