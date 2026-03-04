@@ -25,11 +25,11 @@ public static class LoggingExtensions
         return (LogEventLevel.Information, LogEventLevel.Warning, productionLogFilePath);
     }
 
-    public static IHostApplicationBuilder AddDottoressaLogging(this WebApplicationBuilder builder)
+    public static void AddDottoressaLogging(this WebApplicationBuilder builder)
     {
         var (minimumLevel, microsoftLevel, logFilePath) = GetLoggingSettings(builder.Environment);
         var logsDirectory = Path.GetDirectoryName(logFilePath)
-            ?? throw new InvalidOperationException("Unable to resolve log directory path.");
+                            ?? throw new InvalidOperationException("Unable to resolve log directory path.");
         Directory.CreateDirectory(logsDirectory);
 
         builder.Logging.ClearProviders();
@@ -42,7 +42,5 @@ public static class LoggingExtensions
             .CreateLogger();
         builder.Host.UseSerilog(Log.Logger, dispose: true);
         Log.Information("Serilog initialized. File sink path: {LogFilePath}", logFilePath);
-
-        return builder;
     }
 }

@@ -13,11 +13,13 @@ try
     var builder = WebApplication.CreateBuilder(args);
     var configuration = builder.Configuration;
     var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
+    var runOnlineBackup = args.Any(argument => argument.Equals("--online-backup", StringComparison.OrdinalIgnoreCase));
+    var useDemoDatabase = args.Any(argument => argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
 
     if (isWindowsService) builder.Host.UseWindowsService();
 
-    var encryptionKey = configuration["EncryptionKey"];
-    var allowedUsername = configuration["Authentication:AllowedUsername"];
+    var encryptionKey = configuration["EncryptionKey"]!;
+    var allowedUsername = configuration["Authentication:AllowedUsername"]!;
 
     // Read the "UseNegotiate" setting from the configuration file
     var useNegotiate = configuration.GetValue<bool>("Authentication:UseNegotiate");
@@ -49,14 +51,19 @@ try
     builder.Services.AddPdfServices();
     builder.Services.AddOnlineSqliteBackup(options =>
     {
-        options.PreferredWindowsUsername = ExtractUsername(allowedUsername);
+        options.PreferredWindowsUsername = OnlineBackupExtensions.ExtractUsername(allowedUsername);
     });
+
+    if (runOnlineBackup && useDemoDatabase)
+        throw new InvalidOperationException("Cannot use --online-backup and --demo together.");
+
+    if (useDemoDatabase)
+        builder.ConfigureDemoDatabase();
 
     var app = builder.Build();
     var onlineBackupService = app.Services.GetRequiredService<IOnlineBackupService>();
     var onlineBackupOptions = app.Services.GetRequiredService<OnlineBackupOptions>();
 
-    var runOnlineBackup = args.Any(argument => argument.Equals("--online-backup", StringComparison.OrdinalIgnoreCase));
     if (runOnlineBackup)
     {
         var result = await onlineBackupService.TriggerBackupAsync("scheduled-task");
@@ -139,21 +146,4 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
-}
-
-static string? ExtractUsername(string? allowedUsername)
-{
-    if (string.IsNullOrWhiteSpace(allowedUsername))
-    {
-        return null;
-    }
-
-    var trimmed = allowedUsername.Trim();
-    var backslashIndex = trimmed.LastIndexOf('\\');
-    var slashIndex = trimmed.LastIndexOf('/');
-    var separatorIndex = Math.Max(backslashIndex, slashIndex);
-
-    return separatorIndex >= 0 && separatorIndex < trimmed.Length - 1
-        ? trimmed[(separatorIndex + 1)..]
-        : trimmed;
 }

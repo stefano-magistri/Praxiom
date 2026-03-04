@@ -15,4 +15,21 @@ public static class OnlineBackupExtensions
         services.AddSingleton<IOnlineBackupService, OnlineBackupService>();
         return services;
     }
+
+    public static string? ExtractUsername(string? allowedUsername)
+    {
+        if (string.IsNullOrWhiteSpace(allowedUsername))
+        {
+            return null;
+        }
+
+        var trimmed = allowedUsername.Trim();
+        var backslashIndex = trimmed.LastIndexOf('\\');
+        var slashIndex = trimmed.LastIndexOf('/');
+        var separatorIndex = Math.Max(backslashIndex, slashIndex);
+
+        return separatorIndex >= 0 && separatorIndex < trimmed.Length - 1
+            ? trimmed[(separatorIndex + 1)..]
+            : trimmed;
+    }
 }

@@ -16,6 +16,9 @@ dotnet test DottoressaIorio.slnx --configuration Release
 # Run app locally
 dotnet run --project DottoressaIorio.App
 
+# Run app locally with demo backup DB
+dotnet run --project DottoressaIorio.App --demo
+
 # Build installer (Windows)
 Setup\build-installer.bat
 ```
