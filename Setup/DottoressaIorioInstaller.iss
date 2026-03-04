@@ -37,6 +37,7 @@ Source: "7z.dll"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "install.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "uninstall.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "backup_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
+Source: "restore_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
 
 [Run]
 Filename: "{app}\_setup\install.bat"; Parameters: "{code:GetInstallParams}"; Flags: runhidden waituntilterminated; StatusMsg: "Configuring Windows service..."
@@ -52,7 +53,6 @@ Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}";
 [Code]
 var
   ConfigPage: TInputQueryWizardPage;
-  RemoveAllDataOnUninstall: Boolean;
 
 function IsValidServiceUrl(const Url: string): Boolean; forward;
 function ExtractPortFromUrl(const Url: string): Integer; forward;
@@ -252,26 +252,9 @@ begin
   end;
 end;
 
-function InitializeUninstall(): Boolean;
-begin
-  Result := True;
-  RemoveAllDataOnUninstall := False;
-  if not UninstallSilent then
-  begin
-    RemoveAllDataOnUninstall :=
-      MsgBox(
-        'Do you want to remove all local application data (database files) as well?',
-        mbConfirmation,
-        MB_YESNO or MB_DEFBUTTON2
-      ) = IDYES;
-  end;
-end;
-
 function GetUninstallParams(Value: string): string;
 begin
   Result := '--silent';
-  if RemoveAllDataOnUninstall then
-    Result := Result + ' --remove-all-data';
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
