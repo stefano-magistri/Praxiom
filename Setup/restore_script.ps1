@@ -1,11 +1,11 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [Parameter(Mandatory = $true)]
     [string]$BackupPath,
     [string]$ServiceName = "DottoressaIorio.App",
     [string]$AppRoot = "C:\ProgramData\DottoressaIorio"
 )
+
+$ErrorActionPreference = "Stop"
 
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
