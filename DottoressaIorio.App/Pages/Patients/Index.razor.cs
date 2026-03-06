@@ -1,6 +1,7 @@
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using System.Globalization;
 
 namespace DottoressaIorio.App.Pages.Patients;
@@ -112,7 +113,6 @@ public class PatientsBase : ComponentBase
         await UpdateDisplayedPatients();
     }
 
-
     /// <summary>
     ///     Navigates to the edit page for the patient with the specified identifier.
     /// </summary>
@@ -123,12 +123,34 @@ public class PatientsBase : ComponentBase
     }
 
     /// <summary>
+    ///     Navigates to the detail page for the patient with the specified identifier.
+    /// </summary>
+    /// <param name="id">The patient identifier.</param>
+    protected void NavigateToPatient(int id)
+    {
+        NavigationManager.NavigateTo($"/patient/{id}/");
+    }
+
+    /// <summary>
     ///     Navigates to the delete confirmation page for the patient with the specified identifier.
     /// </summary>
     /// <param name="id">The patient identifier.</param>
     protected void NavigateToDeletePatient(int id)
     {
         NavigationManager.NavigateTo($"/patient/{id}/delete");
+    }
+
+    /// <summary>
+    ///     Supports keyboard activation for clickable patient rows.
+    /// </summary>
+    /// <param name="args">The keyboard event data.</param>
+    /// <param name="id">The patient identifier.</param>
+    protected void HandlePatientRowKeyDown(KeyboardEventArgs args, int id)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            NavigateToPatient(id);
+        }
     }
 
     /// <summary>

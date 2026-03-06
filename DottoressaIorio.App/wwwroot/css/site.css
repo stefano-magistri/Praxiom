@@ -534,8 +534,18 @@ main .patients-table-wrapper {
     border-bottom: 1px solid #e8eef4;
 }
 
+.patients-table > tbody > tr.patient-row {
+    cursor: pointer;
+}
+
 .patients-table > tbody > tr:hover > * {
     background: #f7fbfe;
+}
+
+.patients-table > tbody > tr.patient-row:focus-visible > * {
+    background: #eef7fc;
+    outline: 2px solid #7aa7c7;
+    outline-offset: -2px;
 }
 
 .patient-link {
