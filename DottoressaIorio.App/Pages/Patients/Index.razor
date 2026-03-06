@@ -38,7 +38,11 @@
                     <tbody>
                     @foreach (var patient in DisplayedPatients)
                     {
-                        <tr>
+                        <tr class="patient-row"
+                            @onclick="() => NavigateToPatient(patient.PatientId)"
+                            tabindex="0"
+                            role="link"
+                            @onkeydown="args => HandlePatientRowKeyDown(args, patient.PatientId)">
                             <td>
                                 <span class="oi oi-eye px-2 text-muted" aria-hidden="true"></span>
                                 <a class="patient-link" href="/patient/@patient.PatientId/">@patient.Title @FormatPatientDisplayName(patient.FirstName, patient.LastName)</a>
@@ -49,7 +53,7 @@
                             <td>
                                 @patient.CreatedDate.ToString("dd/MM/yyyy")
                             </td>
-                            <td class="text-end">
+                            <td class="text-end" @onclick:stopPropagation="true">
                                 <div class="patient-row-actions">
                                     <AnchorButton ButtonClass="primary btn-create-therapy" Url="@($"/patient/{patient.PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Crea terapia"></AnchorButton>
                                     <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditPatient(patient.PatientId)" IconClass="oi oi-pencil"></ActionButton>
