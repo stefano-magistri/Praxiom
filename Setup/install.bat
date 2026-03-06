@@ -4,6 +4,7 @@ setlocal EnableExtensions
 set "interactive=1"
 set "allowedUsername="
 set "appUrl=http://localhost:5000"
+set "skipAutoDbRestore=0"
 set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
 set "statusFile=%~dp0install.status"
@@ -42,6 +43,11 @@ if /I "%~1"=="--app-url" (
     shift
     goto parseArgs
 )
+if /I "%~1"=="--skip-auto-db-restore" (
+    set "skipAutoDbRestore=1"
+    shift
+    goto parseArgs
+)
 echo Unknown argument: %~1
 if "%interactive%"=="1" pause
 exit /b 1
@@ -55,7 +61,7 @@ if "%allowedUsername%"=="" (
 )
 echo %appUrl% | findstr /I "://">nul
 if errorlevel 1 set "appUrl=http://%appUrl%"
->> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl%
+>> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore%
 call :validateUrl "%appUrl%"
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] ERROR: Invalid app URL "%appUrl%".
@@ -152,12 +158,16 @@ if errorlevel 1 (
 )
 
 rem Restore database files if backup is present.
-call :restoreDbFile "app.db"
-call :restoreDbFile "app.db-shm"
-call :restoreDbFile "app.db-wal"
-call :restoreDbFile "app_unencrypted.db"
-call :restoreDbFile "app_unencrypted.db-shm"
-call :restoreDbFile "app_unencrypted.db-wal"
+if "%skipAutoDbRestore%"=="1" (
+    >> "%logFile%" echo [%date% %time%] Automatic database restore from local backup skipped by installer option.
+) else (
+    call :restoreDbFile "app.db"
+    call :restoreDbFile "app.db-shm"
+    call :restoreDbFile "app.db-wal"
+    call :restoreDbFile "app_unencrypted.db"
+    call :restoreDbFile "app_unencrypted.db-shm"
+    call :restoreDbFile "app_unencrypted.db-wal"
+)
 
 if exist "%backupScriptSource%" (
     copy /Y "%backupScriptSource%" "%backupScriptDest%" >nul

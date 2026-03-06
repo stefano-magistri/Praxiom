@@ -24,10 +24,10 @@ SetupIconFile=..\DottoressaIorio.App\wwwroot\favicon.ico
 UninstallDisplayIcon={app}\DottoressaIorio.App.exe
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
+Name: "desktopicon"; Description: "Crea un collegamento sul desktop"; GroupDescription: "Icone aggiuntive:"
 
 [Files]
 Source: "..\DottoressaIorio.App\wwwroot\favicon.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -40,7 +40,7 @@ Source: "backup_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "restore_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
 
 [Run]
-Filename: "{app}\_setup\install.bat"; Parameters: "{code:GetInstallParams}"; Flags: runhidden waituntilterminated; StatusMsg: "Configuring Windows service..."
+Filename: "{app}\_setup\install.bat"; Parameters: "{code:GetInstallParams}"; Flags: runhidden waituntilterminated; StatusMsg: "Configurazione del servizio Windows in corso..."
 
 [UninstallRun]
 Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "DottoressaIorioAppUninstall"
@@ -53,11 +53,15 @@ Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}";
 [Code]
 var
   ConfigPage: TInputQueryWizardPage;
+  RestoreOptionPage: TInputOptionWizardPage;
+  RestoreFilePage: TInputFileWizardPage;
 
 function IsValidServiceUrl(const Url: string): Boolean; forward;
 function ExtractPortFromUrl(const Url: string): Integer; forward;
 function IsPortInUse(PortValue: Integer): Boolean; forward;
 function GetUninstallParams(Value: string): string; forward;
+function ShouldRestoreDatabase(): Boolean; forward;
+function GetRestoreBackupPath(): string; forward;
 
 procedure InitializeWizard;
 var
@@ -65,13 +69,13 @@ var
 begin
   ConfigPage := CreateInputQueryPage(
     wpSelectTasks,
-    'Application Configuration',
-    'Choose service URL and allowed Windows user',
-    'These values are applied during installation and can be changed by reinstalling.'
+    'Configurazione applicazione',
+    'Scegli l''URL del servizio e l''utente Windows autorizzato',
+    'Questi valori vengono applicati durante l''installazione e possono essere modificati reinstallando.'
   );
 
-  ConfigPage.Add('Allowed Username (DOMAIN\username):', False);
-  ConfigPage.Add('Service URL:', False);
+  ConfigPage.Add('Nome utente autorizzato (DOMINIO\username):', False);
+  ConfigPage.Add('URL del servizio:', False);
 
   DomainName := GetEnv('USERDOMAIN');
   if Trim(DomainName) = '' then
@@ -81,6 +85,26 @@ begin
   else
     ConfigPage.Values[0] := DomainName + '\' + ExpandConstant('{username}');
   ConfigPage.Values[1] := 'http://localhost:5000';
+
+  RestoreOptionPage := CreateInputOptionPage(
+    ConfigPage.ID,
+    'Ripristino database',
+    'Scegli se ripristinare il database da un file di backup esistente.',
+    'Seleziona "Si" solo se vuoi che questa installazione sostituisca il database corrente.',
+    True,
+    False
+  );
+  RestoreOptionPage.Add('No, usa il database esistente se presente');
+  RestoreOptionPage.Add('Si, ripristina da un file di backup');
+  RestoreOptionPage.SelectedValueIndex := 0;
+
+  RestoreFilePage := CreateInputFilePage(
+    RestoreOptionPage.ID,
+    'File di ripristino database',
+    'Scegli il file di backup del database da ripristinare.',
+    'Seleziona il file di backup `.db` che deve sostituire il database installato.'
+  );
+  RestoreFilePage.Add('Percorso file di backup:', 'Backup database (*.db)|*.db|Tutti i file (*.*)|*.*', '.db');
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -92,14 +116,14 @@ begin
   begin
     if Trim(ConfigPage.Values[0]) = '' then
     begin
-      MsgBox('Allowed Username is required.', mbError, MB_OK);
+      MsgBox('Il nome utente autorizzato e obbligatorio.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
     if Trim(ConfigPage.Values[1]) = '' then
     begin
-      MsgBox('Service URL is required.', mbError, MB_OK);
+      MsgBox('L''URL del servizio e obbligatorio.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
@@ -107,20 +131,44 @@ begin
     UrlToCheck := Trim(ConfigPage.Values[1]);
     if not IsValidServiceUrl(UrlToCheck) then
     begin
-      MsgBox('Service URL must be in the format http://hostname:port or https://hostname:port.', mbError, MB_OK);
+      MsgBox('L''URL del servizio deve essere nel formato http://hostname:porta oppure https://hostname:porta.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
     if IsPortInUse(ExtractPortFromUrl(UrlToCheck)) then
     begin
-      if MsgBox('The selected port appears to already be in use. Continue anyway?', mbConfirmation, MB_YESNO) = IDNO then
+      if MsgBox('La porta selezionata sembra gia essere in uso. Vuoi continuare comunque?', mbConfirmation, MB_YESNO) = IDNO then
       begin
         Result := False;
         Exit;
       end;
     end;
   end;
+
+  if CurPageID = RestoreFilePage.ID then
+  begin
+    if ShouldRestoreDatabase() and (Trim(GetRestoreBackupPath()) = '') then
+    begin
+      MsgBox('Il percorso del file di backup e obbligatorio quando il ripristino del database e attivato.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+
+    if ShouldRestoreDatabase() and (not FileExists(GetRestoreBackupPath())) then
+    begin
+      MsgBox('Il file di backup selezionato non esiste.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if PageID = RestoreFilePage.ID then
+    Result := not ShouldRestoreDatabase();
 end;
 
 function GetInstallParams(Value: string): string;
@@ -128,11 +176,23 @@ begin
   Result :=
     '--silent --allowed-username ' + AddQuotes(ConfigPage.Values[0]) +
     ' --app-url ' + AddQuotes(ConfigPage.Values[1]);
+  if ShouldRestoreDatabase() then
+    Result := Result + ' --skip-auto-db-restore';
 end;
 
 function GetConfiguredUrl(Value: string): string;
 begin
   Result := ConfigPage.Values[1];
+end;
+
+function ShouldRestoreDatabase(): Boolean;
+begin
+  Result := RestoreOptionPage.SelectedValueIndex = 1;
+end;
+
+function GetRestoreBackupPath(): string;
+begin
+  Result := Trim(RestoreFilePage.Values[0]);
 end;
 
 function IsDigits(const Value: string): Boolean;
@@ -261,6 +321,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 var
   StatusFile: string;
   StatusText: AnsiString;
+  RestoreResult: Integer;
 begin
   if CurStep <> ssPostInstall then
     Exit;
@@ -273,10 +334,46 @@ begin
   begin
     if Pos('WARNING', UpperCase(String(StatusText))) > 0 then
       MsgBox(
-        'Installation completed with warnings. Open "' +
-        ExpandConstant('{app}\_setup\install.log') + '" for details.',
+        'Installazione completata con avvisi. Apri "' +
+        ExpandConstant('{app}\_setup\install.log') + '" per i dettagli.',
         mbInformation,
         MB_OK
       );
   end;
+
+  if not ShouldRestoreDatabase() then
+    Exit;
+
+  if not Exec(
+    ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    '-NoProfile -ExecutionPolicy Bypass -File ' +
+      AddQuotes(ExpandConstant('{app}\_setup\restore_script.ps1')) +
+      ' -BackupPath ' + AddQuotes(GetRestoreBackupPath()),
+    '',
+    SW_HIDE,
+    ewWaitUntilTerminated,
+    RestoreResult
+  ) then
+  begin
+    MsgBox(
+      'Impossibile avviare lo script di ripristino del database. Potrai eseguirlo manualmente in seguito da "' +
+      ExpandConstant('{app}\_setup\restore_script.ps1') + '".',
+      mbError,
+      MB_OK
+    );
+    Exit;
+  end;
+
+  if RestoreResult <> 0 then
+  begin
+    MsgBox(
+      'Ripristino del database non riuscito. Verifica il file di backup selezionato ed esegui "' +
+      ExpandConstant('{app}\_setup\restore_script.ps1') + '" manualmente se necessario.',
+      mbError,
+      MB_OK
+    );
+    Exit;
+  end;
+
+  MsgBox('Ripristino del database completato con successo.', mbInformation, MB_OK);
 end;
