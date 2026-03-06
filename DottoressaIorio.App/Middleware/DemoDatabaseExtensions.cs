@@ -13,7 +13,7 @@ public static class DemoDatabaseExtensions
 
     public static void ConfigureDemoDatabase(this WebApplicationBuilder builder)
     {
-        var demoDbPath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Demo", "_db_backup", "app.db"));
+        var demoDbPath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Demo", "app_old.db"));
         if (!File.Exists(demoDbPath))
             throw new FileNotFoundException($"Demo database not found: {demoDbPath}");
 
