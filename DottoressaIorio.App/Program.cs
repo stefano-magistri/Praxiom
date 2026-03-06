@@ -6,10 +6,14 @@ using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting.WindowsServices;
+using SQLitePCL;
 using Serilog;
 
 try
 {
+    raw.SetProvider(new SQLite3Provider_e_sqlcipher());
+    Batteries_V2.Init();
+
     var builder = WebApplication.CreateBuilder(args);
     var configuration = builder.Configuration;
     var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();

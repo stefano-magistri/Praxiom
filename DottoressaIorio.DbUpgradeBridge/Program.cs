@@ -1,9 +1,10 @@
 using Microsoft.Data.Sqlite;
+using DottoressaIorio.DbUpgradeBridge;
 using SQLitePCL;
 using System.Text.Json;
-using DottoressaIorio.DbUpgradeBridge;
 
 Batteries_V2.Init();
+raw.SetProvider(new SQLite3Provider_e_sqlcipher());
 
 var appRoot = GetAppRoot(args);
 if (string.IsNullOrWhiteSpace(appRoot))
@@ -62,7 +63,9 @@ foreach (var openStrategy in sourceStrategies)
     using var sourceConnection = openStrategy(sourceDbPath, key);
     if (sourceConnection is null) continue;
 
-    if (!TryExportPlainSqlite(sourceConnection, tempDbPath)) continue;
+    if (!TryExportEncryptedSqlite(sourceConnection, tempDbPath, key)) continue;
+    if (!TryOpenWithCurrentPragmaKey(tempDbPath, key)) continue;
+    if (CanOpenWithoutKey(tempDbPath)) continue;
 
     migrated = true;
     break;
@@ -70,7 +73,7 @@ foreach (var openStrategy in sourceStrategies)
 
 if (!migrated)
 {
-    Console.Error.WriteLine("Bridge failed: could not migrate database into current app-readable format.");
+    Console.Error.WriteLine("Bridge failed: could not migrate database into current encrypted format.");
     DeleteIfExists(tempDbPath);
     return 1;
 }
@@ -204,7 +207,7 @@ static SqliteConnection? TryOpenWithPragmaKeyCompat4(string dbPath, string key)
     }
 }
 
-static bool TryExportPlainSqlite(SqliteConnection sourceConnection, string targetPath)
+static bool TryExportEncryptedSqlite(SqliteConnection sourceConnection, string targetPath, string key)
 {
     try
     {
@@ -212,7 +215,7 @@ static bool TryExportPlainSqlite(SqliteConnection sourceConnection, string targe
 
         ExecuteNonQuery(
             sourceConnection,
-            $"ATTACH DATABASE '{EscapeSqlLiteral(targetPath)}' AS migrated KEY '';");
+            $"ATTACH DATABASE '{EscapeSqlLiteral(targetPath)}' AS migrated KEY '{EscapeSqlLiteral(key)}';");
         ExecuteNonQuery(sourceConnection, "SELECT sqlcipher_export('migrated');");
         ExecuteNonQuery(sourceConnection, "DETACH DATABASE migrated;");
 
@@ -221,6 +224,37 @@ static bool TryExportPlainSqlite(SqliteConnection sourceConnection, string targe
     catch
     {
         DeleteIfExists(targetPath);
+        return false;
+    }
+}
+
+static bool TryOpenWithCurrentPragmaKey(string dbPath, string key)
+{
+    try
+    {
+        using var connection = new SqliteConnection($"Data Source={dbPath};Mode=ReadWriteCreate;Pooling=false");
+        connection.Open();
+        ExecuteNonQuery(connection, $"PRAGMA key = '{EscapeSqlLiteral(key)}';");
+        EnsureReadable(connection);
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+static bool CanOpenWithoutKey(string dbPath)
+{
+    try
+    {
+        using var connection = new SqliteConnection($"Data Source={dbPath};Mode=ReadWriteCreate;Pooling=false");
+        connection.Open();
+        EnsureReadable(connection);
+        return true;
+    }
+    catch
+    {
         return false;
     }
 }
