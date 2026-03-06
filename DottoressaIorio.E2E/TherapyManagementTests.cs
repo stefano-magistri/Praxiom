@@ -24,6 +24,8 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
 
         await page.GotoAsync($"/patient/{patientId}/create-therapy",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await Expect(page.Locator("#TemplateId option").Filter(new LocatorFilterOptions { HasText = templateTitle }))
+            .ToHaveCountAsync(1);
         await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = templateTitle });
         await Expect(page.Locator("#Description")).ToHaveValueAsync(templateDescription);
 
@@ -63,6 +65,39 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await Expect(page.GetByTestId("page-heading")).ToContainTextAsync("Editthnome",
             new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
         await Expect(page.Locator($"//tbody/tr[contains(., '{editedDescription}')]")).ToHaveCountAsync(0);
+    }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task CreateTherapy_ClearingTemplateSelection_ShouldClearDescription()
+    {
+        var setup = await NewAuthorizedPageAsync();
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var templateTitle = $"TPL-CLEAR-{seed}";
+        var templateDescription = $"Template to clear {seed}";
+        var manualDescription = $"Manual therapy {seed}";
+
+        await CreateTherapyTemplateAsync(page, templateTitle, templateDescription);
+        var patientId = await CreatePatientAsync(page, $"ClrNome{seed}", $"ClrCognome{seed}", $"{seed}.clr@example.test",
+            "1982-02-02");
+
+        await page.GotoAsync($"/patient/{patientId}/create-therapy",
+            new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        await Expect(page.Locator("#TemplateId option").Filter(new LocatorFilterOptions { HasText = templateTitle }))
+            .ToHaveCountAsync(1);
+        await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = templateTitle });
+        await Expect(page.Locator("#Description")).ToHaveValueAsync(templateDescription);
+
+        await page.Locator("#TemplateId").SelectOptionAsync("0");
+        await Expect(page.Locator("#Description")).ToHaveValueAsync(string.Empty);
+
+        await page.Locator("#Description").FillAsync(manualDescription);
+        await SubmitCreateTherapyFormAsync(page);
+        await Expect(page.GetByText(manualDescription)).ToBeVisibleAsync();
     }
 
     [Fact]
