@@ -26,7 +26,8 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
                 "1980-01-01");
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#search").FillAsync(prefix);
+        await WaitForInteractiveReadyAsync(page);
+        await FillLiveFieldAsync(page.Locator("#search"), prefix);
 
         var pageTwoButton = page.Locator("//button[contains(@class,'page-link') and normalize-space()='2']").First;
         await Expect(pageTwoButton).ToBeVisibleAsync();
@@ -34,7 +35,7 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
 
         await Expect(page.GetByText($"{prefix}11")).ToBeVisibleAsync();
 
-        await page.Locator("#search").FillAsync($"{prefix}03");
+        await FillLiveFieldAsync(page.Locator("#search"), $"{prefix}03");
         await Expect(page.GetByText($"{prefix}03")).ToBeVisibleAsync();
     }
 
@@ -58,7 +59,8 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
                 "1980-01-01");
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#search").FillAsync(prefix);
+        await WaitForInteractiveReadyAsync(page);
+        await FillLiveFieldAsync(page.Locator("#search"), prefix);
 
         var pagination = page.Locator("nav[aria-label='Patients Pagination']").First;
         var prevButton = pagination.GetByTestId("pagination-prev");
@@ -86,21 +88,26 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
 
         var seed = Guid.NewGuid().ToString("N")[..6];
         var prefix = $"PAGTPL-{seed}";
+        var finalDescription = $"Descrizione {prefix}-11";
+        var filteredDescription = $"Descrizione {prefix}-04";
 
         for (var i = 1; i <= 11; i++)
             await CreateTherapyTemplateAsync(page, $"{prefix}-{i:D2}", $"Descrizione {prefix}-{i:D2}");
 
         await page.GotoAsync("/therapy-templates", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#templateSearch").FillAsync(prefix);
+        await WaitForInteractiveReadyAsync(page);
+        await FillLiveFieldAsync(page.Locator("#templateSearch"), prefix);
 
-        var pageTwoButton = page.Locator("//button[contains(@class,'page-link') and normalize-space()='2']").First;
+        var pagination = page.Locator("nav[aria-label='Patients Pagination']").First;
+        var pageTwoButton = pagination.Locator("//button[contains(@class,'page-link') and normalize-space()='2']").First;
         await Expect(pageTwoButton).ToBeVisibleAsync();
         await pageTwoButton.ClickAsync();
+        await Expect(pagination.Locator("li.page-item.active .page-link")).ToHaveTextAsync("2");
 
-        await Expect(page.Locator($"//tbody/tr[contains(., '{prefix}-11')]").First).ToBeVisibleAsync();
+        await Expect(page.Locator($"//tbody/tr[contains(., '{finalDescription}')]").First).ToBeVisibleAsync();
 
-        await page.Locator("#templateSearch").FillAsync($"{prefix}-04");
-        await Expect(page.Locator($"//tbody/tr[contains(., '{prefix}-04')]").First).ToBeVisibleAsync();
+        await FillLiveFieldAsync(page.Locator("#templateSearch"), $"{prefix}-04");
+        await Expect(page.Locator($"//tbody/tr[contains(., '{filteredDescription}')]").First).ToBeVisibleAsync();
     }
 
     [Fact]
@@ -123,7 +130,8 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         for (var i = 1; i <= 9; i++) await CreateTherapyAsync(page, patientId, $"{prefix}-{i:D2}");
 
         await page.GotoAsync($"/patient/{patientId}/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#therapySearch").FillAsync(prefix);
+        await WaitForInteractiveReadyAsync(page);
+        await FillLiveFieldAsync(page.Locator("#therapySearch"), prefix);
 
         var pageTwoButton = page.Locator("//button[contains(@class,'page-link') and normalize-space()='2']").First;
         await Expect(pageTwoButton).ToBeVisibleAsync();
@@ -131,7 +139,7 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
 
         await Expect(page.GetByText($"{prefix}-01")).ToBeVisibleAsync();
 
-        await page.Locator("#therapySearch").FillAsync($"{prefix}-09");
+        await FillLiveFieldAsync(page.Locator("#therapySearch"), $"{prefix}-09");
         await Expect(page.GetByText($"{prefix}-09")).ToBeVisibleAsync();
     }
 }

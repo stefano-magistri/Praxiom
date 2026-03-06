@@ -26,21 +26,21 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await page.GetByTestId("create-patient-nav-link").ClickAsync();
 
         var createFormRows = page.Locator("form .row.g-3");
-        await createFormRows.Nth(0).Locator("input.form-control").FillAsync(firstName);
-        await createFormRows.Nth(1).Locator("input.form-control").FillAsync(lastName);
-        await createFormRows.Nth(2).Locator("input.form-control[type='date']").FillAsync(dateOfBirth);
-        await createFormRows.Nth(3).Locator("input.form-control[type='email']").FillAsync(email);
+        await FillBoundFieldAsync(createFormRows.Nth(0).Locator("input.form-control"), firstName);
+        await FillBoundFieldAsync(createFormRows.Nth(1).Locator("input.form-control"), lastName);
+        await FillDateFieldAsync(createFormRows.Nth(2).Locator("input.form-control[type='date']"), dateOfBirth);
+        await FillBoundFieldAsync(createFormRows.Nth(3).Locator("input.form-control[type='email']"), email);
         await SubmitCreatePatientFormAsync(page);
 
         await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Modifica" }).ClickAsync();
         await page.WaitForURLAsync("**/patient/*/edit/");
 
         await page.Locator("#Title").SelectOptionAsync(new SelectOptionValue { Label = "Dottoressa" });
-        await page.Locator("#PlaceOfBirth").FillAsync(placeOfBirth);
+        await FillBoundFieldAsync(page.Locator("#PlaceOfBirth"), placeOfBirth);
         await page.Locator("input[name='Gender']").Nth(1).CheckAsync();
-        await page.Locator("input[type='tel']").FillAsync(phone);
-        await page.Locator("input[type='email']").FillAsync(email);
-        await page.Locator("#Notes").FillAsync(notes);
+        await FillBoundFieldAsync(page.Locator("input[type='tel']"), phone);
+        await FillBoundFieldAsync(page.Locator("input[type='email']"), email);
+        await FillBoundFieldAsync(page.Locator("#Notes"), notes);
         await SubmitEditPatientFormAsync(page);
 
         await Expect(page.GetByText(placeOfBirth)).ToBeVisibleAsync();
@@ -70,7 +70,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
         await Expect(page.Locator("#search")).ToBeVisibleAsync();
 
-        await page.Locator("#search").FillAsync(firstName);
+        await FillLiveFieldAsync(page.Locator("#search"), firstName);
         await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
     }
 
@@ -90,14 +90,15 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await CreatePatientAsync(page, firstName, lastName, email, "1984-04-04");
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#search").FillAsync(firstName);
+        await WaitForInteractiveReadyAsync(page);
+        await FillLiveFieldAsync(page.Locator("#search"), firstName);
         await page.Locator(".patient-row-actions .btn-delete-soft").First.ClickAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
-        await page.Locator("#search").FillAsync(firstName);
+        await FillLiveFieldAsync(page.Locator("#search"), firstName);
         await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
     }
 
@@ -147,7 +148,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
-        await page.Locator("#search").FillAsync(firstName);
+        await FillLiveFieldAsync(page.Locator("#search"), firstName);
         await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
     }
 
@@ -178,7 +179,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
-        await page.Locator("#search").FillAsync(firstName);
+        await FillLiveFieldAsync(page.Locator("#search"), firstName);
         await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
     }
 }

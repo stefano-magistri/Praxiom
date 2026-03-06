@@ -15,6 +15,7 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
         var page = await context.NewPageAsync();
         await page.GotoAsync(path, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await EnsureAuthorizedShellAsync(page);
+        await WaitForInteractiveReadyAsync(page);
         return (context, page);
     }
 
@@ -32,12 +33,13 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
         string dateOfBirth)
     {
         await page.GotoAsync("/create-patient", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await WaitForInteractiveReadyAsync(page);
 
         var createFormRows = page.Locator("form .row.g-3");
-        await createFormRows.Nth(0).Locator("input.form-control").FillAsync(firstName);
-        await createFormRows.Nth(1).Locator("input.form-control").FillAsync(lastName);
-        await createFormRows.Nth(2).Locator("input.form-control[type='date']").FillAsync(dateOfBirth);
-        await createFormRows.Nth(3).Locator("input.form-control[type='email']").FillAsync(email);
+        await FillBoundFieldAsync(createFormRows.Nth(0).Locator("input.form-control"), firstName);
+        await FillBoundFieldAsync(createFormRows.Nth(1).Locator("input.form-control"), lastName);
+        await FillDateFieldAsync(createFormRows.Nth(2).Locator("input.form-control[type='date']"), dateOfBirth);
+        await FillBoundFieldAsync(createFormRows.Nth(3).Locator("input.form-control[type='email']"), email);
         await SubmitCreatePatientFormAsync(page);
 
         var match = Regex.Match(page.Url, @"/patient/(\d+)/?");
@@ -50,8 +52,9 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     {
         await page.GotoAsync("/create-therapy-template",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#Title").FillAsync(title);
-        await page.Locator("#Description").FillAsync(description);
+        await WaitForInteractiveReadyAsync(page);
+        await FillBoundFieldAsync(page.Locator("#Title"), title);
+        await FillBoundFieldAsync(page.Locator("#Description"), description);
         await SubmitTemplateFormAsync(page);
     }
 
@@ -59,9 +62,29 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     {
         await page.GotoAsync($"/patient/{patientId}/create-therapy",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#Description").FillAsync(description);
+        await WaitForInteractiveReadyAsync(page);
+        await FillBoundFieldAsync(page.Locator("#Description"), description);
         await SubmitCreateTherapyFormAsync(page);
     }
+
+    protected static async Task FillBoundFieldAsync(ILocator locator, string value)
+    {
+        await locator.FocusAsync();
+        await locator.FillAsync(string.Empty);
+        await locator.PressSequentiallyAsync(value);
+        await locator.PressAsync("Tab");
+        await Task.Delay(50);
+    }
+
+    protected static async Task FillDateFieldAsync(ILocator locator, string value)
+    {
+        await locator.FocusAsync();
+        await locator.FillAsync(value);
+        await locator.PressAsync("Tab");
+        await Task.Delay(50);
+    }
+
+    protected static Task WaitForInteractiveReadyAsync(IPage page) => page.WaitForTimeoutAsync(750);
 
     protected static async Task SubmitTemplateFormAsync(IPage page)
     {
@@ -69,7 +92,11 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
         for (var i = 0; i < 80; i++)
         {
-            if (page.Url.Contains("/therapy-templates", StringComparison.OrdinalIgnoreCase)) return;
+            if (page.Url.Contains("/therapy-templates", StringComparison.OrdinalIgnoreCase))
+            {
+                await WaitForInteractiveReadyAsync(page);
+                return;
+            }
 
             await page.WaitForTimeoutAsync(250);
         }
@@ -109,12 +136,17 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
         for (var i = 0; i < 40; i++)
         {
-            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$")) return;
+            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                await WaitForInteractiveReadyAsync(page);
+                return;
+            }
 
             if (await duplicatePatientWarning.IsVisibleAsync())
             {
                 await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
                 await page.WaitForURLAsync("**/patient/*/");
+                await WaitForInteractiveReadyAsync(page);
                 return;
             }
 
@@ -135,7 +167,11 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
         for (var i = 0; i < 40; i++)
         {
-            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$")) return;
+            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                await WaitForInteractiveReadyAsync(page);
+                return;
+            }
 
             await page.WaitForTimeoutAsync(250);
         }
@@ -153,7 +189,11 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
         for (var i = 0; i < 40; i++)
         {
-            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$")) return;
+            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                await WaitForInteractiveReadyAsync(page);
+                return;
+            }
 
             await page.WaitForTimeoutAsync(250);
         }
@@ -171,7 +211,11 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
         for (var i = 0; i < 40; i++)
         {
-            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$")) return;
+            if (Regex.IsMatch(page.Url, @"/patient/\d+/?$"))
+            {
+                await WaitForInteractiveReadyAsync(page);
+                return;
+            }
 
             await page.WaitForTimeoutAsync(250);
         }
@@ -186,8 +230,15 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
     protected static async Task FilterTemplatesAsync(IPage page, string term)
     {
-        await page.Locator("#templateSearch").FillAsync(term);
-        await page.Locator("#templateSearch").PressAsync("Tab");
+        await FillLiveFieldAsync(page.Locator("#templateSearch"), term);
+    }
+
+    protected static async Task FillLiveFieldAsync(ILocator locator, string value)
+    {
+        await locator.FocusAsync();
+        await locator.FillAsync(value);
+        await locator.DispatchEventAsync("input");
+        await Task.Delay(250);
     }
 
     protected static string FormatTitleCase(string? value)
