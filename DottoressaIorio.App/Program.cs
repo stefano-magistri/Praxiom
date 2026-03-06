@@ -15,6 +15,7 @@ try
     var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
     var runOnlineBackup = args.Any(argument => argument.Equals("--online-backup", StringComparison.OrdinalIgnoreCase));
     var useDemoDatabase = args.Any(argument => argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
+    var databaseRootPath = isWindowsService ? AppContext.BaseDirectory : builder.Environment.ContentRootPath;
 
     if (isWindowsService) builder.Host.UseWindowsService();
 
@@ -44,7 +45,9 @@ try
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
 
-    builder.Services.AddSqlLiteDbEncryption<ApplicationDbContext>(encryptionKey);
+    builder.Services.AddSqlLiteDbEncryption<ApplicationDbContext>(
+        encryptionKey,
+        databaseRootPath);
 
     builder.Services.AddDottoressaRepositories();
 

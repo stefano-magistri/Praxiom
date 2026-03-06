@@ -3,7 +3,7 @@ using System.Text;
 
 namespace DottoressaIorio.Services.SqlLiteEncryption;
 
-public class SqlLiteDbEncryptionService(string key)
+public class SqlLiteDbEncryptionService(string key, string? databaseRootPath = null)
 {
     private const string EncryptedDbPath = "app.db";
     private const string UnencryptedDbPath = "app_unencrypted.db";
@@ -15,7 +15,7 @@ public class SqlLiteDbEncryptionService(string key)
     /// </summary>
     public string GetConnectionString()
     {
-        var dbPath = GetDbPath();
+        var dbPath = GetDatabasePath();
         return $"Data Source={dbPath}";
     }
 
@@ -26,7 +26,7 @@ public class SqlLiteDbEncryptionService(string key)
     /// </summary>
     public SqliteConnection CreateConnection()
     {
-        var dbPath = GetDbPath();
+        var dbPath = GetDatabasePath();
         return CreateConnectionForPath(dbPath);
     }
 
@@ -66,10 +66,11 @@ public class SqlLiteDbEncryptionService(string key)
             26);
     }
 
-    private string GetDbPath()
+    public string GetDatabasePath()
     {
         var fileName = string.IsNullOrEmpty(key) ? UnencryptedDbPath : EncryptedDbPath;
-        return Path.Combine(AppContext.BaseDirectory, fileName);
+        var rootPath = string.IsNullOrWhiteSpace(databaseRootPath) ? AppContext.BaseDirectory : databaseRootPath;
+        return Path.Combine(rootPath, fileName);
     }
 
     private bool TryOpenWithLegacyPassword(string dbPath, out SqliteConnection connection, out string error)
