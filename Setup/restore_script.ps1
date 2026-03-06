@@ -18,17 +18,75 @@ if (-not (Test-Path -Path $expandedBackupPath -PathType Leaf)) {
 }
 $resolvedBackupPath = (Resolve-Path -Path $expandedBackupPath).Path
 
-$destinationDbPath = Join-Path $AppRoot "app.db"
 $backupRoot = Join-Path $AppRoot "_db_backup"
 if (-not (Test-Path -Path $backupRoot -PathType Container)) {
     New-Item -Path $backupRoot -ItemType Directory | Out-Null
 }
 
+function Get-ConfiguredEncryptionKey {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$AppRoot
+    )
+
+    $configPaths = @(
+        (Join-Path $AppRoot "appsettings.json"),
+        (Join-Path $AppRoot "appsettings.Production.json")
+    )
+
+    $encryptionKey = $null
+    foreach ($configPath in $configPaths) {
+        if (-not (Test-Path -Path $configPath -PathType Leaf)) {
+            continue
+        }
+
+        $config = Get-Content -Raw -Path $configPath | ConvertFrom-Json
+        $property = $config.PSObject.Properties["EncryptionKey"]
+        if ($null -ne $property) {
+            $encryptionKey = $property.Value
+        }
+    }
+
+    return $encryptionKey
+}
+
+function Get-RestoreDestinationDbPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$AppRoot
+    )
+
+    $encryptedPath = Join-Path $AppRoot "app.db"
+    $unencryptedPath = Join-Path $AppRoot "app_unencrypted.db"
+    $configuredEncryptionKey = Get-ConfiguredEncryptionKey -AppRoot $AppRoot
+    $preferredPath = if ([string]::IsNullOrWhiteSpace($configuredEncryptionKey)) {
+        $unencryptedPath
+    }
+    else {
+        $encryptedPath
+    }
+
+    if (Test-Path -Path $preferredPath -PathType Leaf) {
+        return $preferredPath
+    }
+
+    $fallbackPath = if ($preferredPath -eq $encryptedPath) { $unencryptedPath } else { $encryptedPath }
+    if (Test-Path -Path $fallbackPath -PathType Leaf) {
+        Write-Warning "Preferred restore target '$preferredPath' was not found. Falling back to '$fallbackPath'."
+        return $fallbackPath
+    }
+
+    return $preferredPath
+}
+
+$destinationDbPath = Get-RestoreDestinationDbPath -AppRoot $AppRoot
+
 $service = Get-Service -Name $ServiceName -ErrorAction Stop
 $serviceWasRunning = $service.Status -ne "Stopped"
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
-$preRestoreBackupPath = Join-Path $backupRoot "app_pre_restore_$timestamp.db"
+$destinationDbFileName = [System.IO.Path]::GetFileNameWithoutExtension($destinationDbPath)
+$preRestoreBackupPath = Join-Path $backupRoot "${destinationDbFileName}_pre_restore_$timestamp.db"
 
 try {
     if ($serviceWasRunning) {

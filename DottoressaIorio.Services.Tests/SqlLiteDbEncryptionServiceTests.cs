@@ -1,5 +1,6 @@
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.Data.Sqlite;
+using SQLitePCL;
 using System.IO;
 
 namespace DottoressaIorio.Services.Tests;
@@ -9,6 +10,12 @@ namespace DottoressaIorio.Services.Tests;
 /// </summary>
 public class SqlLiteDbEncryptionServiceTests
 {
+    static SqlLiteDbEncryptionServiceTests()
+    {
+        raw.SetProvider(new SQLite3Provider_e_sqlcipher());
+        Batteries_V2.Init();
+    }
+
     /// <summary>
     /// When no encryption key is provided, the service should point to the unencrypted DB file.
     /// </summary>
@@ -22,8 +29,9 @@ public class SqlLiteDbEncryptionServiceTests
         var cnStr = service.GetConnectionString();
 
         // Assert
-        var dataSource = cnStr["Data Source=".Length..];
-        Assert.Equal("app_unencrypted.db", Path.GetFileName(dataSource));
+        var builder = new SqliteConnectionStringBuilder(cnStr);
+        Assert.Equal("app_unencrypted.db", Path.GetFileName(builder.DataSource));
+        Assert.True(string.IsNullOrEmpty(builder.Password));
     }
 
     /// <summary>
@@ -39,8 +47,9 @@ public class SqlLiteDbEncryptionServiceTests
         var cnStr = service.GetConnectionString();
 
         // Assert
-        var dataSource = cnStr["Data Source=".Length..];
-        Assert.Equal("app.db", Path.GetFileName(dataSource));
+        var builder = new SqliteConnectionStringBuilder(cnStr);
+        Assert.Equal("app.db", Path.GetFileName(builder.DataSource));
+        Assert.True(string.IsNullOrEmpty(builder.Password));
     }
 
     /// <summary>
@@ -63,70 +72,72 @@ public class SqlLiteDbEncryptionServiceTests
     /// (We only test that the connection opens without error.)
     /// </summary>
     [Fact]
-    public void CreateConnection_WithEncryptionKey_DoesNotThrow()
+    public void CreateConnection_WithEncryptionKey_CreatesEncryptedDatabase()
     {
-        // Arrange
-        var service = new SqlLiteDbEncryptionService("key123");
-
-        // Act & Assert
-        using var conn = service.CreateConnection();
-        Assert.NotNull(conn);
-        Assert.Equal(System.Data.ConnectionState.Open, conn.State);
-    }
-
-    [Fact]
-    public void CreateConnection_WithEncryptionKey_AndPlainAppDb_FallsBackToPlainDatabase()
-    {
-        var appDbPath = Path.Combine(AppContext.BaseDirectory, "app.db");
-        var backupPath = $"{appDbPath}.test_backup";
-
-        if (File.Exists(appDbPath))
-        {
-            if (File.Exists(backupPath))
-                File.Delete(backupPath);
-
-            File.Move(appDbPath, backupPath);
-        }
-
+        var tempDir = Path.Combine(Path.GetTempPath(), "DottoressaIorio.EncryptionTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
         try
         {
-            using (var seedConnection = new SqliteConnection($"Data Source={appDbPath}"))
+            var service = new SqlLiteDbEncryptionService("key123", tempDir);
+            using (var conn = service.CreateConnection())
             {
-                seedConnection.Open();
-                using var command = seedConnection.CreateCommand();
+                Assert.Equal(System.Data.ConnectionState.Open, conn.State);
+                using var command = conn.CreateCommand();
                 command.CommandText = "CREATE TABLE IF NOT EXISTS __test (id INTEGER PRIMARY KEY);";
                 command.ExecuteNonQuery();
             }
 
-            var service = new SqlLiteDbEncryptionService("key123");
-            using var conn = service.CreateConnection();
-            Assert.Equal(System.Data.ConnectionState.Open, conn.State);
+            var appDbPath = Path.Combine(tempDir, "app.db");
+            Assert.True(File.Exists(appDbPath));
+
+            var header = ReadAsciiHeader(appDbPath);
+            Assert.DoesNotContain("SQLite format 3", header);
+
+            using (var keyedConnection = new SqliteConnection($"Data Source={appDbPath};Mode=ReadWrite;Pooling=false"))
+            {
+                keyedConnection.Open();
+                using (var keyCommand = keyedConnection.CreateCommand())
+                {
+                    keyCommand.CommandText = "PRAGMA key = 'key123';";
+                    keyCommand.ExecuteNonQuery();
+                }
+
+                using var command = keyedConnection.CreateCommand();
+                command.CommandText = "SELECT COUNT(*) FROM sqlite_master;";
+                _ = command.ExecuteScalar();
+            }
+
+            using var plainConnection = new SqliteConnection($"Data Source={appDbPath};Mode=ReadWrite;Pooling=false");
+            var ex = Assert.Throws<SqliteException>(() =>
+            {
+                plainConnection.Open();
+                using var command = plainConnection.CreateCommand();
+                command.CommandText = "SELECT COUNT(*) FROM sqlite_master;";
+                _ = command.ExecuteScalar();
+            });
+            Assert.Equal(26, ex.SqliteErrorCode);
         }
         finally
         {
-            if (File.Exists(appDbPath))
+            if (Directory.Exists(tempDir))
             {
                 try
                 {
-                    File.Delete(appDbPath);
+                    Directory.Delete(tempDir, recursive: true);
                 }
                 catch (IOException)
                 {
-                    // Best effort cleanup: pooled SQLite handles can transiently lock the file.
-                }
-            }
-
-            if (File.Exists(backupPath))
-            {
-                try
-                {
-                    File.Move(backupPath, appDbPath);
-                }
-                catch (IOException)
-                {
-                    // Best effort cleanup for the same reason.
+                    // Best effort cleanup for transient SQLite locks.
                 }
             }
         }
+    }
+
+    private static string ReadAsciiHeader(string path)
+    {
+        using var stream = File.OpenRead(path);
+        var buffer = new byte[16];
+        _ = stream.Read(buffer, 0, buffer.Length);
+        return System.Text.Encoding.ASCII.GetString(buffer);
     }
 }

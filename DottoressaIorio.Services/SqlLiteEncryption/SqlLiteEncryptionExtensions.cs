@@ -11,10 +11,11 @@ public static class SqlLiteEncryptionExtensions
     /// </summary>
     public static IServiceCollection AddSqlLiteDbEncryption<TContext>(
         this IServiceCollection services,
-        string encryptionKey)
+        string encryptionKey,
+        string? databaseRootPath = null)
         where TContext : DbContext
     {
-        services.AddSingleton(new SqlLiteDbEncryptionService(encryptionKey));
+        services.AddSingleton(new SqlLiteDbEncryptionService(encryptionKey, databaseRootPath));
 
         services.AddDbContext<TContext>((sp, options) =>
         {

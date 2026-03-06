@@ -1,9 +1,8 @@
 using Microsoft.Data.Sqlite;
-using System.Text;
 
 namespace DottoressaIorio.Services.SqlLiteEncryption;
 
-public class SqlLiteDbEncryptionService(string key)
+public class SqlLiteDbEncryptionService(string key, string? databaseRootPath = null)
 {
     private const string EncryptedDbPath = "app.db";
     private const string UnencryptedDbPath = "app_unencrypted.db";
@@ -15,8 +14,8 @@ public class SqlLiteDbEncryptionService(string key)
     /// </summary>
     public string GetConnectionString()
     {
-        var dbPath = GetDbPath();
-        return $"Data Source={dbPath}";
+        var builder = BuildConnectionStringBuilder(GetDatabasePath());
+        return builder.ToString();
     }
 
     /// <summary>
@@ -26,147 +25,39 @@ public class SqlLiteDbEncryptionService(string key)
     /// </summary>
     public SqliteConnection CreateConnection()
     {
-        var dbPath = GetDbPath();
-        return CreateConnectionForPath(dbPath);
+        return CreateConnectionForPath(GetDatabasePath());
     }
 
     public SqliteConnection CreateConnectionForPath(string dbPath)
     {
-        var errors = new StringBuilder();
+        if (!string.IsNullOrWhiteSpace(key) && !File.Exists(dbPath))
+            CreateEmptyEncryptedDatabase(dbPath, key);
 
-        if (string.IsNullOrEmpty(key))
-        {
-            var plainConnection = new SqliteConnection($"Data Source={dbPath}");
-            plainConnection.Open();
-            return plainConnection;
-        }
-
-        if (TryOpenWithLegacyPassword(dbPath, out var legacyPasswordConnection, out var legacyError))
-            return legacyPasswordConnection;
-        errors.Append("LegacyPassword=").Append(legacyError).Append("; ");
-
-        if (TryOpenWithPragmaKey(dbPath, out var pragmaKeyConnection, out var pragmaError))
-            return pragmaKeyConnection;
-        errors.Append("PragmaKey=").Append(pragmaError).Append("; ");
-
-        if (TryOpenWithPragmaKeyCompat3(dbPath, out var pragmaCompat3Connection, out var compat3Error))
-            return pragmaCompat3Connection;
-        errors.Append("PragmaKeyCompat3=").Append(compat3Error).Append("; ");
-
-        if (TryOpenWithPragmaKeyCompat4(dbPath, out var pragmaCompat4Connection, out var compat4Error))
-            return pragmaCompat4Connection;
-        errors.Append("PragmaKeyCompat4=").Append(compat4Error).Append(";");
-
-        if (TryOpenWithoutKey(dbPath, out var fallbackPlainConnection, out var plainError))
-            return fallbackPlainConnection;
-        errors.Append("Plain=").Append(plainError).Append(";");
-
-        throw new SqliteException(
-            $"Unable to open SQLite database with available key strategies. Details: {errors}",
-            26);
+        var connection = new SqliteConnection(BuildConnectionStringBuilder(dbPath).ToString());
+        connection.Open();
+        if (!string.IsNullOrWhiteSpace(key))
+            ExecuteNonQuery(connection, $"PRAGMA key = '{EscapeSqlLiteral(key)}';");
+        EnsureReadable(connection);
+        return connection;
     }
 
-    private string GetDbPath()
+    public string GetDatabasePath()
     {
         var fileName = string.IsNullOrEmpty(key) ? UnencryptedDbPath : EncryptedDbPath;
-        return Path.Combine(AppContext.BaseDirectory, fileName);
+        var rootPath = string.IsNullOrWhiteSpace(databaseRootPath) ? AppContext.BaseDirectory : databaseRootPath;
+        return Path.Combine(rootPath, fileName);
     }
 
-    private bool TryOpenWithLegacyPassword(string dbPath, out SqliteConnection connection, out string error)
+    private SqliteConnectionStringBuilder BuildConnectionStringBuilder(string dbPath)
     {
-        SqliteConnection? candidate = null;
-        try
+        var builder = new SqliteConnectionStringBuilder
         {
-            var builder = new SqliteConnectionStringBuilder
-            {
-                DataSource = dbPath,
-                Mode = SqliteOpenMode.ReadWriteCreate,
-                Password = key,
-                Pooling = false
-            };
+            DataSource = dbPath,
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            Pooling = false
+        };
 
-            candidate = new SqliteConnection(builder.ToString());
-            candidate.Open();
-            EnsureReadable(candidate);
-            connection = candidate;
-            error = "ok";
-            return true;
-        }
-        catch (Exception ex)
-        {
-            candidate?.Dispose();
-            connection = null!;
-            error = ex.Message;
-            return false;
-        }
-    }
-
-    private bool TryOpenWithPragmaKey(string dbPath, out SqliteConnection connection, out string error)
-    {
-        SqliteConnection? candidate = null;
-        try
-        {
-            candidate = new SqliteConnection($"Data Source={dbPath}");
-            candidate.Open();
-            ExecuteNonQuery(candidate, $"PRAGMA key = '{EscapeSqlLiteral(key)}';");
-            EnsureReadable(candidate);
-            connection = candidate;
-            error = "ok";
-            return true;
-        }
-        catch (Exception ex)
-        {
-            candidate?.Dispose();
-            connection = null!;
-            error = ex.Message;
-            return false;
-        }
-    }
-
-    private bool TryOpenWithPragmaKeyCompat3(string dbPath, out SqliteConnection connection, out string error)
-    {
-        SqliteConnection? candidate = null;
-        try
-        {
-            candidate = new SqliteConnection($"Data Source={dbPath}");
-            candidate.Open();
-            ExecuteNonQuery(candidate, "PRAGMA cipher_compatibility = 3;");
-            ExecuteNonQuery(candidate, $"PRAGMA key = '{EscapeSqlLiteral(key)}';");
-            EnsureReadable(candidate);
-            connection = candidate;
-            error = "ok";
-            return true;
-        }
-        catch (Exception ex)
-        {
-            candidate?.Dispose();
-            connection = null!;
-            error = ex.Message;
-            return false;
-        }
-    }
-
-    private bool TryOpenWithPragmaKeyCompat4(string dbPath, out SqliteConnection connection, out string error)
-    {
-        SqliteConnection? candidate = null;
-        try
-        {
-            candidate = new SqliteConnection($"Data Source={dbPath}");
-            candidate.Open();
-            ExecuteNonQuery(candidate, "PRAGMA cipher_compatibility = 4;");
-            ExecuteNonQuery(candidate, $"PRAGMA key = '{EscapeSqlLiteral(key)}';");
-            EnsureReadable(candidate);
-            connection = candidate;
-            error = "ok";
-            return true;
-        }
-        catch (Exception ex)
-        {
-            candidate?.Dispose();
-            connection = null!;
-            error = ex.Message;
-            return false;
-        }
+        return builder;
     }
 
     private static void EnsureReadable(SqliteConnection connection)
@@ -188,24 +79,14 @@ public class SqlLiteDbEncryptionService(string key)
         return value.Replace("'", "''");
     }
 
-    private bool TryOpenWithoutKey(string dbPath, out SqliteConnection connection, out string error)
+    private static void CreateEmptyEncryptedDatabase(string dbPath, string key)
     {
-        SqliteConnection? candidate = null;
-        try
-        {
-            candidate = new SqliteConnection($"Data Source={dbPath}");
-            candidate.Open();
-            EnsureReadable(candidate);
-            connection = candidate;
-            error = "ok";
-            return true;
-        }
-        catch (Exception ex)
-        {
-            candidate?.Dispose();
-            connection = null!;
-            error = ex.Message;
-            return false;
-        }
+        using var bootstrapConnection = new SqliteConnection("Data Source=:memory:;Mode=Memory;Pooling=false");
+        bootstrapConnection.Open();
+        ExecuteNonQuery(
+            bootstrapConnection,
+            $"ATTACH DATABASE '{EscapeSqlLiteral(dbPath)}' AS encrypted KEY '{EscapeSqlLiteral(key)}';");
+        ExecuteNonQuery(bootstrapConnection, "DETACH DATABASE encrypted;");
     }
+
 }

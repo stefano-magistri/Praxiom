@@ -28,7 +28,7 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
         await using var context = setup.Context;
         var page = setup.Page;
 
-        await page.Locator("#Title").FillAsync($"VAL-TPL-{Guid.NewGuid():N}");
+        await FillBoundFieldAsync(page.Locator("#Title"), $"VAL-TPL-{Guid.NewGuid():N}");
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
 
         await Expect(page.Locator(".validation-message")).ToContainTextAsync("descrizione");
@@ -48,6 +48,7 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
 
         await page.GotoAsync($"/patient/{patientId}/create-therapy",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await WaitForInteractiveReadyAsync(page);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
 
         await Expect(page.Locator(".validation-message")).ToContainTextAsync("descrizione");

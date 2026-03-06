@@ -4,6 +4,7 @@ setlocal EnableExtensions
 set "interactive=1"
 set "allowedUsername="
 set "appUrl=http://localhost:5000"
+set "skipAutoDbRestore=0"
 set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
 set "statusFile=%~dp0install.status"
@@ -42,6 +43,11 @@ if /I "%~1"=="--app-url" (
     shift
     goto parseArgs
 )
+if /I "%~1"=="--skip-auto-db-restore" (
+    set "skipAutoDbRestore=1"
+    shift
+    goto parseArgs
+)
 echo Unknown argument: %~1
 if "%interactive%"=="1" pause
 exit /b 1
@@ -55,7 +61,7 @@ if "%allowedUsername%"=="" (
 )
 echo %appUrl% | findstr /I "://">nul
 if errorlevel 1 set "appUrl=http://%appUrl%"
->> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl%
+>> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore%
 call :validateUrl "%appUrl%"
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] ERROR: Invalid app URL "%appUrl%".
@@ -82,7 +88,6 @@ set "sevenZipExe=%scriptDir%7z.exe"
 set "destinationFolder=C:\ProgramData\DottoressaIorio"
 set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
-set "dbBridge=DottoressaIorio.DbUpgradeBridge.exe"
 set "dbBackupFolder=_db_backup"
 set "legacyBackupDb=C:\Program Files\DottoressaIorio\_db_backup\app.db"
 set "configFile=%destinationFolder%\appsettings.Production.json"
@@ -152,12 +157,16 @@ if errorlevel 1 (
 )
 
 rem Restore database files if backup is present.
-call :restoreDbFile "app.db"
-call :restoreDbFile "app.db-shm"
-call :restoreDbFile "app.db-wal"
-call :restoreDbFile "app_unencrypted.db"
-call :restoreDbFile "app_unencrypted.db-shm"
-call :restoreDbFile "app_unencrypted.db-wal"
+if "%skipAutoDbRestore%"=="1" (
+    >> "%logFile%" echo [%date% %time%] Automatic database restore from local backup skipped by installer option.
+) else (
+    call :restoreDbFile "app.db"
+    call :restoreDbFile "app.db-shm"
+    call :restoreDbFile "app.db-wal"
+    call :restoreDbFile "app_unencrypted.db"
+    call :restoreDbFile "app_unencrypted.db-shm"
+    call :restoreDbFile "app_unencrypted.db-wal"
+)
 
 if exist "%backupScriptSource%" (
     copy /Y "%backupScriptSource%" "%backupScriptDest%" >nul
@@ -206,15 +215,6 @@ call :setAllowedUsernameJson "%configFile%" "%allowedUsername%"
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] ERROR: Failed to update appsettings.Production.json.
     echo Failed to update appsettings.Production.json.
-    if "%interactive%"=="1" pause
-    exit /b 1
-)
-
-rem Preflight database compatibility before creating the service.
-call :runLegacyBridgePreflight
-if errorlevel 1 (
-    > "%statusFile%" echo ERROR: Legacy bridge migration failed.
-    echo ERROR: Legacy bridge migration failed. Check "%logFile%" for details.
     if "%interactive%"=="1" pause
     exit /b 1
 )
@@ -314,24 +314,6 @@ set "URL_TO_VALIDATE=%urlToValidate%"
 powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $u=$env:URL_TO_VALIDATE; if($u -notmatch '^(https?)://[^/:\s]+:\d{1,5}$'){ exit 1 }; $port=[int]($u.Split(':')[-1]); if($port -lt 1 -or $port -gt 65535){ exit 1 } else { exit 0 }"
 set "exitCode=%errorlevel%"
 endlocal & exit /b %exitCode%
-
-:runLegacyBridgePreflight
-if not exist "%legacyBackupDb%" (
-    >> "%logFile%" echo [%date% %time%] Legacy DB bridge preflight skipped. No legacy backup found at "%legacyBackupDb%".
-    exit /b 0
-)
->> "%logFile%" echo [%date% %time%] Running legacy DB bridge preflight.
-if not exist "%destinationFolder%\%dbBridge%" (
-    >> "%logFile%" echo [%date% %time%] ERROR: Missing bridge executable "%destinationFolder%\%dbBridge%".
-    exit /b 1
-)
-"%destinationFolder%\%dbBridge%" --app-root "%destinationFolder%" >> "%logFile%" 2>&1
-if errorlevel 1 (
-    >> "%logFile%" echo [%date% %time%] ERROR: Legacy DB bridge preflight failed.
-    exit /b 1
-)
->> "%logFile%" echo [%date% %time%] Legacy DB bridge preflight passed.
-exit /b 0
 
 :logServiceDiagnostics
 >> "%logFile%" echo [%date% %time%] Collecting service diagnostics...

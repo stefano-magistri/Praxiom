@@ -41,9 +41,9 @@ jobs:
       - name: Prepare E2E database
         shell: bash
         run: |
-          APP_OUT_DIR="DottoressaIorio.App/bin/Release/net10.0"
+          APP_OUT_DIR="DottoressaIorio.App/"
           mkdir -p "$APP_OUT_DIR"
-          cp Demo/_db_backup/app.db "$APP_OUT_DIR/app.db"
+          cp Demo/app_old.db "$APP_OUT_DIR/app.db"
           rm -f "$APP_OUT_DIR/app.db-shm" "$APP_OUT_DIR/app.db-wal"
 
       - name: Start app for E2E

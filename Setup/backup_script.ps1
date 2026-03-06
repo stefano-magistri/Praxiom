@@ -12,9 +12,64 @@ if (-not $isAdmin) {
 
 $serviceName = "DottoressaIorio.App"
 $appRoot = "C:\ProgramData\DottoressaIorio"
-$sourcePath = Join-Path $appRoot "app.db"
 $localBackupRoot = Join-Path $appRoot "_db_backup"
 $retentionCount = 360
+
+function Get-ConfiguredEncryptionKey {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$AppRoot
+    )
+
+    $configPaths = @(
+        (Join-Path $AppRoot "appsettings.json"),
+        (Join-Path $AppRoot "appsettings.Production.json")
+    )
+
+    $encryptionKey = $null
+    foreach ($configPath in $configPaths) {
+        if (-not (Test-Path -Path $configPath -PathType Leaf)) {
+            continue
+        }
+
+        $config = Get-Content -Raw -Path $configPath | ConvertFrom-Json
+        $property = $config.PSObject.Properties["EncryptionKey"]
+        if ($null -ne $property) {
+            $encryptionKey = $property.Value
+        }
+    }
+
+    return $encryptionKey
+}
+
+function Get-DatabasePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$AppRoot
+    )
+
+    $encryptedPath = Join-Path $AppRoot "app.db"
+    $unencryptedPath = Join-Path $AppRoot "app_unencrypted.db"
+    $configuredEncryptionKey = Get-ConfiguredEncryptionKey -AppRoot $AppRoot
+    $preferredPath = if ([string]::IsNullOrWhiteSpace($configuredEncryptionKey)) {
+        $unencryptedPath
+    }
+    else {
+        $encryptedPath
+    }
+
+    if (Test-Path -Path $preferredPath -PathType Leaf) {
+        return $preferredPath
+    }
+
+    $fallbackPath = if ($preferredPath -eq $encryptedPath) { $unencryptedPath } else { $encryptedPath }
+    if (Test-Path -Path $fallbackPath -PathType Leaf) {
+        Write-Warning "Preferred database file '$preferredPath' was not found. Falling back to '$fallbackPath'."
+        return $fallbackPath
+    }
+
+    throw "Database file not found. Checked '$preferredPath' and '$fallbackPath'."
+}
 
 function Get-OneDriveRoot {
     $candidates = @(
@@ -39,6 +94,7 @@ $oneDriveBackupRoot = if ($null -ne $oneDriveRoot) {
 } else {
     $null
 }
+$sourcePath = Get-DatabasePath -AppRoot $appRoot
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
 $backupFileName = "app_backup_$timestamp.db"

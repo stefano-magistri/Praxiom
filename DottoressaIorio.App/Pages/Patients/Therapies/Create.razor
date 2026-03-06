@@ -40,7 +40,7 @@
     [Parameter] public int Id { get; set; }
     private Patient? patient;
     private readonly Therapy model = new();
-    private IList<TherapyTemplate> templates;
+    private IList<TherapyTemplate> templates = [];
     private string warningMessage = "";
     private string FormattedPatientName => patient == null
         ? string.Empty
@@ -82,9 +82,14 @@
 
     private async Task TemplateChanged(ChangeEventArgs args)
     {
-        int.TryParse(args.Value?.ToString(), out var id);
+        if (!int.TryParse(args.Value?.ToString(), out var id) || id <= 0)
+        {
+            model.Description = string.Empty;
+            return;
+        }
+
         var selected = await templateRepository.GetByIdAsync(id);
-        model.Description = selected.Description;
+        model.Description = selected?.Description ?? string.Empty;
     }
 
     private static string FormatFullName(string? firstName, string? lastName)
