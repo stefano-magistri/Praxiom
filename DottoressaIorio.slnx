@@ -15,7 +15,4 @@
   <Folder Name="/tests/e2e/">
     <Project Path="DottoressaIorio.E2E/DottoressaIorio.E2E.csproj" />
   </Folder>
-  <Folder Name="/tools/">
-    <Project Path="DottoressaIorio.DbUpgradeBridge/DottoressaIorio.DbUpgradeBridge.csproj" />
-  </Folder>
 </Solution>
