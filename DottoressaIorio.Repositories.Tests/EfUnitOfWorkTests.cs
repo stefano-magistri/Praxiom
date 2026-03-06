@@ -3,6 +3,7 @@ using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
@@ -11,6 +12,12 @@ public sealed class EfUnitOfWorkTests : IDisposable
     private readonly SqliteConnection _connection;
     private readonly ApplicationDbContext _context;
     private readonly IUnitOfWork _unitOfWork;
+
+    static EfUnitOfWorkTests()
+    {
+        raw.SetProvider(new SQLite3Provider_e_sqlcipher());
+        Batteries_V2.Init();
+    }
 
     public EfUnitOfWorkTests()
     {
