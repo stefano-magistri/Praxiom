@@ -11,29 +11,29 @@
     <ValidationWarningAlert Message="@warningMessage"/>
     <div class="row g-3">
         <div class="col-12">
-            <label>Nome:*</label>
-            <input type="text" class="form-control" @bind="model.FirstName" autocomplete="off"/>
+            <label for="FirstName">Nome:*</label>
+            <input id="FirstName" type="text" class="form-control" @bind="model.FirstName" autocomplete="off"/>
             <ValidationMessage For="@(() => model.FirstName)"/>
         </div>
     </div>
     <div class="row g-3">
         <div class="col-12">
-            <label>Cognome:*</label>
-            <input type="text" class="form-control" @bind="model.LastName" autocomplete="off">
+            <label for="LastName">Cognome:*</label>
+            <input id="LastName" type="text" class="form-control" @bind="model.LastName" autocomplete="off">
             <ValidationMessage For="@(() => model.LastName)"/>
         </div>
     </div>
     <div class="row g-3">
         <div class="col-12">
-            <label>Data di Nascita (es: 31/12/1979):*</label>
-            <input type="date" class="form-control" @bind="model.DateOfBirth" autocomplete="off"/>
+            <label for="DateOfBirth">Data di Nascita (es: 31/12/1979):*</label>
+            <input id="DateOfBirth" type="date" class="form-control" @bind="model.DateOfBirth" autocomplete="off"/>
             <ValidationMessage For="@(() => model.DateOfBirth)"/>
         </div>
     </div>
     <div class="row g-3">
         <div class="col-12">
-            <label>Indirizzo email:</label>
-            <input type="email" class="form-control" @bind="model.Email" placeholder="name@example.com" autocomplete="off"/>
+            <label for="Email">Indirizzo email:</label>
+            <input id="Email" type="email" class="form-control" @bind="model.Email" placeholder="name@example.com" autocomplete="off"/>
             <ValidationMessage For="@(() => model.Email)"/>
         </div>
     </div>

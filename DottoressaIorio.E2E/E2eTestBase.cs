@@ -33,11 +33,10 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
         string dateOfBirth)
     {
         await page.GotoAsync("/create-patient", new PageGotoOptions { WaitUntil = WaitUntilState.Load });
-        var createFormRows = page.Locator("form .row.g-3");
-        var firstNameInput = createFormRows.Nth(0).Locator("input.form-control");
-        var lastNameInput = createFormRows.Nth(1).Locator("input.form-control");
-        var dateOfBirthInput = createFormRows.Nth(2).Locator("input.form-control[type='date']");
-        var emailInput = createFormRows.Nth(3).Locator("input.form-control[type='email']");
+        var firstNameInput = page.Locator("#FirstName");
+        var lastNameInput = page.Locator("#LastName");
+        var dateOfBirthInput = page.Locator("#DateOfBirth");
+        var emailInput = page.Locator("#Email");
 
         await Expect(firstNameInput).ToBeVisibleAsync();
         await FillBoundFieldAsync(firstNameInput, firstName);
@@ -77,8 +76,10 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     protected static async Task FillBoundFieldAsync(ILocator locator, string value)
     {
         await locator.FocusAsync();
-        await locator.FillAsync(value);
+        await locator.FillAsync(string.Empty);
+        await locator.PressSequentiallyAsync(value);
         await locator.PressAsync("Tab");
+        await Task.Delay(50);
     }
 
     protected static async Task FillDateFieldAsync(ILocator locator, string value)
@@ -86,9 +87,14 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
         await locator.FocusAsync();
         await locator.FillAsync(value);
         await locator.PressAsync("Tab");
+        await Task.Delay(50);
     }
 
-    protected static Task WaitForInteractiveReadyAsync(IPage page) => page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+    protected static async Task WaitForInteractiveReadyAsync(IPage page)
+    {
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+        await page.WaitForTimeoutAsync(150);
+    }
 
     protected static async Task SubmitTemplateFormAsync(IPage page)
     {

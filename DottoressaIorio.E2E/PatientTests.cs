@@ -25,11 +25,10 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 
         await page.GetByTestId("create-patient-nav-link").ClickAsync();
 
-        var createFormRows = page.Locator("form .row.g-3");
-        await FillBoundFieldAsync(createFormRows.Nth(0).Locator("input.form-control"), firstName);
-        await FillBoundFieldAsync(createFormRows.Nth(1).Locator("input.form-control"), lastName);
-        await FillDateFieldAsync(createFormRows.Nth(2).Locator("input.form-control[type='date']"), dateOfBirth);
-        await FillBoundFieldAsync(createFormRows.Nth(3).Locator("input.form-control[type='email']"), email);
+        await FillBoundFieldAsync(page.Locator("#FirstName"), firstName);
+        await FillBoundFieldAsync(page.Locator("#LastName"), lastName);
+        await FillDateFieldAsync(page.Locator("#DateOfBirth"), dateOfBirth);
+        await FillBoundFieldAsync(page.Locator("#Email"), email);
         await SubmitCreatePatientFormAsync(page);
 
         await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Modifica" }).ClickAsync();

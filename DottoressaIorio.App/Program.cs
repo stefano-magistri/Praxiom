@@ -64,6 +64,7 @@ try
     builder.Services.AddLocalLicenseServices(configuration);
     builder.Services.AddOnlineSqliteBackup(options =>
     {
+        options.AppRootPath = databaseRootPath;
         options.PreferredWindowsUsername = OnlineBackupExtensions.ExtractUsername(allowedUsername);
     });
 
