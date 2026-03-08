@@ -1,11 +1,12 @@
-﻿@inject IJSRuntime jsRuntime
+@inject IJSRuntime jsRuntime
+@inject DottoressaIorio.Shared.Branding.ProductBrandingOptions Branding
 
 <nav id="sidebarMenu"
      class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
     <div class="position-sticky p-3">
         <div class="sidebar-brand">
-            <div class="sidebar-product-name">Dottoressa Iorio</div>
-            <div class="sidebar-product-subtitle">@StudioDisplayName</div>
+            <div class="sidebar-product-name">@Branding.ProductName</div>
+            <div class="sidebar-product-subtitle">@Branding.StudioDisplayName</div>
         </div>
         <ul class="nav flex-column">
             <li class="nav-item">
@@ -36,7 +37,7 @@
             <li class="sidebar-footer">
                 <div class="copyright">
                     <div>Versione @AppVersion</div>
-                    <a href="mailto:stefanomagistri@gmail.com?subject=Dottoressa Iorio App%20Support%20Request">Supporto</a>
+                    <a href="@SupportLink">Supporto</a>
                 </div>
             </li>
         </ul>
@@ -47,7 +48,8 @@
 @code {
     [Parameter] public string AppVersion { get; set; } = "sconosciuta";
 
-    [Parameter] public string StudioDisplayName { get; set; } = "Studio: Alessandra Iorio";
+    private string SupportLink =>
+        $"mailto:{Branding.SupportEmailAddress}?subject={Uri.EscapeDataString(Branding.SupportEmailSubject)}";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

@@ -33,7 +33,8 @@ rem Define installation and service variables.
 set "destinationFolder=C:\ProgramData\DottoressaIorio"
 set "service=DottoressaIorio.App"
 set "dbBackupFolder=_db_backup"
-set "backupTaskName=DottoressaIorio Online Backup"
+set "backupTaskName=Praxiom Online Backup"
+set "legacyBackupTaskName=DottoressaIorio Online Backup"
 set "oneDriveRoot=%OneDrive%"
 set "oneDriveBackupFolder="
 set "backupTimestamp="
@@ -49,6 +50,7 @@ if not "%oneDriveRoot%"=="" (
 
 rem Remove scheduled backup task when present.
 schtasks /Delete /TN "%backupTaskName%" /F >nul 2>nul
+schtasks /Delete /TN "%legacyBackupTaskName%" /F >nul 2>nul
 
 rem Stop and remove the Windows service when present.
 sc query "%service%" >nul 2>nul

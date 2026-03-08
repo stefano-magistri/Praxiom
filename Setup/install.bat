@@ -132,7 +132,7 @@ set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
 set "restoreScriptSource=%scriptDir%restore_script.ps1"
 set "restoreScriptDest=%destinationFolder%\restore_script.ps1"
-set "backupTaskName=DottoressaIorio Online Backup"
+set "backupTaskName=Praxiom Online Backup"
 set "legacyBackupTaskName=DottoressaIorio Daily Backup"
 set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
 
@@ -267,12 +267,12 @@ if errorlevel 1 (
 
 rem Recreate the Windows service using native Service Control Manager.
 >> "%logFile%" echo [%date% %time%] Creating service "%service%" with URL "%appUrl%".
-sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
+sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Praxiom App" >> "%logFile%" 2>&1
 if errorlevel 1 (
     rem Retry once in case the service was still finishing deletion.
     >> "%logFile%" echo [%date% %time%] WARNING: First service creation attempt failed, retrying.
     timeout /t 2 /nobreak >nul
-    sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
+    sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Praxiom App" >> "%logFile%" 2>&1
     if errorlevel 1 (
         >> "%logFile%" echo [%date% %time%] ERROR: Failed to create service after retry.
         > "%statusFile%" echo ERROR: Service creation failed.
@@ -282,7 +282,7 @@ if errorlevel 1 (
     )
 )
 
-sc description "%service%" "Dottoressa Iorio medical management application" >> "%logFile%" 2>&1
+sc description "%service%" "Praxiom medical management application" >> "%logFile%" 2>&1
 sc start "%service%" >> "%logFile%" 2>&1
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] ERROR: Service start command failed.

@@ -1,4 +1,4 @@
-#define MyAppName "Dottoressa Iorio"
+#define MyAppName "Praxiom"
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
@@ -7,7 +7,7 @@
 AppId={{A53D1775-E8B2-4E8D-9FB3-52312AA1E7A4}
 AppName={#MyAppName}
 AppVersion={#AppVersion}
-AppPublisher=Dottoressa Iorio
+AppPublisher=Praxiom
 DefaultDirName={commonappdata}\DottoressaIorio
 DefaultGroupName={#MyAppName}
 DisableDirPage=yes
@@ -49,9 +49,9 @@ Filename: "{code:GetConfiguredUrl}"; Description: "Apri l'applicazione al termin
 Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "DottoressaIorioAppUninstall"
 
 [Icons]
-Name: "{group}\Dottoressa Iorio App"; Filename: "{app}\DottoressaIorio.App.exe"
-Name: "{group}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"
-Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"; Tasks: desktopicon
+Name: "{group}\Praxiom App"; Filename: "{app}\DottoressaIorio.App.exe"
+Name: "{group}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"
+Name: "{autodesktop}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"; Tasks: desktopicon
 
 [Code]
 var
