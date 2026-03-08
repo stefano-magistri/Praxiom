@@ -1,10 +1,10 @@
-# Dottoressa Iorio Medical Management System
+# Praxiom Medical Management System
 
 [![CI](https://github.com/stefano-magistri/DottoressaIorio/actions/workflows/ci.yml/badge.svg)](https://github.com/stefano-magistri/DottoressaIorio/actions/workflows/ci.yml)
 
 A private medical management application built for a single doctor workflow on Windows.
 
-It helps Dr. Iorio manage patients, therapies, and reusable therapy templates, then generate printable therapy PDFs directly from the same interface. The project exists to keep day-to-day clinical administration fast, local-first, and maintainable without introducing unnecessary platform complexity.
+It helps doctors manage patients, therapies, and reusable therapy templates, then generate printable therapy PDFs directly from the same interface. The project exists to keep day-to-day clinical administration fast, local-first, and maintainable without introducing unnecessary platform complexity.
 
 ## Quick Commands
 
@@ -14,11 +14,9 @@ dotnet build DottoressaIorio.slnx --configuration Release
 dotnet test DottoressaIorio.slnx --configuration Release
 
 # Run app locally
-# Requires a valid local license file bound to this machine and Windows user
 dotnet run --project DottoressaIorio.App
 
 # Run app locally with demo backup DB
-# Requires a valid local license file bound to this machine and Windows user
 dotnet run --project DottoressaIorio.App --demo
 
 # Build installer (Windows)
