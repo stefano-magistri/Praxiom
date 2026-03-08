@@ -33,6 +33,7 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
         string dateOfBirth)
     {
         await page.GotoAsync("/create-patient", new PageGotoOptions { WaitUntil = WaitUntilState.Load });
+        await WaitForInteractiveReadyAsync(page);
         var firstNameInput = page.Locator("#FirstName");
         var lastNameInput = page.Locator("#LastName");
         var dateOfBirthInput = page.Locator("#DateOfBirth");
@@ -55,6 +56,7 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     {
         await page.GotoAsync("/create-therapy-template",
             new PageGotoOptions { WaitUntil = WaitUntilState.Load });
+        await WaitForInteractiveReadyAsync(page);
         var titleInput = page.Locator("#Title");
         var descriptionInput = page.Locator("#Description");
         await Expect(titleInput).ToBeVisibleAsync();
@@ -67,6 +69,7 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
     {
         await page.GotoAsync($"/patient/{patientId}/create-therapy",
             new PageGotoOptions { WaitUntil = WaitUntilState.Load });
+        await WaitForInteractiveReadyAsync(page);
         var descriptionInput = page.Locator("#Description");
         await Expect(descriptionInput).ToBeVisibleAsync();
         await FillBoundFieldAsync(descriptionInput, description);
@@ -75,17 +78,39 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
 
     protected static async Task FillBoundFieldAsync(ILocator locator, string value)
     {
+        await Expect(locator).ToBeVisibleAsync();
         await locator.FocusAsync();
         await locator.FillAsync(string.Empty);
         await locator.PressSequentiallyAsync(value);
+        if (!string.Equals(await locator.InputValueAsync(), value, StringComparison.Ordinal))
+        {
+            await locator.FillAsync(value);
+        }
+        if (!string.Equals(await locator.InputValueAsync(), value, StringComparison.Ordinal))
+        {
+            await locator.EvaluateAsync(
+                "(element, nextValue) => { element.value = nextValue; element.dispatchEvent(new Event('input', { bubbles: true })); element.dispatchEvent(new Event('change', { bubbles: true })); }",
+                value);
+        }
         await locator.PressAsync("Tab");
         await Task.Delay(50);
     }
 
     protected static async Task FillDateFieldAsync(ILocator locator, string value)
     {
+        await Expect(locator).ToBeVisibleAsync();
         await locator.FocusAsync();
         await locator.FillAsync(value);
+        if (!string.Equals(await locator.InputValueAsync(), value, StringComparison.Ordinal))
+        {
+            await locator.FillAsync(value);
+        }
+        if (!string.Equals(await locator.InputValueAsync(), value, StringComparison.Ordinal))
+        {
+            await locator.EvaluateAsync(
+                "(element, nextValue) => { element.value = nextValue; element.dispatchEvent(new Event('input', { bubbles: true })); element.dispatchEvent(new Event('change', { bubbles: true })); }",
+                value);
+        }
         await locator.PressAsync("Tab");
         await Task.Delay(50);
     }

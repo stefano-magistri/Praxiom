@@ -1,4 +1,5 @@
-﻿using DottoressaIorio.Models;
+using System.Net;
+using DottoressaIorio.Models;
 
 namespace DottoressaIorio.Services.Pdf;
 
@@ -22,15 +23,59 @@ public class PdfHtmlBuilder
 </html>";
     }
 
-    public string BuildHeaderHtml(string template, Therapy therapy)
-    {
-        return template.Replace("{{therapyDate}}", therapy.CreatedDate.ToString("dd/MM/yyyy"));
-    }
-
-    public string BuildFooterHtml(string template, Therapy therapy)
+    public string BuildHeaderHtml(string template, Therapy therapy, ClinicSettings settings)
     {
         return template
+            .Replace("{{doctorName}}", Encode(settings.DoctorName))
+            .Replace("{{doctorTitleLine}}", BuildLine(settings.DoctorTitle))
+            .Replace("{{specializationLine}}", BuildLine(settings.Specialization))
+            .Replace("{{clinicNameLine}}", BuildLine(settings.ClinicName))
+            .Replace("{{addressLine}}", BuildLine(settings.Address))
+            .Replace("{{phoneLine}}", BuildPhoneLine(settings.Phone))
+            .Replace("{{emailLine}}", BuildEmailLine(settings.Email))
+            .Replace("{{therapyDate}}", therapy.CreatedDate.ToString("dd/MM/yyyy"));
+    }
+
+    public string BuildFooterHtml(string template, Therapy therapy, ClinicSettings settings)
+    {
+        return template
+            .Replace("{{footerText}}", Encode(settings.FooterText))
             .Replace("{{therapyDate}}", therapy.CreatedDate.ToString("dd/MM/yyyy"))
             .Replace("{{patient}}", $"{therapy.Patient.Title} {therapy.Patient.FirstName} {therapy.Patient.LastName}");
+    }
+
+    private static string BuildLine(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return $"<p style=\"margin:0; font-size: 15px;\">{Encode(value)}</p>";
+    }
+
+    private static string BuildPhoneLine(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return $"<p style=\"margin:0; font-size: 15px;\">Tel: {Encode(value)}</p>";
+    }
+
+    private static string BuildEmailLine(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return $"<p style=\"margin:0; font-size: 15px;\"><i>{Encode(value)}</i></p>";
+    }
+
+    private static string Encode(string? value)
+    {
+        return WebUtility.HtmlEncode(value ?? string.Empty);
     }
 }

@@ -17,6 +17,63 @@ namespace DottoressaIorio.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
 
+            modelBuilder.Entity("DottoressaIorio.Models.ClinicSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClinicName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DoctorName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DoctorTitle")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FooterText")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Specialization")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ClinicSettings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Address = "",
+                            ClinicName = "Studio Medico",
+                            DoctorName = "Dott.ssa Alessandra Iorio",
+                            DoctorTitle = "Medico Chirurgo",
+                            Email = "alessandraiorio8@gmail.com",
+                            FooterText = "",
+                            Phone = "320.1871136",
+                            Specialization = "Specialista in Dermatologia e Venereologia"
+                        });
+                });
+
             modelBuilder.Entity("DottoressaIorio.Models.Patient", b =>
                 {
                     b.Property<int>("PatientId")

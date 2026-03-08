@@ -33,17 +33,19 @@ public class PdfHtmlBuilderTests
     {
         var builder = new PdfHtmlBuilder();
         var therapy = new Therapy { CreatedDate = new DateTime(2023, 1, 1) };
+        var settings = new ClinicSettings { DoctorName = "Doctor Test" };
 
-        string template = "Data terapia: {{therapyDate}}";
-        var header = builder.BuildHeaderHtml(template, therapy);
+        string template = "{{doctorName}} Data terapia: {{therapyDate}}";
+        var header = builder.BuildHeaderHtml(template, therapy, settings);
 
-        Assert.Equal("Data terapia: 01/01/2023", header);
+        Assert.Equal("Doctor Test Data terapia: 01/01/2023", header);
     }
 
     [Fact]
     public void BuildFooterHtml_ShouldReplacePlaceholders()
     {
         var builder = new PdfHtmlBuilder();
+        var settings = new ClinicSettings { FooterText = "Footer test" };
 
         var therapy = new Therapy
         {
@@ -51,9 +53,9 @@ public class PdfHtmlBuilderTests
             Patient = new Patient { Title = "Dr.", FirstName = "John", LastName = "Doe" }
         };
 
-        string template = "Terapia {{therapyDate}} - {{patient}}";
-        var footer = builder.BuildFooterHtml(template, therapy);
+        string template = "{{footerText}} Terapia {{therapyDate}} - {{patient}}";
+        var footer = builder.BuildFooterHtml(template, therapy, settings);
 
-        Assert.Equal("Terapia 01/01/2023 - Dr. John Doe", footer);
+        Assert.Equal("Footer test Terapia 01/01/2023 - Dr. John Doe", footer);
     }
 }

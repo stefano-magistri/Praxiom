@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DottoressaIorio.Models;
+using DottoressaIorio.Repositories;
 using Microsoft.Playwright;
 
 namespace DottoressaIorio.Services.Pdf;
 
-public class PdfService(PdfHtmlBuilder builder)
+public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinicSettingsRepository)
 {
     public async Task<byte[]> GenerateTherapyPdfAsync(Therapy therapy)
     {
@@ -20,11 +21,8 @@ public class PdfService(PdfHtmlBuilder builder)
         await page.SetContentAsync(html);
 
         var templateRoot = Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
-        var headerPath = Path.Combine(templateRoot, "header.html");
-        var footerPath = Path.Combine(templateRoot, "footer.html");
-
-        var header = builder.BuildHeaderHtml(await File.ReadAllTextAsync(headerPath), therapy);
-        var footer = builder.BuildFooterHtml(await File.ReadAllTextAsync(footerPath), therapy);
+        var header = await BuildHeaderHtmlAsync(therapy, templateRoot);
+        var footer = await BuildFooterHtmlAsync(therapy, templateRoot);
 
         return await page.PdfAsync(new PagePdfOptions
         {
@@ -41,6 +39,22 @@ public class PdfService(PdfHtmlBuilder builder)
             HeaderTemplate = header,
             FooterTemplate = footer
         });
+    }
+
+    public async Task<string> BuildHeaderHtmlAsync(Therapy therapy, string? templateRoot = null)
+    {
+        var effectiveTemplateRoot = templateRoot ?? Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
+        var headerPath = Path.Combine(effectiveTemplateRoot, "header.html");
+        var settings = await clinicSettingsRepository.GetAsync();
+        return builder.BuildHeaderHtml(await File.ReadAllTextAsync(headerPath), therapy, settings);
+    }
+
+    private async Task<string> BuildFooterHtmlAsync(Therapy therapy, string? templateRoot = null)
+    {
+        var effectiveTemplateRoot = templateRoot ?? Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
+        var footerPath = Path.Combine(effectiveTemplateRoot, "footer.html");
+        var settings = await clinicSettingsRepository.GetAsync();
+        return builder.BuildFooterHtml(await File.ReadAllTextAsync(footerPath), therapy, settings);
     }
 
     private static async Task<IBrowser> LaunchBrowserAsync(IPlaywright playwright)

@@ -1,5 +1,7 @@
 using DottoressaIorio.Models;
+using DottoressaIorio.Repositories;
 using DottoressaIorio.Services.Pdf;
+using Moq;
 using Xunit.Abstractions;
 
 namespace DottoressaIorio.Services.Tests;
@@ -12,7 +14,9 @@ public class PdfServiceIntegrationTests(ITestOutputHelper testOutputHelper)
     {
         // Arrange
         var builder = new PdfHtmlBuilder();
-        var service = new PdfService(builder);
+        var repository = new Mock<IClinicSettingsRepository>();
+        repository.Setup(x => x.GetAsync()).ReturnsAsync(ClinicSettings.CreateDefault());
+        var service = new PdfService(builder, repository.Object);
 
         var therapy = new Therapy
         {

@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Microsoft.Playwright;
 using static Microsoft.Playwright.Assertions;
 
@@ -27,12 +26,12 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
 
         await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
 
-        var matchedPdfUrls = new ConcurrentQueue<string>();
+        var pdfUrlCompletion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         void OnResponse(object? _, IResponse response)
         {
             if (response.Url.Contains("/pdf/therapy/", StringComparison.OrdinalIgnoreCase) && response.Status == 200)
             {
-                matchedPdfUrls.Enqueue(response.Url);
+                pdfUrlCompletion.TrySetResult(response.Url);
             }
         }
 
@@ -45,24 +44,13 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
 
         try
         {
-            for (var i = 0; i < 120; i++)
-            {
-                if (!matchedPdfUrls.IsEmpty)
-                {
-                    break;
-                }
-
-                await page.WaitForTimeoutAsync(250);
-            }
+            var pdfUrl = await pdfUrlCompletion.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            Assert.Contains("/pdf/therapy/", pdfUrl, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
             context.Response -= OnResponse;
+            await popup.CloseAsync();
         }
-
-        Assert.False(matchedPdfUrls.IsEmpty, $"No /pdf/therapy response captured. Popup URL: {popup.Url}");
-        Assert.All(matchedPdfUrls, url => Assert.Contains("/pdf/therapy/", url, StringComparison.OrdinalIgnoreCase));
-
-        await popup.CloseAsync();
     }
 }

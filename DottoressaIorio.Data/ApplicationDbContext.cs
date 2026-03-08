@@ -35,6 +35,8 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<TherapyTemplate> TherapyTemplates { get; set; }
 
+    public DbSet<ClinicSettings> ClinicSettings { get; set; }
+
     public override int SaveChanges()
     {
         NormalizeAndValidateTrackedEntities();
@@ -73,6 +75,9 @@ public class ApplicationDbContext : DbContext
             .HasIndex(x => x.Title)
             .HasFilter("\"Deleted\" = 0")
             .IsUnique();
+
+        modelBuilder.Entity<ClinicSettings>()
+            .HasData(DottoressaIorio.Models.ClinicSettings.CreateDefault());
     }
 
     private void NormalizeAndValidateTrackedEntities()
