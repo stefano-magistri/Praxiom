@@ -2,6 +2,7 @@ using DottoressaIorio.App.Middleware;
 using DottoressaIorio.Data;
 using DottoressaIorio.Repositories;
 using DottoressaIorio.Services.Backup;
+using DottoressaIorio.Services.Licensing;
 using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,8 @@ try
     var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
     var runOnlineBackup = args.Any(argument => argument.Equals("--online-backup", StringComparison.OrdinalIgnoreCase));
     var useDemoDatabase = args.Any(argument => argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
-    var databaseRootPath = isWindowsService ? AppContext.BaseDirectory : builder.Environment.ContentRootPath;
+    var databaseRootPath = configuration["DatabaseRootPath"]
+                           ?? (isWindowsService ? AppContext.BaseDirectory : builder.Environment.ContentRootPath);
 
     if (isWindowsService) builder.Host.UseWindowsService();
 
@@ -56,6 +58,7 @@ try
     builder.Services.AddDottoressaRepositories();
 
     builder.Services.AddPdfServices();
+    builder.Services.AddLocalLicenseServices(configuration);
     builder.Services.AddOnlineSqliteBackup(options =>
     {
         options.PreferredWindowsUsername = OnlineBackupExtensions.ExtractUsername(allowedUsername);
@@ -68,8 +71,15 @@ try
         builder.ConfigureDemoDatabase();
 
     var app = builder.Build();
+    var licenseService = app.Services.GetRequiredService<ILocalLicenseService>();
     var onlineBackupService = app.Services.GetRequiredService<IOnlineBackupService>();
     var onlineBackupOptions = app.Services.GetRequiredService<OnlineBackupOptions>();
+
+    var licenseValidationResult = licenseService.ValidateCurrentLicense(allowedUsername);
+    if (!licenseValidationResult.IsValid)
+    {
+        throw new InvalidOperationException($"Local license validation failed: {licenseValidationResult.Failure}.");
+    }
 
     if (runOnlineBackup)
     {

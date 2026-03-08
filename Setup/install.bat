@@ -4,6 +4,7 @@ setlocal EnableExtensions
 set "interactive=1"
 set "allowedUsername="
 set "appUrl=http://localhost:5000"
+set "licenseFile="
 set "skipAutoDbRestore=0"
 set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
@@ -43,6 +44,17 @@ if /I "%~1"=="--app-url" (
     shift
     goto parseArgs
 )
+if /I "%~1"=="--license-file" (
+    if "%~2"=="" (
+        echo Missing value for --license-file.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    set "licenseFile=%~2"
+    shift
+    shift
+    goto parseArgs
+)
 if /I "%~1"=="--skip-auto-db-restore" (
     set "skipAutoDbRestore=1"
     shift
@@ -59,9 +71,21 @@ if "%allowedUsername%"=="" (
     if "%interactive%"=="1" pause
     exit /b 1
 )
+if "%licenseFile%"=="" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing required parameter --license-file.
+    echo Missing required parameter --license-file.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+if not exist "%licenseFile%" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file "%licenseFile%" not found.
+    echo License file not found: "%licenseFile%"
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
 echo %appUrl% | findstr /I "://">nul
 if errorlevel 1 set "appUrl=http://%appUrl%"
->> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore%
+>> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore% licenseFile=%licenseFile%
 call :validateUrl "%appUrl%"
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] ERROR: Invalid app URL "%appUrl%".
@@ -86,6 +110,7 @@ rem Define source file, destination folder, and service-related variables.
 set "sourceFile=%scriptDir%Service.7z"
 set "sevenZipExe=%scriptDir%7z.exe"
 set "destinationFolder=C:\ProgramData\DottoressaIorio"
+set "licenseDestination=%destinationFolder%\license.dat"
 set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
 set "dbBackupFolder=_db_backup"
@@ -137,6 +162,15 @@ if not exist "%sevenZipExe%" (
 
 if not exist "%destinationFolder%" mkdir "%destinationFolder%"
 if not exist "%destinationFolder%\%dbBackupFolder%" mkdir "%destinationFolder%\%dbBackupFolder%"
+
+copy /Y "%licenseFile%" "%licenseDestination%" >nul
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to copy license file to "%licenseDestination%".
+    echo Failed to copy license file to "%licenseDestination%".
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+>> "%logFile%" echo [%date% %time%] License file copied to "%licenseDestination%".
 
 rem Backup current database files before replacing files.
 call :backupDbFile "app.db"

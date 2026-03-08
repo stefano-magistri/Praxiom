@@ -53,6 +53,7 @@ Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}";
 [Code]
 var
   ConfigPage: TInputQueryWizardPage;
+  LicenseFilePage: TInputFileWizardPage;
   RestoreOptionPage: TInputOptionWizardPage;
   RestoreFilePage: TInputFileWizardPage;
 
@@ -86,8 +87,16 @@ begin
     ConfigPage.Values[0] := DomainName + '\' + ExpandConstant('{username}');
   ConfigPage.Values[1] := 'http://localhost:5000';
 
-  RestoreOptionPage := CreateInputOptionPage(
+  LicenseFilePage := CreateInputFilePage(
     ConfigPage.ID,
+    'File licenza',
+    'Seleziona il file di licenza ricevuto.',
+    'Il file di licenza verra copiato in ProgramData e verificato a ogni avvio dell''applicazione.'
+  );
+  LicenseFilePage.Add('Percorso file licenza:', 'File licenza (*.dat)|*.dat|Tutti i file (*.*)|*.*', '.dat');
+
+  RestoreOptionPage := CreateInputOptionPage(
+    LicenseFilePage.ID,
     'Ripristino database',
     'Scegli se ripristinare il database da un file di backup esistente.',
     'Seleziona "Si" solo se vuoi che questa installazione sostituisca il database corrente.',
@@ -146,6 +155,23 @@ begin
     end;
   end;
 
+  if CurPageID = LicenseFilePage.ID then
+  begin
+    if Trim(LicenseFilePage.Values[0]) = '' then
+    begin
+      MsgBox('Il file di licenza e obbligatorio.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+
+    if not FileExists(Trim(LicenseFilePage.Values[0])) then
+    begin
+      MsgBox('Il file di licenza selezionato non esiste.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
+
   if CurPageID = RestoreFilePage.ID then
   begin
     if ShouldRestoreDatabase() and (Trim(GetRestoreBackupPath()) = '') then
@@ -175,7 +201,8 @@ function GetInstallParams(Value: string): string;
 begin
   Result :=
     '--silent --allowed-username ' + AddQuotes(ConfigPage.Values[0]) +
-    ' --app-url ' + AddQuotes(ConfigPage.Values[1]);
+    ' --app-url ' + AddQuotes(ConfigPage.Values[1]) +
+    ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]);
   if ShouldRestoreDatabase() then
     Result := Result + ' --skip-auto-db-restore';
 end;

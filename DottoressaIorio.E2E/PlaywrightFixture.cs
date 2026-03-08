@@ -1,6 +1,11 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Security.Principal;
+using System.Management;
+using DottoressaIorio.Services.Licensing;
 using Microsoft.Playwright;
+using Microsoft.Win32;
 
 namespace DottoressaIorio.E2E;
 
@@ -13,6 +18,8 @@ public sealed class PlaywrightCollection : ICollectionFixture<PlaywrightFixture>
 public sealed class PlaywrightFixture : IAsyncLifetime
 {
     private IBrowser? _browser;
+    private Process? _appProcess;
+    private string? _tempDirectory;
 
     public IPlaywright Playwright { get; private set; } = null!;
 
@@ -21,6 +28,7 @@ public sealed class PlaywrightFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         Settings = E2eSettings.Load();
+        await StartApplicationAsync();
         Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
         _browser = await LaunchBrowserWithInstallFallbackAsync();
     }
@@ -29,6 +37,7 @@ public sealed class PlaywrightFixture : IAsyncLifetime
     {
         if (_browser is not null) await _browser.DisposeAsync();
 
+        await StopApplicationAsync();
         Playwright.Dispose();
     }
 
@@ -105,5 +114,215 @@ public sealed class PlaywrightFixture : IAsyncLifetime
             throw new InvalidOperationException(
                 $"Failed to install Playwright browsers. Exit code: {process.ExitCode}. {error}".Trim());
         }
+    }
+
+    private async Task StartApplicationAsync()
+    {
+        StopLeftoverApplicationHosts();
+
+        _tempDirectory = Path.Combine(Path.GetTempPath(), "DottoressaIorio.E2E", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_tempDirectory);
+
+        var currentUsername = GetCurrentWindowsIdentityName();
+        var machineId = ReadMachineGuid();
+        if (string.IsNullOrWhiteSpace(currentUsername) || string.IsNullOrWhiteSpace(machineId))
+        {
+            throw new InvalidOperationException("Unable to determine the current Windows identity or machine id for E2E license generation.");
+        }
+
+        using var rsa = RSA.Create(2048);
+        var licensePath = Path.Combine(_tempDirectory, LocalLicenseDefaults.LicenseFileName);
+        var token = LocalLicenseToken.CreateSignedLicense(
+            new LicensePayload(LocalLicenseDefaults.ProductName, machineId, currentUsername),
+            rsa.ExportPkcs8PrivateKeyPem());
+        await File.WriteAllTextAsync(licensePath, token);
+
+        var repoRoot = ResolveRepositoryRoot();
+        SeedDatabaseIfAvailable(repoRoot.FullName, _tempDirectory);
+        var appAssemblyPath = Path.Combine(
+            repoRoot.FullName,
+            "DottoressaIorio.App",
+            "bin",
+            "Release",
+            "net10.0",
+            "DottoressaIorio.App.dll");
+
+        if (!File.Exists(appAssemblyPath))
+        {
+            throw new FileNotFoundException("Built app assembly not found for E2E startup.", appAssemblyPath);
+        }
+
+        _appProcess = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"\"{appAssemblyPath}\" --urls \"{Settings.BaseUrl}\"",
+                WorkingDirectory = Path.GetDirectoryName(appAssemblyPath)
+                                   ?? throw new InvalidOperationException("Unable to resolve app working directory."),
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        _appProcess.StartInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+        _appProcess.StartInfo.Environment["Authentication__UseNegotiate"] = "false";
+        _appProcess.StartInfo.Environment["Authentication__AllowedUsername"] = currentUsername;
+        _appProcess.StartInfo.Environment["DatabaseRootPath"] = _tempDirectory;
+        _appProcess.StartInfo.Environment["EncryptionKey"] = string.Empty;
+        _appProcess.StartInfo.Environment["LocalLicense__LicensePath"] = licensePath;
+        _appProcess.StartInfo.Environment["LocalLicense__PublicKeyPemBase64"] =
+            Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(rsa.ExportSubjectPublicKeyInfoPem()));
+
+        _appProcess.Start();
+        await WaitForApplicationReadyAsync();
+    }
+
+    private async Task StopApplicationAsync()
+    {
+        if (_appProcess is not null && !_appProcess.HasExited)
+        {
+            _appProcess.Kill(entireProcessTree: true);
+            await _appProcess.WaitForExitAsync();
+        }
+
+        _appProcess?.Dispose();
+        _appProcess = null;
+
+        if (!string.IsNullOrWhiteSpace(_tempDirectory) && Directory.Exists(_tempDirectory))
+        {
+            Directory.Delete(_tempDirectory, recursive: true);
+        }
+
+        _tempDirectory = null;
+    }
+
+    private async Task WaitForApplicationReadyAsync()
+    {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var client = new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(5)
+        };
+
+        for (var attempt = 0; attempt < 60; attempt++)
+        {
+            if (_appProcess is not null && _appProcess.HasExited)
+            {
+                var error = await _appProcess.StandardError.ReadToEndAsync();
+                var output = await _appProcess.StandardOutput.ReadToEndAsync();
+                throw new InvalidOperationException(
+                    $"E2E app host exited before becoming ready. Stdout: {output} Stderr: {error}".Trim());
+            }
+
+            try
+            {
+                using var response = await client.GetAsync(Settings.BaseUrl);
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+            }
+            catch (HttpRequestException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
+
+            await Task.Delay(1000);
+        }
+
+        throw new TimeoutException($"Timed out waiting for the app to become reachable at {Settings.BaseUrl}.");
+    }
+
+    private static void StopLeftoverApplicationHosts()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using var searcher = new ManagementObjectSearcher(
+            "SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name = 'dotnet.exe'");
+
+        foreach (ManagementObject processInfo in searcher.Get())
+        {
+            var commandLine = processInfo["CommandLine"]?.ToString();
+            if (string.IsNullOrWhiteSpace(commandLine) ||
+                !commandLine.Contains("DottoressaIorio.App", StringComparison.OrdinalIgnoreCase) ||
+                !commandLine.Contains("dotnet", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (!int.TryParse(processInfo["ProcessId"]?.ToString(), out var processId))
+            {
+                continue;
+            }
+
+            try
+            {
+                using var process = Process.GetProcessById(processId);
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit();
+            }
+            catch (Exception)
+            {
+            }
+        }
+    }
+
+    private static string GetCurrentWindowsIdentityName()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException("E2E license provisioning requires Windows.");
+        }
+
+        return WindowsIdentity.GetCurrent().Name;
+    }
+
+    private static string ReadMachineGuid()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException("E2E license provisioning requires Windows.");
+        }
+
+        using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography", writable: false);
+        return key?.GetValue("MachineGuid")?.ToString() ?? string.Empty;
+    }
+
+    private static void SeedDatabaseIfAvailable(string repoRootPath, string targetDirectory)
+    {
+        var demoDbPath = Path.Combine(repoRootPath, "Demo", "app_unencrypted.db");
+        if (!File.Exists(demoDbPath))
+        {
+            return;
+        }
+
+        File.Copy(demoDbPath, Path.Combine(targetDirectory, "app_unencrypted.db"), overwrite: true);
+    }
+
+    private static DirectoryInfo ResolveRepositoryRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "DottoressaIorio.slnx")))
+            {
+                return current;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Unable to locate the repository root for E2E app startup.");
     }
 }
