@@ -5,8 +5,11 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Management;
 using DottoressaIorio.Services.Licensing;
+using DottoressaIorio.Services.SqlLiteEncryption;
+using Microsoft.Data.Sqlite;
 using Microsoft.Playwright;
 using Microsoft.Win32;
+using SQLitePCL;
 
 namespace DottoressaIorio.E2E;
 
@@ -30,6 +33,8 @@ public sealed class PlaywrightFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        raw.SetProvider(new SQLite3Provider_e_sqlcipher());
+        Batteries_V2.Init();
         Settings = E2eSettings.Load();
         await StartApplicationAsync();
         Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
@@ -54,6 +59,88 @@ public sealed class PlaywrightFixture : IAsyncLifetime
             IgnoreHTTPSErrors = true,
             AcceptDownloads = true
         });
+    }
+
+    public async Task<IReadOnlyList<int>> SeedPatientsAsync(
+        IEnumerable<(string FirstName, string LastName, string Email, DateTime DateOfBirth)> patients)
+    {
+        using var connection = CreateTestDatabaseConnection();
+        using var transaction = connection.BeginTransaction();
+        var patientIds = new List<int>();
+
+        foreach (var patient in patients)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = """
+                                  INSERT INTO "Patients"
+                                  ("Title", "FirstName", "LastName", "DateOfBirth", "PlaceOfBirth", "Gender", "PhoneNumber",
+                                   "Email", "Notes", "CreatedDate", "EditDate", "Deleted")
+                                  VALUES
+                                  (NULL, $firstName, $lastName, $dateOfBirth, NULL, NULL, NULL,
+                                   $email, NULL, $createdDate, NULL, 0);
+                                  SELECT last_insert_rowid();
+                                  """;
+            command.Parameters.AddWithValue("$firstName", patient.FirstName);
+            command.Parameters.AddWithValue("$lastName", patient.LastName);
+            command.Parameters.AddWithValue("$dateOfBirth", patient.DateOfBirth);
+            command.Parameters.AddWithValue("$email", patient.Email);
+            command.Parameters.AddWithValue("$createdDate", DateTime.UtcNow);
+
+            patientIds.Add(Convert.ToInt32((long)(await command.ExecuteScalarAsync()
+                                              ?? throw new InvalidOperationException("Failed to seed patient."))));
+        }
+
+        await transaction.CommitAsync();
+        return patientIds;
+    }
+
+    public async Task SeedTherapyTemplatesAsync(IEnumerable<(string Title, string Description)> templates)
+    {
+        using var connection = CreateTestDatabaseConnection();
+        using var transaction = connection.BeginTransaction();
+
+        foreach (var template in templates)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = """
+                                  INSERT INTO "TherapyTemplates"
+                                  ("Title", "Description", "CreatedDate", "EditDate", "Deleted")
+                                  VALUES
+                                  ($title, $description, $createdDate, NULL, 0);
+                                  """;
+            command.Parameters.AddWithValue("$title", template.Title);
+            command.Parameters.AddWithValue("$description", template.Description);
+            command.Parameters.AddWithValue("$createdDate", DateTime.UtcNow);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        await transaction.CommitAsync();
+    }
+
+    public async Task SeedTherapiesAsync(int patientId, IEnumerable<string> descriptions)
+    {
+        using var connection = CreateTestDatabaseConnection();
+        using var transaction = connection.BeginTransaction();
+
+        foreach (var description in descriptions)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = """
+                                  INSERT INTO "Therapies"
+                                  ("Description", "PatientId", "CreatedDate", "EditDate", "Deleted")
+                                  VALUES
+                                  ($description, $patientId, $createdDate, NULL, 0);
+                                  """;
+            command.Parameters.AddWithValue("$description", description);
+            command.Parameters.AddWithValue("$patientId", patientId);
+            command.Parameters.AddWithValue("$createdDate", DateTime.UtcNow);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        await transaction.CommitAsync();
     }
 
     private async Task<IBrowser> LaunchBrowserWithInstallFallbackAsync()
@@ -292,6 +379,16 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         }
 
         File.Copy(demoDbPath, Path.Combine(targetDirectory, "app_unencrypted.db"), overwrite: true);
+    }
+
+    private SqliteConnection CreateTestDatabaseConnection()
+    {
+        if (string.IsNullOrWhiteSpace(_tempDirectory))
+        {
+            throw new InvalidOperationException("E2E temporary database directory is not initialized.");
+        }
+
+        return new SqlLiteDbEncryptionService(string.Empty, _tempDirectory).CreateConnection();
     }
 
     private ProcessStartInfo BuildAppStartInfo(

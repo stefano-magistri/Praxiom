@@ -17,13 +17,12 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         var seed = Guid.NewGuid().ToString("N")[..6];
         var prefix = $"PAGPAZ{seed}";
 
-        for (var i = 1; i <= 11; i++)
-            await CreatePatientAsync(
-                page,
-                $"{prefix}{i:D2}",
-                "LN",
-                $"{prefix.ToLowerInvariant()}{i:D2}@example.test",
-                "1980-01-01");
+        await Fixture.SeedPatientsAsync(
+            Enumerable.Range(1, 11).Select(i => (
+                FirstName: $"{prefix}{i:D2}",
+                LastName: "LN",
+                Email: $"{prefix.ToLowerInvariant()}{i:D2}@example.test",
+                DateOfBirth: new DateTime(1980, 1, 1))));
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
@@ -50,13 +49,12 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         var seed = Guid.NewGuid().ToString("N")[..6];
         var prefix = $"PAGNAV{seed}";
 
-        for (var i = 1; i <= 11; i++)
-            await CreatePatientAsync(
-                page,
-                $"{prefix}{i:D2}",
-                "LN",
-                $"{prefix.ToLowerInvariant()}{i:D2}@example.test",
-                "1980-01-01");
+        await Fixture.SeedPatientsAsync(
+            Enumerable.Range(1, 11).Select(i => (
+                FirstName: $"{prefix}{i:D2}",
+                LastName: "LN",
+                Email: $"{prefix.ToLowerInvariant()}{i:D2}@example.test",
+                DateOfBirth: new DateTime(1980, 1, 1))));
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
@@ -91,8 +89,9 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         var finalDescription = $"Descrizione {prefix}-11";
         var filteredDescription = $"Descrizione {prefix}-04";
 
-        for (var i = 1; i <= 11; i++)
-            await CreateTherapyTemplateAsync(page, $"{prefix}-{i:D2}", $"Descrizione {prefix}-{i:D2}");
+        await Fixture.SeedTherapyTemplatesAsync(
+            Enumerable.Range(1, 11)
+                .Select(i => ($"{prefix}-{i:D2}", $"Descrizione {prefix}-{i:D2}")));
 
         await page.GotoAsync("/therapy-templates", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
@@ -119,15 +118,12 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         var page = setup.Page;
 
         var seed = Guid.NewGuid().ToString("N")[..6];
-        var patientId = await CreatePatientAsync(
-            page,
-            $"THP{seed}",
-            "LN",
-            $"thp{seed}@example.test",
-            "1984-04-04");
+        var patientId = (await Fixture.SeedPatientsAsync([
+            ($"THP{seed}", "LN", $"thp{seed}@example.test", new DateTime(1984, 4, 4))
+        ])).Single();
 
         var prefix = $"PAGTH-{seed}";
-        for (var i = 1; i <= 9; i++) await CreateTherapyAsync(page, patientId, $"{prefix}-{i:D2}");
+        await Fixture.SeedTherapiesAsync(patientId, Enumerable.Range(1, 9).Select(i => $"{prefix}-{i:D2}"));
 
         await page.GotoAsync($"/patient/{patientId}/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
