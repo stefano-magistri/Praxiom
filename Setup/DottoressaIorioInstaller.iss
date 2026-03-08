@@ -38,7 +38,7 @@ Source: "install.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "uninstall.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "backup_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "restore_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
-Source: "tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"; DestDir: "{app}\_setup"; Flags: ignoreversion; StatusMsg: "Preparazione dei componenti di installazione..."
+Source: "tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"; DestDir: "{app}\_setup"; DestName: "setup-helper.exe"; Flags: ignoreversion
 Source: "tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"; Flags: dontcopy
 
 [Run]

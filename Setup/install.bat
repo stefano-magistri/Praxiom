@@ -9,7 +9,7 @@ set "skipAutoDbRestore=0"
 set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
 set "statusFile=%~dp0install.status"
-set "licenseValidatorExe=%scriptDir%DottoressaIorio.LicenseGenerator.exe"
+set "licenseValidatorExe=%scriptDir%setup-helper.exe"
 set "licenseValidatorProject=%scriptDir%..\DottoressaIorio.LicenseGenerator\DottoressaIorio.LicenseGenerator.csproj"
 
 > "%logFile%" echo [%date% %time%] Installer script started.
