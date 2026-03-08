@@ -75,10 +75,17 @@ try
     var onlineBackupService = app.Services.GetRequiredService<IOnlineBackupService>();
     var onlineBackupOptions = app.Services.GetRequiredService<OnlineBackupOptions>();
 
-    var licenseValidationResult = licenseService.ValidateCurrentLicense(allowedUsername);
-    if (!licenseValidationResult.IsValid)
+    if (app.Environment.IsDevelopment())
     {
-        throw new InvalidOperationException($"Local license validation failed: {licenseValidationResult.Failure}.");
+        Log.Warning("Skipping local license validation in Development.");
+    }
+    else
+    {
+        var licenseValidationResult = licenseService.ValidateCurrentLicense(allowedUsername);
+        if (!licenseValidationResult.IsValid)
+        {
+            throw new InvalidOperationException($"Local license validation failed: {licenseValidationResult.Failure}.");
+        }
     }
 
     if (runOnlineBackup)
