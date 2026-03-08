@@ -6,6 +6,7 @@ using DottoressaIorio.Services.Licensing;
 using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using DottoressaIorio.Shared.Branding;
+using DottoressaIorio.Shared.State;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using SQLitePCL;
@@ -51,6 +52,7 @@ try
     // Add services to the container.
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
+    builder.Services.AddScoped<ClinicSettingsState>();
     builder.Services.AddSingleton(configuration.GetSection("Branding").Get<ProductBrandingOptions>() ??
                                   new ProductBrandingOptions());
 

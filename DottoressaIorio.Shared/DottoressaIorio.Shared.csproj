@@ -16,4 +16,9 @@
 		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.3" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<ProjectReference Include="..\DottoressaIorio.Models\DottoressaIorio.Models.csproj" />
+		<ProjectReference Include="..\DottoressaIorio.Repositories\DottoressaIorio.Repositories.csproj" />
+	</ItemGroup>
+
 </Project>

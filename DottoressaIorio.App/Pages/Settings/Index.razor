@@ -1,5 +1,6 @@
 @page "/settings"
 @inject DottoressaIorio.Repositories.IClinicSettingsRepository repository
+@inject DottoressaIorio.Shared.State.ClinicSettingsState clinicSettingsState
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
 <PageHeader Title="Impostazioni"/>
@@ -80,7 +81,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        model = await repository.GetAsync();
+        model = await clinicSettingsState.GetAsync();
     }
 
     private async Task SaveAsync()
@@ -96,6 +97,7 @@ else
         try
         {
             await repository.SaveAsync(model);
+            clinicSettingsState.SetCurrent(model);
             successMessage = "Impostazioni salvate.";
 
             try
