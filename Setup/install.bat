@@ -9,6 +9,8 @@ set "skipAutoDbRestore=0"
 set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
 set "statusFile=%~dp0install.status"
+set "licenseValidatorExe=%scriptDir%DottoressaIorio.LicenseGenerator.exe"
+set "licenseValidatorProject=%scriptDir%..\DottoressaIorio.LicenseGenerator\DottoressaIorio.LicenseGenerator.csproj"
 
 > "%logFile%" echo [%date% %time%] Installer script started.
 >> "%logFile%" echo [%date% %time%] Script path=%0
@@ -83,9 +85,19 @@ if not exist "%licenseFile%" (
     if "%interactive%"=="1" pause
     exit /b 1
 )
+if not exist "%licenseValidatorExe%" (
+    if exist "%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe" (
+        set "licenseValidatorExe=%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"
+    )
+)
 echo %appUrl% | findstr /I "://">nul
 if errorlevel 1 set "appUrl=http://%appUrl%"
 >> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore% licenseFile=%licenseFile%
+call :validateLicense "%licenseFile%" "%allowedUsername%"
+if errorlevel 1 (
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
 call :validateUrl "%appUrl%"
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] ERROR: Invalid app URL "%appUrl%".
@@ -313,6 +325,56 @@ if "%interactive%"=="1" start "" "%appUrl%"
 echo Installation completed successfully.
 if "%interactive%"=="1" pause
 exit /b 0
+
+:validateLicense
+setlocal EnableDelayedExpansion
+set "licenseToValidate=%~1"
+set "usernameToValidate=%~2"
+set "validatorExitCode=9"
+if not exist "%licenseValidatorExe%" (
+    if exist "%licenseValidatorProject%" (
+        dotnet run --project "%licenseValidatorProject%" -- validate --license-file "%licenseToValidate%" --allowed-username "%usernameToValidate%" >nul 2>&1
+        set "validatorExitCode=!errorlevel!"
+        goto validatorDone
+    )
+
+    >> "%logFile%" echo [%date% %time%] ERROR: License validator executable not found at "%licenseValidatorExe%".
+    echo File di licenza non valido. Contatta il fornitore del software.
+    endlocal & exit /b 1
+)
+
+"%licenseValidatorExe%" validate --license-file "%licenseToValidate%" --allowed-username "%usernameToValidate%" >nul 2>&1
+set "validatorExitCode=%errorlevel%"
+:validatorDone
+if "!validatorExitCode!"=="0" (
+    >> "%logFile%" echo [%date% %time%] License file pre-validation succeeded.
+    endlocal & exit /b 0
+)
+
+if "!validatorExitCode!"=="2" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file not found during validation.
+    echo File di licenza non trovato.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="3" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License does not match this machine.
+    echo Questa licenza non e valida per questo computer.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="4" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License does not match the configured Windows user.
+    echo La licenza non e valida per questo utente Windows.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="6" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file is invalid or corrupted.
+    echo Il file di licenza non e valido o e danneggiato.
+    endlocal & exit /b 1
+)
+
+>> "%logFile%" echo [%date% %time%] ERROR: License validation failed with exit code !validatorExitCode!.
+echo File di licenza non valido. Contatta il fornitore del software.
+endlocal & exit /b 1
 
 :backupDbFile
 set "dbName=%~1"

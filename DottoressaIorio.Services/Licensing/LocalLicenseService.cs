@@ -127,6 +127,69 @@ public interface ILocalLicenseService
     LicenseValidationResult ValidateCurrentLicense(string currentUsername);
 }
 
+public static class LocalLicenseValidator
+{
+    public static LicenseValidationResult ValidateToken(
+        string token,
+        string expectedProductName,
+        string currentMachineId,
+        string currentUsername,
+        string publicKeyPem)
+    {
+        var normalizedMachineId = LicenseNormalizer.NormalizeMachineId(currentMachineId);
+        if (string.IsNullOrWhiteSpace(normalizedMachineId))
+        {
+            return LicenseValidationResult.Invalid(LicenseValidationFailure.MissingMachineId);
+        }
+
+        var normalizedUsername = LicenseNormalizer.NormalizeUsername(currentUsername);
+        if (string.IsNullOrWhiteSpace(normalizedUsername))
+        {
+            return LicenseValidationResult.Invalid(LicenseValidationFailure.MissingAllowedUsername);
+        }
+
+        return LocalLicenseToken.Validate(
+            token,
+            expectedProductName,
+            normalizedMachineId,
+            normalizedUsername,
+            publicKeyPem);
+    }
+
+    public static LicenseValidationResult ValidateFile(
+        string licensePath,
+        string expectedProductName,
+        string currentMachineId,
+        string currentUsername,
+        string publicKeyPem)
+    {
+        string token;
+        try
+        {
+            token = File.ReadAllText(licensePath);
+        }
+        catch (FileNotFoundException)
+        {
+            return LicenseValidationResult.Invalid(LicenseValidationFailure.MissingLicenseFile);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return LicenseValidationResult.Invalid(LicenseValidationFailure.MissingLicenseFile);
+        }
+        catch (Exception)
+        {
+            return LicenseValidationResult.Invalid(LicenseValidationFailure.MalformedLicenseFile);
+        }
+
+        return ValidateToken(
+            token,
+            expectedProductName,
+            currentMachineId,
+            currentUsername,
+            publicKeyPem);
+    }
+}
+
 public sealed class LocalLicenseService(
     ILocalLicenseFileReader fileReader,
     IMachineIdProvider machineIdProvider,
@@ -170,7 +233,7 @@ public sealed class LocalLicenseService(
             return LicenseValidationResult.Invalid(LicenseValidationFailure.MalformedLicenseFile);
         }
 
-        var parseResult = LocalLicenseToken.Validate(
+        var parseResult = LocalLicenseValidator.ValidateToken(
             token,
             settings.ProductName,
             normalizedMachineId,

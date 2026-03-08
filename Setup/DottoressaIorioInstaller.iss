@@ -27,7 +27,7 @@ UninstallDisplayIcon={app}\DottoressaIorio.App.exe
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Crea un collegamento sul desktop"; GroupDescription: "Icone aggiuntive:"
+Name: "desktopicon"; Description: "Crea un collegamento sul desktop"; GroupDescription: "Seleziona le icone da creare:"
 
 [Files]
 Source: "..\DottoressaIorio.App\wwwroot\favicon.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -38,9 +38,12 @@ Source: "install.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "uninstall.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "backup_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "restore_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
+Source: "tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"; DestDir: "{app}\_setup"; Flags: ignoreversion; StatusMsg: "Preparazione dei componenti di installazione..."
+Source: "tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"; Flags: dontcopy
 
 [Run]
 Filename: "{app}\_setup\install.bat"; Parameters: "{code:GetInstallParams}"; Flags: runhidden waituntilterminated; StatusMsg: "Configurazione del servizio Windows in corso..."
+Filename: "{code:GetConfiguredUrl}"; Description: "Apri l'applicazione al termine dell'installazione"; Flags: postinstall shellexec nowait skipifsilent
 
 [UninstallRun]
 Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "DottoressaIorioAppUninstall"
@@ -56,6 +59,7 @@ var
   LicenseFilePage: TInputFileWizardPage;
   RestoreOptionPage: TInputOptionWizardPage;
   RestoreFilePage: TInputFileWizardPage;
+  AllowedUserHintLabel: TNewStaticText;
 
 function IsValidServiceUrl(const Url: string): Boolean; forward;
 function ExtractPortFromUrl(const Url: string): Integer; forward;
@@ -63,11 +67,14 @@ function IsPortInUse(PortValue: Integer): Boolean; forward;
 function GetUninstallParams(Value: string): string; forward;
 function ShouldRestoreDatabase(): Boolean; forward;
 function GetRestoreBackupPath(): string; forward;
+function ValidateSelectedLicense(): Boolean; forward;
 
 procedure InitializeWizard;
 var
   DomainName: string;
 begin
+  WizardForm.SelectTasksLabel.Caption := 'Seleziona le icone aggiuntive da creare.';
+
   ConfigPage := CreateInputQueryPage(
     wpSelectTasks,
     'Configurazione applicazione',
@@ -87,6 +94,18 @@ begin
     ConfigPage.Values[0] := DomainName + '\' + ExpandConstant('{username}');
   ConfigPage.Values[1] := 'http://localhost:5000';
 
+  AllowedUserHintLabel := TNewStaticText.Create(ConfigPage);
+  AllowedUserHintLabel.Parent := ConfigPage.Surface;
+  AllowedUserHintLabel.Left := ConfigPage.Edits[0].Left;
+  AllowedUserHintLabel.Top := ConfigPage.Edits[0].Top + ConfigPage.Edits[0].Height + ScaleY(4);
+  AllowedUserHintLabel.Width := ConfigPage.SurfaceWidth - AllowedUserHintLabel.Left;
+  AllowedUserHintLabel.Height := ScaleY(24);
+  AllowedUserHintLabel.Caption := 'Deve corrispondere all''utente Windows presente nella licenza.';
+  AllowedUserHintLabel.WordWrap := True;
+
+  ConfigPage.PromptLabels[1].Top := AllowedUserHintLabel.Top + AllowedUserHintLabel.Height + ScaleY(8);
+  ConfigPage.Edits[1].Top := ConfigPage.PromptLabels[1].Top + ConfigPage.PromptLabels[1].Height + ScaleY(4);
+
   LicenseFilePage := CreateInputFilePage(
     ConfigPage.ID,
     'File licenza',
@@ -99,7 +118,7 @@ begin
     LicenseFilePage.ID,
     'Ripristino database',
     'Scegli se ripristinare il database da un file di backup esistente.',
-    'Seleziona "Si" solo se vuoi che questa installazione sostituisca il database corrente.',
+    'Seleziona "Si" solo se vuoi sostituire il database corrente.',
     True,
     False
   );
@@ -170,6 +189,12 @@ begin
       Result := False;
       Exit;
     end;
+
+    if not ValidateSelectedLicense() then
+    begin
+      Result := False;
+      Exit;
+    end;
   end;
 
   if CurPageID = RestoreFilePage.ID then
@@ -220,6 +245,48 @@ end;
 function GetRestoreBackupPath(): string;
 begin
   Result := Trim(RestoreFilePage.Values[0]);
+end;
+
+function ValidateSelectedLicense(): Boolean;
+var
+  ValidatorExe: string;
+  CmdResult: Integer;
+  Parameters: string;
+begin
+  Result := False;
+
+  ExtractTemporaryFile('DottoressaIorio.LicenseGenerator.exe');
+  ValidatorExe := ExpandConstant('{tmp}\DottoressaIorio.LicenseGenerator.exe');
+  Parameters :=
+    'validate --license-file ' + AddQuotes(Trim(LicenseFilePage.Values[0])) +
+    ' --allowed-username ' + AddQuotes(Trim(ConfigPage.Values[0]));
+
+  if not Exec(ValidatorExe, Parameters, '', SW_HIDE, ewWaitUntilTerminated, CmdResult) then
+  begin
+    MsgBox('File di licenza non valido. Contatta il fornitore del software.', mbError, MB_OK);
+    Exit;
+  end;
+
+  if CmdResult = 0 then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  case CmdResult of
+    2:
+      MsgBox('File di licenza non trovato.', mbError, MB_OK);
+    3:
+      MsgBox('Questa licenza non e valida per questo computer.', mbError, MB_OK);
+    4:
+      MsgBox('La licenza non e valida per questo utente Windows.', mbError, MB_OK);
+    5:
+      MsgBox('File di licenza non valido. Contatta il fornitore del software.', mbError, MB_OK);
+    6:
+      MsgBox('Il file di licenza non e valido o e danneggiato.', mbError, MB_OK);
+    else
+      MsgBox('File di licenza non valido. Contatta il fornitore del software.', mbError, MB_OK);
+  end;
 end;
 
 function IsDigits(const Value: string): Boolean;
