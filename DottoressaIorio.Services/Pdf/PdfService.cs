@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DottoressaIorio.Models;
 using Microsoft.Playwright;
@@ -8,11 +9,10 @@ public class PdfService(PdfHtmlBuilder builder)
 {
     public async Task<byte[]> GenerateTherapyPdfAsync(Therapy therapy)
     {
+        using var playwright = await Playwright.CreateAsync();
         ConfigurePlaywrightBrowsersPath();
 
-        using var playwright = await Playwright.CreateAsync();
-        await using var browser =
-            await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+        await using var browser = await LaunchBrowserAsync(playwright);
 
         var page = await browser.NewPageAsync();
 
@@ -43,13 +43,84 @@ public class PdfService(PdfHtmlBuilder builder)
         });
     }
 
+    private static async Task<IBrowser> LaunchBrowserAsync(IPlaywright playwright)
+    {
+        try
+        {
+            return await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+        }
+        catch (PlaywrightException ex) when (!IsProductionEnvironment() &&
+                                             ex.Message.Contains(
+                                                 "Executable doesn't exist",
+                                                 StringComparison.OrdinalIgnoreCase))
+        {
+            await InstallPlaywrightBrowsersAsync();
+            return await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+        }
+    }
+
     private static void ConfigurePlaywrightBrowsersPath()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return;
 
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH")))
+            return;
+
+        if (!IsProductionEnvironment())
+            return;
+
         const string playwrightPath = @"C:\ProgramData\DottoressaIorio\ms-playwright";
         Directory.CreateDirectory(playwrightPath);
         Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", playwrightPath);
+    }
+
+    private static bool IsProductionEnvironment()
+    {
+        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                              ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+
+        return string.Equals(environmentName, "Production", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task InstallPlaywrightBrowsersAsync()
+    {
+        var baseDir = AppContext.BaseDirectory;
+        string fileName;
+        string arguments;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            fileName = "pwsh";
+            arguments = $"\"{Path.Combine(baseDir, "playwright.ps1")}\" install chromium";
+        }
+        else
+        {
+            fileName = "bash";
+            arguments = $"\"{Path.Combine(baseDir, "playwright.sh")}\" install chromium";
+        }
+
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+        await process.WaitForExitAsync();
+
+        if (process.ExitCode != 0)
+        {
+            var error = await process.StandardError.ReadToEndAsync();
+            throw new InvalidOperationException(
+                $"Failed to install Playwright browsers. Exit code: {process.ExitCode}. {error}".Trim());
+        }
     }
 }
