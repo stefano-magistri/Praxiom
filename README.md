@@ -81,11 +81,61 @@ Supporting projects:
 4. Optionally apply a therapy template to speed authoring.
 5. Export therapy to PDF and open in a browser tab for print/save.
 
-### Screenshots (Placeholders)
+### Screenshots
 
-- `Patients list`: add image at `docs/screenshots/patients-list.png`
-- `Patient therapy detail`: add image at `docs/screenshots/patient-therapy.png`
-- `Therapy PDF preview`: add image at `docs/screenshots/pdf-preview.png`
+#### Patients List
+
+The main patient list is the operational starting point for the day: it keeps search, browsing, and record access in one place.
+
+![Patients list](docs/screenshots/Lista%20Pazienti.png)
+
+#### New Patient
+
+Creating a new patient record is kept intentionally direct so new admissions can be entered quickly during routine work.
+
+![New patient](docs/screenshots/Nuovo%20Paziente.png)
+
+#### Edit Patient
+
+Existing demographic and clinical reference data can be updated without leaving the patient management flow.
+
+![Edit patient](docs/screenshots/Modifica%20Paziente.png)
+
+#### Patient Detail
+
+The patient detail page acts as the central workspace for reviewing information and continuing the therapy workflow.
+
+![Patient detail](docs/screenshots/Scheda%20Paziente.png)
+
+#### New Therapy
+
+Therapies can be authored from scratch when a fully custom treatment plan is needed.
+
+![New therapy](docs/screenshots/Nuova%20Terapia.png)
+
+#### Add Precompiled Therapy
+
+Reusable therapy templates help reduce repetitive typing and keep recurring prescriptions consistent.
+
+![Add precompiled therapy](docs/screenshots/Aggiungi%20Terapia%20Precompilata.png)
+
+#### Edit Precompiled Therapy
+
+Template maintenance stays inside the application so recurring therapy definitions can evolve with the practice.
+
+![Edit precompiled therapy](docs/screenshots/Modifica%20Terapia%20Precompilata.png)
+
+#### Therapy Print View
+
+Once a therapy is ready, the printable output is generated in a browser-friendly layout designed for PDF export and paper printing.
+
+![Therapy print view](docs/screenshots/Stampa%20Terapia.png)
+
+#### Additional Workflow Screen
+
+This extra screen captures another point in the application workflow and is included here for general UI coverage.
+
+![Additional workflow screen](docs/screenshots/Screenshot%202026-03-08%20134859.png)
 
 ## Scope and Security Context
 
