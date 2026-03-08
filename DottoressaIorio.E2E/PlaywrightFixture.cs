@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
@@ -20,6 +21,8 @@ public sealed class PlaywrightFixture : IAsyncLifetime
     private IBrowser? _browser;
     private Process? _appProcess;
     private string? _tempDirectory;
+    private readonly StringBuilder _appStdout = new();
+    private readonly StringBuilder _appStderr = new();
 
     public IPlaywright Playwright { get; private set; } = null!;
 
@@ -139,44 +142,24 @@ public sealed class PlaywrightFixture : IAsyncLifetime
 
         var repoRoot = ResolveRepositoryRoot();
         SeedDatabaseIfAvailable(repoRoot.FullName, _tempDirectory);
-        var appAssemblyPath = Path.Combine(
-            repoRoot.FullName,
-            "DottoressaIorio.App",
-            "bin",
-            "Release",
-            "net10.0",
-            "DottoressaIorio.App.dll");
-
-        if (!File.Exists(appAssemblyPath))
-        {
-            throw new FileNotFoundException("Built app assembly not found for E2E startup.", appAssemblyPath);
-        }
+        var appAssemblyPath = ResolveAppAssemblyPath(repoRoot.FullName);
 
         _appProcess = new Process
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = $"\"{appAssemblyPath}\" --urls \"{Settings.BaseUrl}\"",
-                WorkingDirectory = Path.GetDirectoryName(appAssemblyPath)
-                                   ?? throw new InvalidOperationException("Unable to resolve app working directory."),
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = BuildAppStartInfo(
+                appAssemblyPath,
+                currentUsername,
+                licensePath,
+                rsa.ExportSubjectPublicKeyInfoPem())
         };
 
-        _appProcess.StartInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
-        _appProcess.StartInfo.Environment["Authentication__UseNegotiate"] = "false";
-        _appProcess.StartInfo.Environment["Authentication__AllowedUsername"] = currentUsername;
-        _appProcess.StartInfo.Environment["DatabaseRootPath"] = _tempDirectory;
-        _appProcess.StartInfo.Environment["EncryptionKey"] = string.Empty;
-        _appProcess.StartInfo.Environment["LocalLicense__LicensePath"] = licensePath;
-        _appProcess.StartInfo.Environment["LocalLicense__PublicKeyPemBase64"] =
-            Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(rsa.ExportSubjectPublicKeyInfoPem()));
-
+        _appStdout.Clear();
+        _appStderr.Clear();
+        _appProcess.OutputDataReceived += (_, args) => AppendLine(_appStdout, args.Data);
+        _appProcess.ErrorDataReceived += (_, args) => AppendLine(_appStderr, args.Data);
         _appProcess.Start();
+        _appProcess.BeginOutputReadLine();
+        _appProcess.BeginErrorReadLine();
         await WaitForApplicationReadyAsync();
     }
 
@@ -193,7 +176,7 @@ public sealed class PlaywrightFixture : IAsyncLifetime
 
         if (!string.IsNullOrWhiteSpace(_tempDirectory) && Directory.Exists(_tempDirectory))
         {
-            Directory.Delete(_tempDirectory, recursive: true);
+            await DeleteDirectoryWithRetryAsync(_tempDirectory);
         }
 
         _tempDirectory = null;
@@ -214,10 +197,9 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         {
             if (_appProcess is not null && _appProcess.HasExited)
             {
-                var error = await _appProcess.StandardError.ReadToEndAsync();
-                var output = await _appProcess.StandardOutput.ReadToEndAsync();
                 throw new InvalidOperationException(
-                    $"E2E app host exited before becoming ready. Stdout: {output} Stderr: {error}".Trim());
+                    $"E2E app host exited before becoming ready. Stdout: {GetBufferedOutput(_appStdout)} Stderr: {GetBufferedOutput(_appStderr)}"
+                        .Trim());
             }
 
             try
@@ -238,7 +220,9 @@ public sealed class PlaywrightFixture : IAsyncLifetime
             await Task.Delay(1000);
         }
 
-        throw new TimeoutException($"Timed out waiting for the app to become reachable at {Settings.BaseUrl}.");
+        throw new TimeoutException(
+            $"Timed out waiting for the app to become reachable at {Settings.BaseUrl}. Stdout: {GetBufferedOutput(_appStdout)} Stderr: {GetBufferedOutput(_appStderr)}"
+                .Trim());
     }
 
     private static void StopLeftoverApplicationHosts()
@@ -308,6 +292,109 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         }
 
         File.Copy(demoDbPath, Path.Combine(targetDirectory, "app_unencrypted.db"), overwrite: true);
+    }
+
+    private ProcessStartInfo BuildAppStartInfo(
+        string appAssemblyPath,
+        string currentUsername,
+        string licensePath,
+        string publicKeyPem)
+    {
+        var workingDirectory = Path.GetDirectoryName(appAssemblyPath)
+                               ?? throw new InvalidOperationException("Unable to resolve app working directory.");
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "dotnet",
+            Arguments = $"\"{appAssemblyPath}\" --urls \"{Settings.BaseUrl}\"",
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+        startInfo.Environment["Authentication__UseNegotiate"] = "false";
+        startInfo.Environment["Authentication__AllowedUsername"] = currentUsername;
+        startInfo.Environment["DatabaseRootPath"] = _tempDirectory;
+        startInfo.Environment["EncryptionKey"] = string.Empty;
+        startInfo.Environment["LocalLicense__LicensePath"] = licensePath;
+        startInfo.Environment["LocalLicense__PublicKeyPemBase64"] =
+            Convert.ToBase64String(Encoding.UTF8.GetBytes(publicKeyPem));
+
+        return startInfo;
+    }
+
+    private static string ResolveAppAssemblyPath(string repoRootPath)
+    {
+        var appBinDirectory = Path.Combine(repoRootPath, "DottoressaIorio.App", "bin");
+        if (!Directory.Exists(appBinDirectory))
+        {
+            throw new DirectoryNotFoundException($"App build output directory not found: {appBinDirectory}");
+        }
+
+        var candidates = Directory
+            .EnumerateFiles(appBinDirectory, "DottoressaIorio.App.dll", SearchOption.AllDirectories)
+            .Where(path => path.Contains($"{Path.DirectorySeparatorChar}net10.0{Path.DirectorySeparatorChar}",
+                StringComparison.OrdinalIgnoreCase))
+            .Select(path => new FileInfo(path))
+            .OrderByDescending(file => file.LastWriteTimeUtc)
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            throw new FileNotFoundException(
+                "Built app assembly not found for E2E startup. Build DottoressaIorio.App before running E2E tests.",
+                Path.Combine(appBinDirectory, "**", "net10.0", "DottoressaIorio.App.dll"));
+        }
+
+        return candidates[0].FullName;
+    }
+
+    private static void AppendLine(StringBuilder builder, string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return;
+        }
+
+        lock (builder)
+        {
+            builder.AppendLine(line);
+        }
+    }
+
+    private static string GetBufferedOutput(StringBuilder builder)
+    {
+        lock (builder)
+        {
+            return builder.ToString();
+        }
+    }
+
+    private static async Task DeleteDirectoryWithRetryAsync(string directoryPath)
+    {
+        const int maxAttempts = 10;
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                Directory.Delete(directoryPath, recursive: true);
+                return;
+            }
+            catch (IOException) when (attempt < maxAttempts)
+            {
+                await Task.Delay(500);
+            }
+            catch (UnauthorizedAccessException) when (attempt < maxAttempts)
+            {
+                await Task.Delay(500);
+            }
+        }
+
+        Directory.Delete(directoryPath, recursive: true);
     }
 
     private static DirectoryInfo ResolveRepositoryRoot()

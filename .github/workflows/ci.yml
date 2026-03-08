@@ -38,48 +38,33 @@ jobs:
       - name: Run integration tests (PDF)
         run: dotnet test DottoressaIorio.Services.Tests/DottoressaIorio.Services.Tests.csproj --configuration Release --no-build --verbosity normal --filter "Category=Integration"
 
-      - name: Prepare E2E database
-        shell: bash
-        run: |
-          APP_OUT_DIR="DottoressaIorio.App/"
-          mkdir -p "$APP_OUT_DIR"
-          cp Demo/app_old.db "$APP_OUT_DIR/app.db"
-          rm -f "$APP_OUT_DIR/app.db-shm" "$APP_OUT_DIR/app.db-wal"
+  e2e-tests:
+    runs-on: windows-latest
 
-      - name: Start app for E2E
-        shell: bash
-        run: |
-          export ASPNETCORE_ENVIRONMENT=Development
-          export Authentication__UseNegotiate=false
-          nohup dotnet run --project DottoressaIorio.App --configuration Release --no-build > app.log 2>&1 &
-          echo $! > app.pid
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Wait for app readiness
-        shell: bash
-        run: |
-          for i in {1..60}; do
-            if curl -kfsS https://localhost:7013/ >/dev/null; then
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "App did not become ready in time"
-          cat app.log || true
-          exit 1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore DottoressaIorio.slnx
+
+      - name: Build
+        run: dotnet build DottoressaIorio.slnx --configuration Release --no-restore
+
+      - name: Install Playwright browsers
+        shell: pwsh
+        run: pwsh DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Run E2E tests
         env:
           E2E__BaseUrl: https://localhost:7013
           E2E__Headless: true
         run: dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj --configuration Release --no-build --verbosity normal
-
-      - name: Stop app
-        if: always()
-        shell: bash
-        run: |
-          if [[ -f app.pid ]]; then
-            kill "$(cat app.pid)" || true
-          fi
 
   build-installer:
     runs-on: windows-latest
