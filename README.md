@@ -14,9 +14,11 @@ dotnet build DottoressaIorio.slnx --configuration Release
 dotnet test DottoressaIorio.slnx --configuration Release
 
 # Run app locally
+# Requires a valid local license file bound to this machine and Windows user
 dotnet run --project DottoressaIorio.App
 
 # Run app locally with demo backup DB
+# Requires a valid local license file bound to this machine and Windows user
 dotnet run --project DottoressaIorio.App --demo
 
 # Build installer (Windows)
@@ -30,6 +32,7 @@ Setup\build-installer.bat
 - Therapy PDF generation through Playwright Chromium for consistent printing output.
 - Optional encrypted SQLite storage (`EncryptionKey`) with unencrypted fallback.
 - Windows service + installer scripts for repeatable deployment and upgrades.
+- Local signed license file bound to one Windows machine and one Windows user.
 - Soft-delete model to preserve records while keeping UI lists clean.
 
 ## Architecture Overview
@@ -127,6 +130,34 @@ Behavior summary:
 - `Authentication:UseNegotiate=true`: Windows-authenticated identity is required.
 - `Authentication:AllowedUsername`: enforced by `SpecificUserOnly` policy.
 
+## Local Licensing
+
+The app now requires a local signed license at startup.
+
+License characteristics:
+
+- Product-scoped: licenses are generated for `DottoressaIorio`.
+- Machine-bound: validated against `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid`.
+- User-bound: validated against the full Windows identity in `MACHINE\username` or `DOMAIN\username` format.
+- Offline: no activation server or network dependency is used.
+
+Runtime behavior:
+
+- License validation runs on every startup.
+- Missing, malformed, tampered, wrong-machine, wrong-user, or wrong-product licenses fail closed.
+- Default installed license path: `C:\ProgramData\DottoressaIorio\license.dat`
+
+Internal generation tool:
+
+- `DottoressaIorio.LicenseGenerator` is an internal-only helper for the software provider.
+- It can create a signed `license.dat` from `MachineId` and `AllowedUsername`.
+- It can also validate a license file locally when used by the installer flow.
+
+Prototype limitations:
+
+- A determined developer could still patch binaries or checks.
+- `MachineGuid` can change after some OS reinstall or restore scenarios.
+
 ## Data and Storage
 
 - Database files are created under app base directory (`AppContext.BaseDirectory`).
@@ -171,9 +202,21 @@ Scripted installer behavior includes:
 - self-contained `win-x64` publish,
 - installer executable creation,
 - deployment to `C:\ProgramData\DottoressaIorio`,
+- dedicated `Richiesta licenza` page that shows the current `Machine ID` and `Utente Windows autorizzato`,
+- immediate installer-side validation of the selected `license.dat`,
 - Windows service setup/start,
 - Playwright Chromium installation attempt,
 - scheduled online backup task setup (`DottoressaIorio.App.exe --online-backup`).
+
+Installer flow summary:
+
+1. Installer shows `Richiesta licenza` with the exact machine/user data needed by the software provider.
+2. Customer sends those values to the provider and receives `license.dat`.
+3. Customer selects the returned license file on the `File licenza` page.
+4. Installer validates the license before continuing.
+5. Installation proceeds with service URL and optional DB restore settings.
+
+The request page keeps the values readable and selectable so the user can copy them manually or send a screenshot.
 
 Backup modes:
 
@@ -190,6 +233,13 @@ Example:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\DottoressaIorio\restore_script.ps1" -BackupPath "C:\Users\<user>\OneDrive\DottoressaIorio\_db_backup\app_backup_20260303153000.db"
 ```
+
+Uninstall backup behavior:
+
+- Uninstall preserves the local `_db_backup` folder exactly as before.
+- If `%OneDrive%` exists, uninstall also writes a timestamped extra copy of the database backup under:
+  - `%OneDrive%\DottoressaIorio\_db_backup`
+- OneDrive copy failures are ignored so uninstall still completes.
 
 ## Contributing and Maintenance
 
