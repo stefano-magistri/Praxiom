@@ -55,11 +55,15 @@ Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}";
 
 [Code]
 var
+  LicenseRequestPage: TInputQueryWizardPage;
   ConfigPage: TInputQueryWizardPage;
   LicenseFilePage: TInputFileWizardPage;
   RestoreOptionPage: TInputOptionWizardPage;
   RestoreFilePage: TInputFileWizardPage;
-  AllowedUserHintLabel: TNewStaticText;
+  LicenseRequestNoteLabel: TNewStaticText;
+
+function GetMachineId(Value: string): string; forward;
+function GetAllowedUsername(Value: string): string; forward;
 
 function IsValidServiceUrl(const Url: string): Boolean; forward;
 function ExtractPortFromUrl(const Url: string): Integer; forward;
@@ -72,50 +76,66 @@ function ValidateSelectedLicense(): Boolean; forward;
 procedure InitializeWizard;
 var
   DomainName: string;
+  MachineId: string;
+  AllowedUsername: string;
 begin
   WizardForm.SelectTasksLabel.Caption := 'Seleziona le icone aggiuntive da creare.';
-
-  ConfigPage := CreateInputQueryPage(
-    wpSelectTasks,
-    'Configurazione applicazione',
-    'Scegli l''URL del servizio e l''utente Windows autorizzato',
-    'Questi valori vengono applicati durante l''installazione e possono essere modificati reinstallando.'
-  );
-
-  ConfigPage.Add('Nome utente autorizzato (DOMINIO\username):', False);
-  ConfigPage.Add('URL del servizio:', False);
 
   DomainName := GetEnv('USERDOMAIN');
   if Trim(DomainName) = '' then
     DomainName := GetEnv('COMPUTERNAME');
   if Trim(DomainName) = '' then
-    ConfigPage.Values[0] := ExpandConstant('{username}')
+    AllowedUsername := ExpandConstant('{username}')
   else
-    ConfigPage.Values[0] := DomainName + '\' + ExpandConstant('{username}');
-  ConfigPage.Values[1] := 'http://localhost:5000';
+    AllowedUsername := DomainName + '\' + ExpandConstant('{username}');
 
-  AllowedUserHintLabel := TNewStaticText.Create(ConfigPage);
-  AllowedUserHintLabel.Parent := ConfigPage.Surface;
-  AllowedUserHintLabel.Left := ConfigPage.Edits[0].Left;
-  AllowedUserHintLabel.Top := ConfigPage.Edits[0].Top + ConfigPage.Edits[0].Height + ScaleY(4);
-  AllowedUserHintLabel.Width := ConfigPage.SurfaceWidth - AllowedUserHintLabel.Left;
-  AllowedUserHintLabel.Height := ScaleY(24);
-  AllowedUserHintLabel.Caption := 'Deve corrispondere all''utente Windows presente nella licenza.';
-  AllowedUserHintLabel.WordWrap := True;
+  if not RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Cryptography', 'MachineGuid', MachineId) then
+    MachineId := '';
 
-  ConfigPage.PromptLabels[1].Top := AllowedUserHintLabel.Top + AllowedUserHintLabel.Height + ScaleY(8);
-  ConfigPage.Edits[1].Top := ConfigPage.PromptLabels[1].Top + ConfigPage.PromptLabels[1].Height + ScaleY(4);
+  LicenseRequestPage := CreateInputQueryPage(
+    wpSelectTasks,
+    'Richiesta licenza',
+    'Per ricevere il file di licenza, invia al fornitore i dati seguenti.',
+    'La licenza verra generata per questo computer e per questo utente Windows.'
+  );
+  LicenseRequestPage.Add('Machine ID:', False);
+  LicenseRequestPage.Add('Utente Windows autorizzato:', False);
+  LicenseRequestPage.Values[0] := MachineId;
+  LicenseRequestPage.Values[1] := AllowedUsername;
+  LicenseRequestPage.Edits[0].ReadOnly := True;
+  LicenseRequestPage.Edits[1].ReadOnly := True;
+
+  LicenseRequestNoteLabel := TNewStaticText.Create(LicenseRequestPage);
+  LicenseRequestNoteLabel.Parent := LicenseRequestPage.Surface;
+  LicenseRequestNoteLabel.Left := LicenseRequestPage.Edits[1].Left;
+  LicenseRequestNoteLabel.Top := LicenseRequestPage.Edits[1].Top + LicenseRequestPage.Edits[1].Height + ScaleY(8);
+  LicenseRequestNoteLabel.Width := LicenseRequestPage.SurfaceWidth - LicenseRequestNoteLabel.Left;
+  LicenseRequestNoteLabel.Height := ScaleY(42);
+  LicenseRequestNoteLabel.Caption :=
+    'Invia questi dati al fornitore per ricevere il file di licenza.' + #13#10 +
+    'Puoi copiarli dai campi sopra oppure inviare uno screenshot di questa schermata.';
+  LicenseRequestNoteLabel.WordWrap := True;
 
   LicenseFilePage := CreateInputFilePage(
-    ConfigPage.ID,
+    LicenseRequestPage.ID,
     'File licenza',
-    'Seleziona il file di licenza ricevuto.',
-    'Il file di licenza verra copiato in ProgramData e verificato a ogni avvio dell''applicazione.'
+    'Seleziona il file di licenza ricevuto dal fornitore.',
+    'Il file di licenza verra verificato subito e copiato in ProgramData.'
   );
   LicenseFilePage.Add('Percorso file licenza:', 'File licenza (*.dat)|*.dat|Tutti i file (*.*)|*.*', '.dat');
 
-  RestoreOptionPage := CreateInputOptionPage(
+  ConfigPage := CreateInputQueryPage(
     LicenseFilePage.ID,
+    'Configurazione applicazione',
+    'Scegli l''URL del servizio.',
+    'Questo valore viene applicato durante l''installazione e puo essere modificato reinstallando.'
+  );
+
+  ConfigPage.Add('URL del servizio:', False);
+  ConfigPage.Values[0] := 'http://localhost:5000';
+
+  RestoreOptionPage := CreateInputOptionPage(
+    ConfigPage.ID,
     'Ripristino database',
     'Scegli se ripristinare il database da un file di backup esistente.',
     'Seleziona "Si" solo se vuoi sostituire il database corrente.',
@@ -140,23 +160,34 @@ var
   UrlToCheck: string;
 begin
   Result := True;
-  if CurPageID = ConfigPage.ID then
+
+  if CurPageID = LicenseRequestPage.ID then
   begin
-    if Trim(ConfigPage.Values[0]) = '' then
+    if Trim(GetMachineId('')) = '' then
     begin
-      MsgBox('Il nome utente autorizzato e obbligatorio.', mbError, MB_OK);
+      MsgBox('Machine ID non disponibile. Contatta il fornitore del software.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    if Trim(ConfigPage.Values[1]) = '' then
+    if Trim(GetAllowedUsername('')) = '' then
+    begin
+      MsgBox('Utente Windows non disponibile. Contatta il fornitore del software.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
+
+  if CurPageID = ConfigPage.ID then
+  begin
+    if Trim(ConfigPage.Values[0]) = '' then
     begin
       MsgBox('L''URL del servizio e obbligatorio.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    UrlToCheck := Trim(ConfigPage.Values[1]);
+    UrlToCheck := Trim(ConfigPage.Values[0]);
     if not IsValidServiceUrl(UrlToCheck) then
     begin
       MsgBox('L''URL del servizio deve essere nel formato http://hostname:porta oppure https://hostname:porta.', mbError, MB_OK);
@@ -225,8 +256,8 @@ end;
 function GetInstallParams(Value: string): string;
 begin
   Result :=
-    '--silent --allowed-username ' + AddQuotes(ConfigPage.Values[0]) +
-    ' --app-url ' + AddQuotes(ConfigPage.Values[1]) +
+    '--silent --allowed-username ' + AddQuotes(GetAllowedUsername('')) +
+    ' --app-url ' + AddQuotes(ConfigPage.Values[0]) +
     ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]);
   if ShouldRestoreDatabase() then
     Result := Result + ' --skip-auto-db-restore';
@@ -234,7 +265,17 @@ end;
 
 function GetConfiguredUrl(Value: string): string;
 begin
-  Result := ConfigPage.Values[1];
+  Result := ConfigPage.Values[0];
+end;
+
+function GetMachineId(Value: string): string;
+begin
+  Result := Trim(LicenseRequestPage.Values[0]);
+end;
+
+function GetAllowedUsername(Value: string): string;
+begin
+  Result := Trim(LicenseRequestPage.Values[1]);
 end;
 
 function ShouldRestoreDatabase(): Boolean;
@@ -259,7 +300,7 @@ begin
   ValidatorExe := ExpandConstant('{tmp}\DottoressaIorio.LicenseGenerator.exe');
   Parameters :=
     'validate --license-file ' + AddQuotes(Trim(LicenseFilePage.Values[0])) +
-    ' --allowed-username ' + AddQuotes(Trim(ConfigPage.Values[0]));
+    ' --allowed-username ' + AddQuotes(GetAllowedUsername(''));
 
   if not Exec(ValidatorExe, Parameters, '', SW_HIDE, ewWaitUntilTerminated, CmdResult) then
   begin
