@@ -689,7 +689,6 @@ body {
     border-radius: 16px;
     background: var(--surface);
     box-shadow: 0 10px 28px rgba(22, 42, 64, .08);
-    max-width: 980px;
 }
 
 .patient-context-heading {
