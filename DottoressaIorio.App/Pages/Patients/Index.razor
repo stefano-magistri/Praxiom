@@ -10,13 +10,21 @@
                 <SearchBox Id="search"
                            Value="@SearchTerm"
                            OnInput="SearchPatients"
+                           AutoFocus="true"
                            Placeholder="Cerca paziente per nome, cognome o entrambi"/>
             </div>
-            <a class="btn btn-outline-primary"
-               data-testid="export-csv-link"
-               href="@GetCsvExportUrl()">
-                <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Esporta CSV
-            </a>
+            <div class="patients-toolbar-actions">
+                <a class="btn btn-primary"
+                   data-testid="create-patient-page-link"
+                   href="/create-patient">
+                    <span class="oi oi-plus px-1" aria-hidden="true"></span>Nuovo Paziente
+                </a>
+                <a class="btn btn-outline-primary"
+                   data-testid="export-csv-link"
+                   href="@GetCsvExportUrl()">
+                    <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Esporta CSV
+                </a>
+            </div>
         </div>
 
         <p class="patients-export-hint">Esporta CSV (usa i filtri attivi)</p>

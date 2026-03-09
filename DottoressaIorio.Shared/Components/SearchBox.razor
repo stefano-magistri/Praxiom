@@ -9,10 +9,13 @@
            value="@Value"
            @oninput="OnInput"
            placeholder="@Placeholder"
-           autocomplete="off"/>
+           autocomplete="off"
+           @ref="inputReference" />
 </div>
 
 @code {
+    private ElementReference inputReference;
+
     [Parameter] [EditorRequired] public string Id { get; set; } = string.Empty;
 
     [Parameter] public string Label { get; set; } = string.Empty;
@@ -21,5 +24,15 @@
 
     [Parameter] public string Placeholder { get; set; } = string.Empty;
 
+    [Parameter] public bool AutoFocus { get; set; }
+
     [Parameter] [EditorRequired] public EventCallback<ChangeEventArgs> OnInput { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && AutoFocus)
+        {
+            await inputReference.FocusAsync();
+        }
+    }
 }

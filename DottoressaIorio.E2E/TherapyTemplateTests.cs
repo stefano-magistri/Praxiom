@@ -22,7 +22,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         var addedDescription = $"AGGIUNGI TEST Descrizione: {seed}";
         var editedDescription = $"MODIFICA TEST Descrizione: {seed}";
 
-        await page.GetByTestId("create-therapy-template-nav-link").ClickAsync();
+        await page.GetByTestId("create-therapy-template-page-link").ClickAsync();
         await FillBoundFieldAsync(page.Locator("#Title"), addedTitle);
         await FillBoundFieldAsync(page.Locator("#Description"), addedDescription);
         await SubmitTemplateFormAsync(page);
@@ -57,7 +57,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
     [Trait("Category", "E2E")]
     public async Task AggiungiTerapiaPrecompilata_ShouldCreateTemplate()
     {
-        var setup = await NewAuthorizedPageAsync();
+        var setup = await NewAuthorizedPageAsync("/therapy-templates");
         await using var context = setup.Context;
         var page = setup.Page;
 
@@ -66,7 +66,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         var titleDisplayed = FormatTitleCase(title);
         var description = $"Template description {seed}";
 
-        await page.GetByTestId("create-therapy-template-nav-link").ClickAsync();
+        await page.GetByTestId("create-therapy-template-page-link").ClickAsync();
         await FillBoundFieldAsync(page.Locator("#Title"), title);
         await FillBoundFieldAsync(page.Locator("#Description"), description);
         await SubmitTemplateFormAsync(page);

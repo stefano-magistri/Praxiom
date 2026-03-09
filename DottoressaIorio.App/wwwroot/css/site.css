@@ -579,6 +579,14 @@ body {
     flex: 1 1 20rem;
 }
 
+.patients-toolbar-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .6rem;
+}
+
 .patients-export-hint {
     margin-top: -.25rem;
     margin-bottom: 1rem;
@@ -766,6 +774,54 @@ main .patients-table-wrapper {
     color: #9aa8b8;
     border-color: #d7e1ea;
     background: #fff;
+}
+
+@media (min-width: 992px) {
+    .sidebar .nav-link {
+        padding: .46rem .66rem;
+        font-size: .95rem;
+    }
+
+    #sidebarMenu .nav {
+        gap: .2rem;
+    }
+
+    .form-label,
+    .needs-validation label {
+        margin: .45rem 0 .3rem;
+        font-size: .95rem;
+    }
+
+    .form-control,
+    .form-select {
+        padding: .5rem .68rem;
+        font-size: .96rem;
+    }
+
+    main form.needs-validation {
+        margin: .85rem 0;
+        padding: 1.25rem;
+    }
+
+    main form.needs-validation .mb-3 {
+        margin-bottom: .85rem !important;
+    }
+
+    .table thead th,
+    .patients-table thead th {
+        padding: .74rem .72rem;
+        font-size: .78rem;
+    }
+
+    .table tbody td {
+        padding: .7rem .72rem;
+        font-size: .95rem;
+    }
+
+    .patients-table > tbody > tr > td {
+        padding-top: .8rem;
+        padding-bottom: .8rem;
+    }
 }
 
 .btn-delete-soft:hover,

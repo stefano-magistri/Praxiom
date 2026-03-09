@@ -8,10 +8,21 @@
 
 <div class="card patients-card">
     <div class="card-body p-4">
-        <SearchBox Id="templateSearch"
-                   Value="@SearchTerm"
-                   OnInput="SearchTemplates"
-                   Placeholder="Cerca terapia precompilata per titolo o descrizione"/>
+        <div class="patients-toolbar mb-3">
+            <div class="patients-toolbar-search">
+                <SearchBox Id="templateSearch"
+                           Value="@SearchTerm"
+                           OnInput="SearchTemplates"
+                           Placeholder="Cerca terapia precompilata per titolo o descrizione"/>
+            </div>
+            <div class="patients-toolbar-actions">
+                <a class="btn btn-primary"
+                   data-testid="create-therapy-template-page-link"
+                   href="/create-therapy-template">
+                    <span class="oi oi-plus px-1" aria-hidden="true"></span>Nuova Terapia Precompilata
+                </a>
+            </div>
+        </div>
 
         @if (DisplayedTemplates.Count == 0)
         {

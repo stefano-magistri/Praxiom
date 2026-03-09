@@ -16,13 +16,13 @@ public sealed class NavigationTests(PlaywrightFixture fixture) : E2eTestBase(fix
         await page.GetByTestId("patients-nav-link").ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
 
-        await page.GetByTestId("create-patient-nav-link").ClickAsync();
+        await page.GetByTestId("create-patient-page-link").ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Nuovo Paziente");
 
         await page.GetByTestId("therapy-templates-nav-link").ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
 
-        await page.GetByTestId("create-therapy-template-nav-link").ClickAsync();
+        await page.GetByTestId("create-therapy-template-page-link").ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Aggiungi Terapia Precompilata");
 
         await page.GetByTestId("guide-nav-link").ClickAsync();
