@@ -1,4 +1,4 @@
-#define MyAppName "Dottoressa Iorio"
+#define MyAppName "Praxiom"
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
@@ -7,7 +7,7 @@
 AppId={{A53D1775-E8B2-4E8D-9FB3-52312AA1E7A4}
 AppName={#MyAppName}
 AppVersion={#AppVersion}
-AppPublisher=Dottoressa Iorio
+AppPublisher=Praxiom
 DefaultDirName={commonappdata}\DottoressaIorio
 DefaultGroupName={#MyAppName}
 DisableDirPage=yes
@@ -27,7 +27,7 @@ UninstallDisplayIcon={app}\DottoressaIorio.App.exe
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Crea un collegamento sul desktop"; GroupDescription: "Icone aggiuntive:"
+Name: "desktopicon"; Description: "Crea un collegamento sul desktop"; GroupDescription: "Seleziona le icone da creare:"
 
 [Files]
 Source: "..\DottoressaIorio.App\wwwroot\favicon.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -38,23 +38,32 @@ Source: "install.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "uninstall.bat"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "backup_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
 Source: "restore_script.ps1"; DestDir: "{app}\_setup"; Flags: ignoreversion
+Source: "tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"; DestDir: "{app}\_setup"; DestName: "setup-helper.exe"; Flags: ignoreversion
+Source: "tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"; Flags: dontcopy
 
 [Run]
 Filename: "{app}\_setup\install.bat"; Parameters: "{code:GetInstallParams}"; Flags: runhidden waituntilterminated; StatusMsg: "Configurazione del servizio Windows in corso..."
+Filename: "{code:GetConfiguredUrl}"; Description: "Apri l'applicazione al termine dell'installazione"; Flags: postinstall shellexec nowait skipifsilent
 
 [UninstallRun]
 Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "DottoressaIorioAppUninstall"
 
 [Icons]
-Name: "{group}\Dottoressa Iorio App"; Filename: "{app}\DottoressaIorio.App.exe"
-Name: "{group}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"
-Name: "{autodesktop}\Dottoressa Iorio Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"; Tasks: desktopicon
+Name: "{group}\Praxiom App"; Filename: "{app}\DottoressaIorio.App.exe"
+Name: "{group}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"
+Name: "{autodesktop}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"; Tasks: desktopicon
 
 [Code]
 var
+  LicenseRequestPage: TInputQueryWizardPage;
   ConfigPage: TInputQueryWizardPage;
+  LicenseFilePage: TInputFileWizardPage;
   RestoreOptionPage: TInputOptionWizardPage;
   RestoreFilePage: TInputFileWizardPage;
+  LicenseRequestNoteLabel: TNewStaticText;
+
+function GetMachineId(Value: string): string; forward;
+function GetAllowedUsername(Value: string): string; forward;
 
 function IsValidServiceUrl(const Url: string): Boolean; forward;
 function ExtractPortFromUrl(const Url: string): Integer; forward;
@@ -62,35 +71,74 @@ function IsPortInUse(PortValue: Integer): Boolean; forward;
 function GetUninstallParams(Value: string): string; forward;
 function ShouldRestoreDatabase(): Boolean; forward;
 function GetRestoreBackupPath(): string; forward;
+function ValidateSelectedLicense(): Boolean; forward;
 
 procedure InitializeWizard;
 var
   DomainName: string;
+  MachineId: string;
+  AllowedUsername: string;
 begin
-  ConfigPage := CreateInputQueryPage(
-    wpSelectTasks,
-    'Configurazione applicazione',
-    'Scegli l''URL del servizio e l''utente Windows autorizzato',
-    'Questi valori vengono applicati durante l''installazione e possono essere modificati reinstallando.'
-  );
-
-  ConfigPage.Add('Nome utente autorizzato (DOMINIO\username):', False);
-  ConfigPage.Add('URL del servizio:', False);
+  WizardForm.SelectTasksLabel.Caption := 'Seleziona le icone aggiuntive da creare.';
 
   DomainName := GetEnv('USERDOMAIN');
   if Trim(DomainName) = '' then
     DomainName := GetEnv('COMPUTERNAME');
   if Trim(DomainName) = '' then
-    ConfigPage.Values[0] := ExpandConstant('{username}')
+    AllowedUsername := ExpandConstant('{username}')
   else
-    ConfigPage.Values[0] := DomainName + '\' + ExpandConstant('{username}');
-  ConfigPage.Values[1] := 'http://localhost:5000';
+    AllowedUsername := DomainName + '\' + ExpandConstant('{username}');
+
+  if not RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Cryptography', 'MachineGuid', MachineId) then
+    MachineId := '';
+
+  LicenseRequestPage := CreateInputQueryPage(
+    wpSelectTasks,
+    'Richiesta licenza',
+    'Per ricevere il file di licenza, invia al fornitore i dati seguenti.',
+    'La licenza verra generata per questo computer e per questo utente Windows.'
+  );
+  LicenseRequestPage.Add('Machine ID:', False);
+  LicenseRequestPage.Add('Utente Windows autorizzato:', False);
+  LicenseRequestPage.Values[0] := MachineId;
+  LicenseRequestPage.Values[1] := AllowedUsername;
+  LicenseRequestPage.Edits[0].ReadOnly := True;
+  LicenseRequestPage.Edits[1].ReadOnly := True;
+
+  LicenseRequestNoteLabel := TNewStaticText.Create(LicenseRequestPage);
+  LicenseRequestNoteLabel.Parent := LicenseRequestPage.Surface;
+  LicenseRequestNoteLabel.Left := LicenseRequestPage.Edits[1].Left;
+  LicenseRequestNoteLabel.Top := LicenseRequestPage.Edits[1].Top + LicenseRequestPage.Edits[1].Height + ScaleY(8);
+  LicenseRequestNoteLabel.Width := LicenseRequestPage.SurfaceWidth - LicenseRequestNoteLabel.Left;
+  LicenseRequestNoteLabel.Height := ScaleY(42);
+  LicenseRequestNoteLabel.Caption :=
+    'Invia questi dati al fornitore per ricevere il file di licenza.' + #13#10 +
+    'Puoi copiarli dai campi sopra oppure inviare uno screenshot di questa schermata.';
+  LicenseRequestNoteLabel.WordWrap := True;
+
+  LicenseFilePage := CreateInputFilePage(
+    LicenseRequestPage.ID,
+    'File licenza',
+    'Seleziona il file di licenza ricevuto dal fornitore.',
+    'Il file di licenza verra verificato subito e copiato in ProgramData.'
+  );
+  LicenseFilePage.Add('Percorso file licenza:', 'File licenza (*.dat)|*.dat|Tutti i file (*.*)|*.*', '.dat');
+
+  ConfigPage := CreateInputQueryPage(
+    LicenseFilePage.ID,
+    'Configurazione applicazione',
+    'Scegli l''URL del servizio.',
+    'Questo valore viene applicato durante l''installazione e puo essere modificato reinstallando.'
+  );
+
+  ConfigPage.Add('URL del servizio:', False);
+  ConfigPage.Values[0] := 'http://localhost:5000';
 
   RestoreOptionPage := CreateInputOptionPage(
     ConfigPage.ID,
     'Ripristino database',
     'Scegli se ripristinare il database da un file di backup esistente.',
-    'Seleziona "Si" solo se vuoi che questa installazione sostituisca il database corrente.',
+    'Seleziona "Si" solo se vuoi sostituire il database corrente.',
     True,
     False
   );
@@ -112,23 +160,34 @@ var
   UrlToCheck: string;
 begin
   Result := True;
-  if CurPageID = ConfigPage.ID then
+
+  if CurPageID = LicenseRequestPage.ID then
   begin
-    if Trim(ConfigPage.Values[0]) = '' then
+    if Trim(GetMachineId('')) = '' then
     begin
-      MsgBox('Il nome utente autorizzato e obbligatorio.', mbError, MB_OK);
+      MsgBox('Machine ID non disponibile. Contatta il fornitore del software.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    if Trim(ConfigPage.Values[1]) = '' then
+    if Trim(GetAllowedUsername('')) = '' then
+    begin
+      MsgBox('Utente Windows non disponibile. Contatta il fornitore del software.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
+
+  if CurPageID = ConfigPage.ID then
+  begin
+    if Trim(ConfigPage.Values[0]) = '' then
     begin
       MsgBox('L''URL del servizio e obbligatorio.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    UrlToCheck := Trim(ConfigPage.Values[1]);
+    UrlToCheck := Trim(ConfigPage.Values[0]);
     if not IsValidServiceUrl(UrlToCheck) then
     begin
       MsgBox('L''URL del servizio deve essere nel formato http://hostname:porta oppure https://hostname:porta.', mbError, MB_OK);
@@ -143,6 +202,29 @@ begin
         Result := False;
         Exit;
       end;
+    end;
+  end;
+
+  if CurPageID = LicenseFilePage.ID then
+  begin
+    if Trim(LicenseFilePage.Values[0]) = '' then
+    begin
+      MsgBox('Il file di licenza e obbligatorio.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+
+    if not FileExists(Trim(LicenseFilePage.Values[0])) then
+    begin
+      MsgBox('Il file di licenza selezionato non esiste.', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+
+    if not ValidateSelectedLicense() then
+    begin
+      Result := False;
+      Exit;
     end;
   end;
 
@@ -174,15 +256,26 @@ end;
 function GetInstallParams(Value: string): string;
 begin
   Result :=
-    '--silent --allowed-username ' + AddQuotes(ConfigPage.Values[0]) +
-    ' --app-url ' + AddQuotes(ConfigPage.Values[1]);
+    '--silent --allowed-username ' + AddQuotes(GetAllowedUsername('')) +
+    ' --app-url ' + AddQuotes(ConfigPage.Values[0]) +
+    ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]);
   if ShouldRestoreDatabase() then
     Result := Result + ' --skip-auto-db-restore';
 end;
 
 function GetConfiguredUrl(Value: string): string;
 begin
-  Result := ConfigPage.Values[1];
+  Result := ConfigPage.Values[0];
+end;
+
+function GetMachineId(Value: string): string;
+begin
+  Result := Trim(LicenseRequestPage.Values[0]);
+end;
+
+function GetAllowedUsername(Value: string): string;
+begin
+  Result := Trim(LicenseRequestPage.Values[1]);
 end;
 
 function ShouldRestoreDatabase(): Boolean;
@@ -193,6 +286,48 @@ end;
 function GetRestoreBackupPath(): string;
 begin
   Result := Trim(RestoreFilePage.Values[0]);
+end;
+
+function ValidateSelectedLicense(): Boolean;
+var
+  ValidatorExe: string;
+  CmdResult: Integer;
+  Parameters: string;
+begin
+  Result := False;
+
+  ExtractTemporaryFile('DottoressaIorio.LicenseGenerator.exe');
+  ValidatorExe := ExpandConstant('{tmp}\DottoressaIorio.LicenseGenerator.exe');
+  Parameters :=
+    'validate --license-file ' + AddQuotes(Trim(LicenseFilePage.Values[0])) +
+    ' --allowed-username ' + AddQuotes(GetAllowedUsername(''));
+
+  if not Exec(ValidatorExe, Parameters, '', SW_HIDE, ewWaitUntilTerminated, CmdResult) then
+  begin
+    MsgBox('File di licenza non valido. Contatta il fornitore del software.', mbError, MB_OK);
+    Exit;
+  end;
+
+  if CmdResult = 0 then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  case CmdResult of
+    2:
+      MsgBox('File di licenza non trovato.', mbError, MB_OK);
+    3:
+      MsgBox('Questa licenza non e valida per questo computer.', mbError, MB_OK);
+    4:
+      MsgBox('La licenza non e valida per questo utente Windows.', mbError, MB_OK);
+    5:
+      MsgBox('File di licenza non valido. Contatta il fornitore del software.', mbError, MB_OK);
+    6:
+      MsgBox('Il file di licenza non e valido o e danneggiato.', mbError, MB_OK);
+    else
+      MsgBox('File di licenza non valido. Contatta il fornitore del software.', mbError, MB_OK);
+  end;
 end;
 
 function IsDigits(const Value: string): Boolean;

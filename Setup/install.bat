@@ -4,10 +4,13 @@ setlocal EnableExtensions
 set "interactive=1"
 set "allowedUsername="
 set "appUrl=http://localhost:5000"
+set "licenseFile="
 set "skipAutoDbRestore=0"
 set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
 set "statusFile=%~dp0install.status"
+set "licenseValidatorExe=%scriptDir%setup-helper.exe"
+set "licenseValidatorProject=%scriptDir%..\DottoressaIorio.LicenseGenerator\DottoressaIorio.LicenseGenerator.csproj"
 
 > "%logFile%" echo [%date% %time%] Installer script started.
 >> "%logFile%" echo [%date% %time%] Script path=%0
@@ -43,6 +46,17 @@ if /I "%~1"=="--app-url" (
     shift
     goto parseArgs
 )
+if /I "%~1"=="--license-file" (
+    if "%~2"=="" (
+        echo Missing value for --license-file.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    set "licenseFile=%~2"
+    shift
+    shift
+    goto parseArgs
+)
 if /I "%~1"=="--skip-auto-db-restore" (
     set "skipAutoDbRestore=1"
     shift
@@ -59,9 +73,31 @@ if "%allowedUsername%"=="" (
     if "%interactive%"=="1" pause
     exit /b 1
 )
+if "%licenseFile%"=="" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing required parameter --license-file.
+    echo Missing required parameter --license-file.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+if not exist "%licenseFile%" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file "%licenseFile%" not found.
+    echo License file not found: "%licenseFile%"
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+if not exist "%licenseValidatorExe%" (
+    if exist "%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe" (
+        set "licenseValidatorExe=%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"
+    )
+)
 echo %appUrl% | findstr /I "://">nul
 if errorlevel 1 set "appUrl=http://%appUrl%"
->> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore%
+>> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore% licenseFile=%licenseFile%
+call :validateLicense "%licenseFile%" "%allowedUsername%"
+if errorlevel 1 (
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
 call :validateUrl "%appUrl%"
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] ERROR: Invalid app URL "%appUrl%".
@@ -86,6 +122,7 @@ rem Define source file, destination folder, and service-related variables.
 set "sourceFile=%scriptDir%Service.7z"
 set "sevenZipExe=%scriptDir%7z.exe"
 set "destinationFolder=C:\ProgramData\DottoressaIorio"
+set "licenseDestination=%destinationFolder%\license.dat"
 set "service=DottoressaIorio.App"
 set "app=DottoressaIorio.App.exe"
 set "dbBackupFolder=_db_backup"
@@ -95,7 +132,7 @@ set "backupScriptSource=%scriptDir%backup_script.ps1"
 set "backupScriptDest=%destinationFolder%\backup_script.ps1"
 set "restoreScriptSource=%scriptDir%restore_script.ps1"
 set "restoreScriptDest=%destinationFolder%\restore_script.ps1"
-set "backupTaskName=DottoressaIorio Online Backup"
+set "backupTaskName=Praxiom Online Backup"
 set "legacyBackupTaskName=DottoressaIorio Daily Backup"
 set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
 
@@ -137,6 +174,15 @@ if not exist "%sevenZipExe%" (
 
 if not exist "%destinationFolder%" mkdir "%destinationFolder%"
 if not exist "%destinationFolder%\%dbBackupFolder%" mkdir "%destinationFolder%\%dbBackupFolder%"
+
+copy /Y "%licenseFile%" "%licenseDestination%" >nul
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to copy license file to "%licenseDestination%".
+    echo Failed to copy license file to "%licenseDestination%".
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+>> "%logFile%" echo [%date% %time%] License file copied to "%licenseDestination%".
 
 rem Backup current database files before replacing files.
 call :backupDbFile "app.db"
@@ -221,12 +267,12 @@ if errorlevel 1 (
 
 rem Recreate the Windows service using native Service Control Manager.
 >> "%logFile%" echo [%date% %time%] Creating service "%service%" with URL "%appUrl%".
-sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
+sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Praxiom App" >> "%logFile%" 2>&1
 if errorlevel 1 (
     rem Retry once in case the service was still finishing deletion.
     >> "%logFile%" echo [%date% %time%] WARNING: First service creation attempt failed, retrying.
     timeout /t 2 /nobreak >nul
-    sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Dottoressa Iorio App" >> "%logFile%" 2>&1
+    sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Praxiom App" >> "%logFile%" 2>&1
     if errorlevel 1 (
         >> "%logFile%" echo [%date% %time%] ERROR: Failed to create service after retry.
         > "%statusFile%" echo ERROR: Service creation failed.
@@ -236,7 +282,7 @@ if errorlevel 1 (
     )
 )
 
-sc description "%service%" "Dottoressa Iorio medical management application" >> "%logFile%" 2>&1
+sc description "%service%" "Praxiom medical management application" >> "%logFile%" 2>&1
 sc start "%service%" >> "%logFile%" 2>&1
 if errorlevel 1 (
     >> "%logFile%" echo [%date% %time%] ERROR: Service start command failed.
@@ -279,6 +325,56 @@ if "%interactive%"=="1" start "" "%appUrl%"
 echo Installation completed successfully.
 if "%interactive%"=="1" pause
 exit /b 0
+
+:validateLicense
+setlocal EnableDelayedExpansion
+set "licenseToValidate=%~1"
+set "usernameToValidate=%~2"
+set "validatorExitCode=9"
+if not exist "%licenseValidatorExe%" (
+    if exist "%licenseValidatorProject%" (
+        dotnet run --project "%licenseValidatorProject%" -- validate --license-file "%licenseToValidate%" --allowed-username "%usernameToValidate%" >nul 2>&1
+        set "validatorExitCode=!errorlevel!"
+        goto validatorDone
+    )
+
+    >> "%logFile%" echo [%date% %time%] ERROR: License validator executable not found at "%licenseValidatorExe%".
+    echo File di licenza non valido. Contatta il fornitore del software.
+    endlocal & exit /b 1
+)
+
+"%licenseValidatorExe%" validate --license-file "%licenseToValidate%" --allowed-username "%usernameToValidate%" >nul 2>&1
+set "validatorExitCode=%errorlevel%"
+:validatorDone
+if "!validatorExitCode!"=="0" (
+    >> "%logFile%" echo [%date% %time%] License file pre-validation succeeded.
+    endlocal & exit /b 0
+)
+
+if "!validatorExitCode!"=="2" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file not found during validation.
+    echo File di licenza non trovato.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="3" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License does not match this machine.
+    echo Questa licenza non e valida per questo computer.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="4" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License does not match the configured Windows user.
+    echo La licenza non e valida per questo utente Windows.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="6" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file is invalid or corrupted.
+    echo Il file di licenza non e valido o e danneggiato.
+    endlocal & exit /b 1
+)
+
+>> "%logFile%" echo [%date% %time%] ERROR: License validation failed with exit code !validatorExitCode!.
+echo File di licenza non valido. Contatta il fornitore del software.
+endlocal & exit /b 1
 
 :backupDbFile
 set "dbName=%~1"

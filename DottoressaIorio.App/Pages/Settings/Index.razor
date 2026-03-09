@@ -1,0 +1,117 @@
+@page "/settings"
+@inject DottoressaIorio.Repositories.IClinicSettingsRepository repository
+@inject DottoressaIorio.Shared.State.ClinicSettingsState clinicSettingsState
+@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
+
+<PageHeader Title="Impostazioni"/>
+
+@if (model is null)
+{
+    <p>Caricamento impostazioni...</p>
+}
+else
+{
+    <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
+        <DataAnnotationsValidator/>
+        <ValidationWarningAlert Message="@warningMessage"/>
+
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="alert alert-success" role="status">@successMessage</div>
+        }
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="DoctorName" class="form-label">Nome medico</label>
+                <InputText id="DoctorName" @bind-Value="model.DoctorName" class="form-control" autocomplete="off"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="DoctorTitle" class="form-label">Titolo professionale</label>
+                <InputText id="DoctorTitle" @bind-Value="model.DoctorTitle" class="form-control" autocomplete="off"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Specialization" class="form-label">Specializzazione</label>
+                <InputText id="Specialization" @bind-Value="model.Specialization" class="form-control" autocomplete="off"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="ClinicName" class="form-label">Nome studio</label>
+                <InputText id="ClinicName" @bind-Value="model.ClinicName" class="form-control" autocomplete="off"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Address" class="form-label">Indirizzo</label>
+                <InputTextArea id="Address" @bind-Value="model.Address" class="form-control" rows="2"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Phone" class="form-label">Telefono</label>
+                <InputText id="Phone" @bind-Value="model.Phone" class="form-control" autocomplete="off"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Email" class="form-label">Email</label>
+                <InputText id="Email" @bind-Value="model.Email" class="form-control" autocomplete="off"/>
+                <ValidationMessage For="@(() => model.Email)"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="FooterText" class="form-label">Testo piè di pagina</label>
+                <InputTextArea id="FooterText" @bind-Value="model.FooterText" class="form-control" rows="3"/>
+            </div>
+        </div>
+        <hr class="my-4">
+        <SubmitButton/>
+    </EditForm>
+}
+
+@code {
+    private DottoressaIorio.Models.ClinicSettings? model;
+    private string warningMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await clinicSettingsState.GetAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (model is null)
+        {
+            return;
+        }
+
+        warningMessage = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            await repository.SaveAsync(model);
+            clinicSettingsState.SetCurrent(model);
+            successMessage = "Impostazioni salvate.";
+
+            try
+            {
+                await onlineBackupService.TriggerBackupAsync("clinic-settings-update");
+            }
+            catch
+            {
+                // Backup failures must not block the settings save flow.
+            }
+        }
+        catch (Exception ex)
+        {
+            warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
+        }
+    }
+}

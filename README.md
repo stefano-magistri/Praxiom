@@ -1,10 +1,10 @@
-# Dottoressa Iorio Medical Management System
+# Praxiom Medical Management System
 
 [![CI](https://github.com/stefano-magistri/DottoressaIorio/actions/workflows/ci.yml/badge.svg)](https://github.com/stefano-magistri/DottoressaIorio/actions/workflows/ci.yml)
 
 A private medical management application built for a single doctor workflow on Windows.
 
-It helps Dr. Iorio manage patients, therapies, and reusable therapy templates, then generate printable therapy PDFs directly from the same interface. The project exists to keep day-to-day clinical administration fast, local-first, and maintainable without introducing unnecessary platform complexity.
+It helps doctors manage patients, therapies, and reusable therapy templates, then generate printable therapy PDFs directly from the same interface. The project exists to keep day-to-day clinical administration fast, local-first, and maintainable without introducing unnecessary platform complexity.
 
 ## Quick Commands
 
@@ -30,6 +30,7 @@ Setup\build-installer.bat
 - Therapy PDF generation through Playwright Chromium for consistent printing output.
 - Optional encrypted SQLite storage (`EncryptionKey`) with unencrypted fallback.
 - Windows service + installer scripts for repeatable deployment and upgrades.
+- Local signed license file bound to one Windows machine and one Windows user.
 - Soft-delete model to preserve records while keeping UI lists clean.
 
 ## Architecture Overview
@@ -78,11 +79,61 @@ Supporting projects:
 4. Optionally apply a therapy template to speed authoring.
 5. Export therapy to PDF and open in a browser tab for print/save.
 
-### Screenshots (Placeholders)
+### Screenshots
 
-- `Patients list`: add image at `docs/screenshots/patients-list.png`
-- `Patient therapy detail`: add image at `docs/screenshots/patient-therapy.png`
-- `Therapy PDF preview`: add image at `docs/screenshots/pdf-preview.png`
+#### Patients List
+
+The main patient list is the operational starting point for the day: it keeps search, browsing, and record access in one place.
+
+![Patients list](docs/screenshots/Lista%20Pazienti.png)
+
+#### New Patient
+
+Creating a new patient record is kept intentionally direct so new admissions can be entered quickly during routine work.
+
+![New patient](docs/screenshots/Nuovo%20Paziente.png)
+
+#### Edit Patient
+
+Existing demographic and clinical reference data can be updated without leaving the patient management flow.
+
+![Edit patient](docs/screenshots/Modifica%20Paziente.png)
+
+#### Patient Detail
+
+The patient detail page acts as the central workspace for reviewing information and continuing the therapy workflow.
+
+![Patient detail](docs/screenshots/Scheda%20Paziente.png)
+
+#### New Therapy
+
+Therapies can be authored from scratch when a fully custom treatment plan is needed.
+
+![New therapy](docs/screenshots/Nuova%20Terapia.png)
+
+#### Add Precompiled Therapy
+
+Reusable therapy templates help reduce repetitive typing and keep recurring prescriptions consistent.
+
+![Add precompiled therapy](docs/screenshots/Aggiungi%20Terapia%20Precompilata.png)
+
+#### Edit Precompiled Therapy
+
+Template maintenance stays inside the application so recurring therapy definitions can evolve with the practice.
+
+![Edit precompiled therapy](docs/screenshots/Modifica%20Terapia%20Precompilata.png)
+
+#### Therapy Print View
+
+Once a therapy is ready, the printable output is generated in a browser-friendly layout designed for PDF export and paper printing.
+
+![Therapy print view](docs/screenshots/Stampa%20Terapia.png)
+
+#### Additional Workflow Screen
+
+This extra screen captures another point in the application workflow and is included here for general UI coverage.
+
+![Additional workflow screen](docs/screenshots/Screenshot%202026-03-08%20134859.png)
 
 ## Scope and Security Context
 
@@ -126,6 +177,34 @@ Behavior summary:
 - `Authentication:UseNegotiate=false`: Negotiate auth middleware is disabled.
 - `Authentication:UseNegotiate=true`: Windows-authenticated identity is required.
 - `Authentication:AllowedUsername`: enforced by `SpecificUserOnly` policy.
+
+## Local Licensing
+
+The app now requires a local signed license at startup.
+
+License characteristics:
+
+- Product-scoped: licenses are generated for `DottoressaIorio`.
+- Machine-bound: validated against `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid`.
+- User-bound: validated against the full Windows identity in `MACHINE\username` or `DOMAIN\username` format.
+- Offline: no activation server or network dependency is used.
+
+Runtime behavior:
+
+- License validation runs on every startup.
+- Missing, malformed, tampered, wrong-machine, wrong-user, or wrong-product licenses fail closed.
+- Default installed license path: `C:\ProgramData\DottoressaIorio\license.dat`
+
+Internal generation tool:
+
+- `DottoressaIorio.LicenseGenerator` is an internal-only helper for the software provider.
+- It can create a signed `license.dat` from `MachineId` and `AllowedUsername`.
+- It can also validate a license file locally when used by the installer flow.
+
+Prototype limitations:
+
+- A determined developer could still patch binaries or checks.
+- `MachineGuid` can change after some OS reinstall or restore scenarios.
 
 ## Data and Storage
 
@@ -171,9 +250,21 @@ Scripted installer behavior includes:
 - self-contained `win-x64` publish,
 - installer executable creation,
 - deployment to `C:\ProgramData\DottoressaIorio`,
+- dedicated `Richiesta licenza` page that shows the current `Machine ID` and `Utente Windows autorizzato`,
+- immediate installer-side validation of the selected `license.dat`,
 - Windows service setup/start,
 - Playwright Chromium installation attempt,
 - scheduled online backup task setup (`DottoressaIorio.App.exe --online-backup`).
+
+Installer flow summary:
+
+1. Installer shows `Richiesta licenza` with the exact machine/user data needed by the software provider.
+2. Customer sends those values to the provider and receives `license.dat`.
+3. Customer selects the returned license file on the `File licenza` page.
+4. Installer validates the license before continuing.
+5. Installation proceeds with service URL and optional DB restore settings.
+
+The request page keeps the values readable and selectable so the user can copy them manually or send a screenshot.
 
 Backup modes:
 
@@ -190,6 +281,13 @@ Example:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\DottoressaIorio\restore_script.ps1" -BackupPath "C:\Users\<user>\OneDrive\DottoressaIorio\_db_backup\app_backup_20260303153000.db"
 ```
+
+Uninstall backup behavior:
+
+- Uninstall preserves the local `_db_backup` folder exactly as before.
+- If `%OneDrive%` exists, uninstall also writes a timestamped extra copy of the database backup under:
+  - `%OneDrive%\DottoressaIorio\_db_backup`
+- OneDrive copy failures are ignored so uninstall still completes.
 
 ## Contributing and Maintenance
 

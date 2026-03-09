@@ -2,6 +2,7 @@
   <Project Path="DottoressaIorio.App/DottoressaIorio.App.csproj" />
   <Folder Name="/src/">
     <Project Path="DottoressaIorio.Data/DottoressaIorio.Data.csproj" />
+    <Project Path="DottoressaIorio.LicenseGenerator/DottoressaIorio.LicenseGenerator.csproj" />
     <Project Path="DottoressaIorio.Models/DottoressaIorio.Models.csproj" />
     <Project Path="DottoressaIorio.Repositories/DottoressaIorio.Repositories.csproj" />
     <Project Path="DottoressaIorio.Services/DottoressaIorio.Services.csproj" />

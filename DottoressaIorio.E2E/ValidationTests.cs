@@ -31,7 +31,8 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
         await FillBoundFieldAsync(page.Locator("#Title"), $"VAL-TPL-{Guid.NewGuid():N}");
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
 
-        await Expect(page.Locator(".validation-message")).ToContainTextAsync("descrizione");
+        var validationTexts = await page.Locator(".validation-message").AllInnerTextsAsync();
+        Assert.Contains(validationTexts, text => text.Contains("descrizione", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -51,6 +52,7 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
         await WaitForInteractiveReadyAsync(page);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
 
-        await Expect(page.Locator(".validation-message")).ToContainTextAsync("descrizione");
+        var validationTexts = await page.Locator(".validation-message").AllInnerTextsAsync();
+        Assert.Contains(validationTexts, text => text.Contains("descrizione", StringComparison.OrdinalIgnoreCase));
     }
 }

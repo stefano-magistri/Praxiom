@@ -413,3 +413,5 @@ FodyWeavers.xsd
 /Setup/tmp/
 query
 DottoressaIorio.E2E/appsettings.Local.json
+DottoressaIorio.App/_db_backup/*
+DottoressaIorio.App/_runtime/*

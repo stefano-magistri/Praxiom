@@ -2,7 +2,7 @@ namespace DottoressaIorio.Services.Backup;
 
 public sealed class OnlineBackupOptions
 {
-    public string AppRootPath { get; init; } =
+    public string AppRootPath { get; set; } =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DottoressaIorio");
 
     public string BackupDirectoryName { get; init; } = "_db_backup";

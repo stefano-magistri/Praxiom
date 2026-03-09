@@ -5,7 +5,10 @@ Playwright + xUnit end-to-end smoke tests for the Dottoressa Iorio app.
 ## Prerequisites
 
 - .NET SDK 10.x
-- App running locally (or reachable URL)
+- Windows
+- App build output available locally
+
+These tests provision a temporary local license automatically. They do not require a manually installed `license.dat`.
 
 ## Install Playwright browsers
 
@@ -30,15 +33,26 @@ Environment variables override appsettings:
 - `E2E__Login__Username` (optional; used only if a login form exists)
 - `E2E__Login__Password` (optional; used only if a login form exists)
 
-For this app, run with `Authentication__UseNegotiate=false` in automated environments to avoid Windows auth dependency.
+Fixture behavior:
+
+- generates an ephemeral RSA keypair and a matching signed local license
+- reads the current Windows identity and `MachineGuid`
+- starts `DottoressaIorio.App` from the built DLL
+- sets:
+  - `Authentication__UseNegotiate=false`
+  - `Authentication__AllowedUsername=<current Windows user>`
+  - `LocalLicense__LicensePath=<temp license path>`
+  - `LocalLicense__PublicKeyPemBase64=<temp public key>`
+  - `DatabaseRootPath=<temp folder>`
+
+Because license provisioning reads the real Windows identity and registry machine GUID, these tests currently require Windows.
 
 ## Run locally
 
-1. Start the app:
+1. Build the app and tests:
 
 ```powershell
-$env:Authentication__UseNegotiate = "false"
-dotnet run --project DottoressaIorio.App
+dotnet build DottoressaIorio.slnx -c Release
 ```
 
 2. Run E2E tests:
@@ -60,5 +74,4 @@ Typical CI sequence:
 
 1. Build app + tests.
 2. Install Playwright browsers with `playwright.ps1 install --with-deps chromium`.
-3. Start app with `Authentication__UseNegotiate=false`.
-4. Run `dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj`.
+3. Run `dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj`.

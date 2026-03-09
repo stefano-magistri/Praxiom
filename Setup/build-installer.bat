@@ -10,10 +10,13 @@ if not "%~2"=="" (
 set "scriptDir=%~dp0"
 for %%I in ("%scriptDir%..") do set "repoDir=%%~fI"
 set "publishScript=%repoDir%\DottoressaIorio.App\publish.bat"
+set "licenseToolProject=%repoDir%\DottoressaIorio.LicenseGenerator\DottoressaIorio.LicenseGenerator.csproj"
 set "issFile=%scriptDir%DottoressaIorioInstaller.iss"
 set "outputFile=%scriptDir%Output\DottoressaIorioInstaller.exe"
 set "tmpDir=%scriptDir%tmp"
 set "tmpArchive=%tmpDir%\Service.7z"
+set "validatorDir=%tmpDir%\LicenseValidator"
+set "validatorExe=%validatorDir%\DottoressaIorio.LicenseGenerator.exe"
 set "versionFile=%tmpDir%\Service.version"
 
 if not exist "%publishScript%" (
@@ -23,6 +26,11 @@ if not exist "%publishScript%" (
 
 if not exist "%issFile%" (
     echo Missing installer script: "%issFile%"
+    exit /b 1
+)
+
+if not exist "%licenseToolProject%" (
+    echo Missing license tool project: "%licenseToolProject%"
     exit /b 1
 )
 
@@ -49,6 +57,18 @@ if /I "%iscc%"=="ISCC.exe" (
 call "%publishScript%"
 if errorlevel 1 (
     echo Publish failed. Installer was not created.
+    exit /b 1
+)
+
+if exist "%validatorDir%" rmdir /s /q "%validatorDir%"
+dotnet publish "%licenseToolProject%" -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o "%validatorDir%"
+if errorlevel 1 (
+    echo License validator publish failed. Installer was not created.
+    exit /b 1
+)
+
+if not exist "%validatorExe%" (
+    echo License validator publish completed but executable was not found: "%validatorExe%"
     exit /b 1
 )
 
@@ -85,6 +105,7 @@ if not exist "%outputFile%" (
 rem Cleanup temporary staging artifacts after successful installer build.
 if exist "%tmpArchive%" del /q "%tmpArchive%"
 if exist "%versionFile%" del /q "%versionFile%"
+if exist "%validatorDir%" rmdir /s /q "%validatorDir%"
 if exist "%tmpDir%" rd "%tmpDir%" 2>nul
 
 echo Installer build completed.
