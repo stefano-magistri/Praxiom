@@ -567,6 +567,25 @@ body {
     color: var(--ink-muted);
 }
 
+.patients-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.patients-toolbar-search {
+    flex: 1 1 20rem;
+}
+
+.patients-export-hint {
+    margin-top: -.25rem;
+    margin-bottom: 1rem;
+    color: var(--ink-muted);
+    font-size: .95rem;
+}
+
 .patients-card {
     border: 1px solid var(--border);
     border-radius: 16px;

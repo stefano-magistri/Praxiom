@@ -3,6 +3,7 @@ using DottoressaIorio.Data;
 using DottoressaIorio.Repositories;
 using DottoressaIorio.Services.Backup;
 using DottoressaIorio.Services.Licensing;
+using DottoressaIorio.Services.Patients;
 using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using DottoressaIorio.Shared.Branding;
@@ -61,6 +62,7 @@ try
         databaseRootPath);
 
     builder.Services.AddDottoressaRepositories();
+    builder.Services.AddScoped<PatientCsvExportService>();
 
     builder.Services.AddPdfServices();
     builder.Services.AddLocalLicenseServices(configuration);
@@ -161,6 +163,7 @@ try
     if (useNegotiate) app.UseAuthentication();
     app.UseAuthorization();
 
+    app.MapDottoressaPatientExportEndpoints();
     app.MapDottoressaPdfEndpoints();
 
     app.MapBlazorHub();

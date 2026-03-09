@@ -88,6 +88,40 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(expectedCount, result.Count);
     }
 
+    [Theory]
+    [InlineData("John")]
+    [InlineData("jane smith")]
+    [InlineData("")]
+    public async Task SearchPatientsWithTherapiesAsync_ShouldUseSameFilteringRulesAsPatientsList(string? searchTerm)
+    {
+        await SeedPatientsAsync();
+        _context.Therapies.AddRange(
+            new Therapy
+            {
+                TherapyId = 10,
+                PatientId = 1,
+                Description = "Therapy A",
+                CreatedDate = DateTime.UtcNow.AddDays(-2)
+            },
+            new Therapy
+            {
+                TherapyId = 11,
+                PatientId = 2,
+                Description = "Therapy B",
+                CreatedDate = DateTime.UtcNow.AddDays(-1)
+            });
+        await _context.SaveChangesAsync();
+
+        var repository = new PatientRepository(_context);
+
+        var listResults = await repository.SearchPatientsAsync(searchTerm);
+        var exportResults = await repository.SearchPatientsWithTherapiesAsync(searchTerm);
+
+        Assert.Equal(listResults.Select(p => p.PatientId), exportResults.Select(p => p.PatientId));
+        Assert.All(exportResults, patient => Assert.NotNull(patient.Therapies));
+        Assert.Equal(exportResults.Count, exportResults.Sum(patient => patient.Therapies.Count));
+    }
+
     /// <summary>
     ///     Tests that the GetAllOrderedAsync method returns all non-deleted patients ordered by last name and first name.
     /// </summary>
@@ -141,10 +175,9 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="searchTerm">The term to search for.</param>
     /// <returns>A list of patients matching the search criteria.</returns>
-    private async Task<IList<Patient>> SearchPatientsAsync(string searchTerm = null)
+    private async Task<IList<Patient>> SearchPatientsAsync(string? searchTerm = null)
     {
-        _context.Patients.AddRange(data);
-        await _context.SaveChangesAsync();
+        await SeedPatientsAsync();
 
         var repository = new PatientRepository(_context);
         var result = await repository.SearchPatientsAsync(searchTerm);
@@ -158,8 +191,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     /// <returns>A list of all non-deleted patients ordered by last name and first name.</returns>
     private async Task<IList<Patient>> GetAllOrderedAsync()
     {
-        _context.Patients.AddRange(data);
-        await _context.SaveChangesAsync();
+        await SeedPatientsAsync();
 
         var repository = new PatientRepository(_context);
         var result = await repository.GetAllOrderedAsync();
@@ -174,12 +206,17 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     /// <returns>True if the patient exists, false otherwise.</returns>
     private async Task<bool> PatientExistsAsync(Patient patient)
     {
-        _context.Patients.AddRange(data);
-        await _context.SaveChangesAsync();
+        await SeedPatientsAsync();
 
         var repository = new PatientRepository(_context);
         var result = await repository.PatientExistsAsync(patient);
 
         return result;
+    }
+
+    private async Task SeedPatientsAsync()
+    {
+        _context.Patients.AddRange(data);
+        await _context.SaveChangesAsync();
     }
 }

@@ -13,8 +13,6 @@ public sealed class NavigationTests(PlaywrightFixture fixture) : E2eTestBase(fix
         await using var context = setup.Context;
         var page = setup.Page;
 
-        await page.Locator(".navbar-brand").ClickAsync();
-
         await page.GetByTestId("patients-nav-link").ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
 
@@ -29,5 +27,8 @@ public sealed class NavigationTests(PlaywrightFixture fixture) : E2eTestBase(fix
 
         await page.GetByTestId("guide-nav-link").ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Guida");
+
+        await page.GetByTestId("settings-nav-link").ClickAsync();
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Impostazioni");
     }
 }

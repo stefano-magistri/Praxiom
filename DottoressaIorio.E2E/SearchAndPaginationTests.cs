@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.Playwright;
 using static Microsoft.Playwright.Assertions;
 
@@ -137,5 +138,45 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
 
         await FillLiveFieldAsync(page.Locator("#therapySearch"), $"{prefix}-09");
         await Expect(page.GetByText($"{prefix}-09")).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task Patients_ExportCsv_ShouldRespectActiveFilters()
+    {
+        var setup = await NewAuthorizedPageAsync();
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..6];
+        var matchingPrefix = $"CSVOK{seed}";
+        var otherPrefix = $"CSVNO{seed}";
+
+        var patientIds = await Fixture.SeedPatientsAsync([
+            ($"{matchingPrefix}", "Rossi", $"{matchingPrefix.ToLowerInvariant()}@example.test", new DateTime(1980, 1, 1)),
+            ($"{otherPrefix}", "Bianchi", $"{otherPrefix.ToLowerInvariant()}@example.test", new DateTime(1981, 1, 1))
+        ]);
+
+        await Fixture.SeedTherapiesAsync(patientIds[0], ["Terapia filtro; confermata"]);
+        await Fixture.SeedTherapiesAsync(patientIds[1], ["Terapia esclusa"]);
+
+        await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await WaitForInteractiveReadyAsync(page);
+        await FillLiveFieldAsync(page.Locator("#search"), matchingPrefix);
+        await Expect(page.GetByText(matchingPrefix)).ToBeVisibleAsync();
+
+        var download = await page.RunAndWaitForDownloadAsync(async () =>
+            await page.GetByTestId("export-csv-link").ClickAsync());
+
+        Assert.Equal($"pazienti-filtrati-{DateTime.Today:yyyy-MM-dd}.csv", download.SuggestedFilename);
+
+        var downloadPath = await download.PathAsync();
+        Assert.NotNull(downloadPath);
+
+        var content = await File.ReadAllTextAsync(downloadPath!, Encoding.UTF8);
+
+        Assert.Contains(matchingPrefix, content);
+        Assert.DoesNotContain(otherPrefix, content);
+        Assert.Contains("\"Terapia filtro; confermata\"", content);
     }
 }

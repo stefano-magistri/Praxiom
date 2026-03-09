@@ -5,10 +5,21 @@
 
 <div class="card patients-card" data-testid="patients-page">
     <div class="card-body p-4">
-        <SearchBox Id="search"
-                   Value="@SearchTerm"
-                   OnInput="SearchPatients"
-                   Placeholder="Cerca paziente per nome, cognome o entrambi"/>
+        <div class="patients-toolbar mb-3">
+            <div class="patients-toolbar-search">
+                <SearchBox Id="search"
+                           Value="@SearchTerm"
+                           OnInput="SearchPatients"
+                           Placeholder="Cerca paziente per nome, cognome o entrambi"/>
+            </div>
+            <a class="btn btn-outline-primary"
+               data-testid="export-csv-link"
+               href="@GetCsvExportUrl()">
+                <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Esporta CSV
+            </a>
+        </div>
+
+        <p class="patients-export-hint">Esporta CSV (usa i filtri attivi)</p>
 
         @if (DisplayedPatients == null || DisplayedPatients.Count == 0)
         {

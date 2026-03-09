@@ -47,19 +47,17 @@ public class PatientRepository : GenericRepository<Patient>
     /// <returns>A list of patients matching the search criteria.</returns>
     public async Task<IList<Patient>> SearchPatientsAsync(string searchTerm)
     {
-        var normalizedSearchTerm = NormalizeSearchToken(searchTerm);
-        if (string.IsNullOrEmpty(normalizedSearchTerm)) return await BaseQuery().ToListAsync();
+        return await ApplySearch(BaseQuery(), searchTerm).ToListAsync();
+    }
 
-        var names = normalizedSearchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        var query = BaseQuery();
-
-        query = names.Aggregate(query,
-            (current, name) => current.Where(p =>
-                p.FirstName.ToLower().Contains(name) || p.LastName.ToLower().Contains(name) ||
-                (p.FirstName.ToLower() + " " + p.LastName.ToLower()).Contains(normalizedSearchTerm)));
-
-        return await query.ToListAsync();
+    /// <summary>
+    ///     Searches for patients using the same filtering rules as the list view and includes therapies for export.
+    /// </summary>
+    /// <param name="searchTerm">The term to search for in patient names.</param>
+    /// <returns>A list of matching patients with their therapies loaded.</returns>
+    public async Task<IList<Patient>> SearchPatientsWithTherapiesAsync(string searchTerm)
+    {
+        return await ApplySearch(BaseQuery().Include(p => p.Therapies), searchTerm).ToListAsync();
     }
 
     /// <summary>
@@ -82,5 +80,21 @@ public class PatientRepository : GenericRepository<Patient>
     private static string NormalizeSearchToken(string? value)
     {
         return (value ?? string.Empty).Trim().ToLower();
+    }
+
+    private static IQueryable<Patient> ApplySearch(IQueryable<Patient> query, string? searchTerm)
+    {
+        var normalizedSearchTerm = NormalizeSearchToken(searchTerm);
+        if (string.IsNullOrEmpty(normalizedSearchTerm))
+        {
+            return query;
+        }
+
+        var names = normalizedSearchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        return names.Aggregate(query,
+            (current, name) => current.Where(p =>
+                p.FirstName.ToLower().Contains(name) || p.LastName.ToLower().Contains(name) ||
+                (p.FirstName.ToLower() + " " + p.LastName.ToLower()).Contains(normalizedSearchTerm)));
     }
 }

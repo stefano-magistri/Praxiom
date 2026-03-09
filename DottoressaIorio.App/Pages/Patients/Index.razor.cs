@@ -98,7 +98,7 @@ public class PatientsBase : ComponentBase
     protected async Task SearchPatients(ChangeEventArgs e)
     {
         CurrentPage = 1;
-        SearchTerm = e.Value.ToString();
+        SearchTerm = e.Value?.ToString() ?? string.Empty;
         await UpdateDisplayedPatients();
     }
 
@@ -194,6 +194,12 @@ public class PatientsBase : ComponentBase
 
         return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
             value.ToLower(CultureInfo.CurrentCulture));
+    }
+
+    protected string GetCsvExportUrl()
+    {
+        var encodedSearch = Uri.EscapeDataString(SearchTerm ?? string.Empty);
+        return $"/patients/export-csv?search={encodedSearch}";
     }
 }
 

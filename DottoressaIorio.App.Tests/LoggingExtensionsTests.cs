@@ -41,7 +41,7 @@ public class LoggingExtensionsTests
         Assert.Equal(
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "DottoressaIorio",
+                "Praxiom",
                 "logs",
                 "DottoressaIorio.App.log"),
             result.LogFilePath);
