@@ -20,17 +20,39 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
 
         var seed = Guid.NewGuid().ToString("N")[..8];
         var doctorName = $"Dott Test {seed}";
+        var canceledDoctorName = $"Canceled {seed}";
         var phone = $"555{seed[..4]}";
         var email = $"pdf-settings-{seed}@example.test";
 
         await page.GetByTestId("settings-nav-link").ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Impostazioni");
 
-        await FillBoundFieldAsync(page.Locator("#DoctorName"), doctorName);
-        await FillBoundFieldAsync(page.Locator("#Phone"), phone);
-        await FillBoundFieldAsync(page.Locator("#Email"), email);
+        var doctorNameInput = page.Locator("#DoctorName");
+        var phoneInput = page.Locator("#Phone");
+        var emailInput = page.Locator("#Email");
+        var originalDoctorName = await doctorNameInput.InputValueAsync();
+
+        await Expect(doctorNameInput).ToBeDisabledAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Modifica" })).ToBeVisibleAsync();
+
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Modifica" }).ClickAsync();
+        await Expect(doctorNameInput).ToBeEnabledAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Annulla" })).ToBeVisibleAsync();
+
+        await FillBoundFieldAsync(doctorNameInput, canceledDoctorName);
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Annulla" }).ClickAsync();
+        await Expect(doctorNameInput).ToBeDisabledAsync();
+        Assert.Equal(originalDoctorName, await doctorNameInput.InputValueAsync());
+
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Modifica" }).ClickAsync();
+        await Expect(doctorNameInput).ToBeEnabledAsync();
+        await FillBoundFieldAsync(doctorNameInput, doctorName);
+        await FillBoundFieldAsync(phoneInput, phone);
+        await FillBoundFieldAsync(emailInput, email);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
         await Expect(page.GetByText("Impostazioni salvate.")).ToBeVisibleAsync();
+        await Expect(doctorNameInput).ToBeDisabledAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Modifica" })).ToBeVisibleAsync();
 
         var firstName = $"PdfSetNome{seed}";
         var lastName = $"PdfSetCognome{seed}";

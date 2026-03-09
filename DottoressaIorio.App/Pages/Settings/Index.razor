@@ -11,7 +11,7 @@
 }
 else
 {
-    <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
+    <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation settings-form" novalidate>
         <DataAnnotationsValidator/>
         <ValidationWarningAlert Message="@warningMessage"/>
 
@@ -23,70 +23,86 @@ else
         <div class="row g-3">
             <div class="col-12">
                 <label for="DoctorName" class="form-label">Nome medico</label>
-                <InputText id="DoctorName" @bind-Value="model.DoctorName" class="form-control" autocomplete="off"/>
+                <InputText id="DoctorName" @bind-Value="model.DoctorName" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="DoctorTitle" class="form-label">Titolo professionale</label>
-                <InputText id="DoctorTitle" @bind-Value="model.DoctorTitle" class="form-control" autocomplete="off"/>
+                <InputText id="DoctorTitle" @bind-Value="model.DoctorTitle" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="Specialization" class="form-label">Specializzazione</label>
-                <InputText id="Specialization" @bind-Value="model.Specialization" class="form-control" autocomplete="off"/>
+                <InputText id="Specialization" @bind-Value="model.Specialization" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="ClinicName" class="form-label">Nome studio</label>
-                <InputText id="ClinicName" @bind-Value="model.ClinicName" class="form-control" autocomplete="off"/>
+                <InputText id="ClinicName" @bind-Value="model.ClinicName" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="Address" class="form-label">Indirizzo</label>
-                <InputTextArea id="Address" @bind-Value="model.Address" class="form-control" rows="2"/>
+                <InputTextArea id="Address" @bind-Value="model.Address" class="form-control" rows="2" disabled="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="Phone" class="form-label">Telefono</label>
-                <InputText id="Phone" @bind-Value="model.Phone" class="form-control" autocomplete="off"/>
+                <InputText id="Phone" @bind-Value="model.Phone" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="Email" class="form-label">Email</label>
-                <InputText id="Email" @bind-Value="model.Email" class="form-control" autocomplete="off"/>
+                <InputText id="Email" @bind-Value="model.Email" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
                 <ValidationMessage For="@(() => model.Email)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="FooterText" class="form-label">Testo piè di pagina</label>
-                <InputTextArea id="FooterText" @bind-Value="model.FooterText" class="form-control" rows="3"/>
+                <InputTextArea id="FooterText" @bind-Value="model.FooterText" class="form-control" rows="3" disabled="@(!isEditMode)"/>
             </div>
         </div>
         <hr class="my-4">
-        <SubmitButton/>
+        @if (isEditMode)
+        {
+            <button type="button" class="btn btn-secondary" @onclick="CancelEdit">
+                <span class="oi oi-x px-1" aria-hidden="true"></span>Annulla
+            </button>
+            <SubmitButton/>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary" @onclick="EnableEditMode">
+                <span class="oi oi-pencil px-1" aria-hidden="true"></span>Modifica
+            </button>
+        }
     </EditForm>
 }
 
 @code {
     private DottoressaIorio.Models.ClinicSettings? model;
+    private DottoressaIorio.Models.ClinicSettings? originalModel;
     private string warningMessage = string.Empty;
     private string successMessage = string.Empty;
+    private bool isEditMode;
 
     protected override async Task OnInitializedAsync()
     {
         model = await clinicSettingsState.GetAsync();
+        originalModel = Clone(model);
+        isEditMode = false;
     }
 
     private async Task SaveAsync()
     {
-        if (model is null)
+        if (model is null || !isEditMode)
         {
             return;
         }
@@ -98,6 +114,8 @@ else
         {
             await repository.SaveAsync(model);
             clinicSettingsState.SetCurrent(model);
+            originalModel = Clone(model);
+            isEditMode = false;
             successMessage = "Impostazioni salvate.";
 
             try
@@ -113,5 +131,41 @@ else
         {
             warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
         }
+    }
+
+    private void EnableEditMode()
+    {
+        warningMessage = string.Empty;
+        successMessage = string.Empty;
+        isEditMode = true;
+    }
+
+    private void CancelEdit()
+    {
+        if (originalModel is null)
+        {
+            return;
+        }
+
+        model = Clone(originalModel);
+        warningMessage = string.Empty;
+        successMessage = string.Empty;
+        isEditMode = false;
+    }
+
+    private static DottoressaIorio.Models.ClinicSettings Clone(DottoressaIorio.Models.ClinicSettings settings)
+    {
+        return new DottoressaIorio.Models.ClinicSettings
+        {
+            Id = settings.Id,
+            DoctorName = settings.DoctorName,
+            DoctorTitle = settings.DoctorTitle,
+            Specialization = settings.Specialization,
+            ClinicName = settings.ClinicName,
+            Address = settings.Address,
+            Phone = settings.Phone,
+            Email = settings.Email,
+            FooterText = settings.FooterText
+        };
     }
 }

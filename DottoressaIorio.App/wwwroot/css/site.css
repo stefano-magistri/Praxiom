@@ -56,7 +56,11 @@ select {
 }
 
 textarea {
-    min-height: calc(1.5em * 5 + 1rem);
+    height: calc(50vh - 30px);
+}
+
+.settings-form textarea {
+    min-height: 0;
     height: auto;
 }
 
