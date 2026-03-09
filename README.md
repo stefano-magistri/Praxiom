@@ -279,14 +279,14 @@ Restore mode:
 Example:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\DottoressaIorio\restore_script.ps1" -BackupPath "C:\Users\<user>\OneDrive\DottoressaIorio\_db_backup\app_backup_20260303153000.db"
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\Praxiom\restore_script.ps1" -BackupPath "C:\Users\<user>\OneDrive\Praxiom\_db_backup\app_backup_20260303153000.db"
 ```
 
 Uninstall backup behavior:
 
 - Uninstall preserves the local `_db_backup` folder exactly as before.
 - If `%OneDrive%` exists, uninstall also writes a timestamped extra copy of the database backup under:
-  - `%OneDrive%\DottoressaIorio\_db_backup`
+  - `%OneDrive%\Praxiom\_db_backup`
 - OneDrive copy failures are ignored so uninstall still completes.
 
 ## Contributing and Maintenance

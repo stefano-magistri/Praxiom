@@ -121,9 +121,9 @@ cd /d "%scriptDir%"
 rem Define source file, destination folder, and service-related variables.
 set "sourceFile=%scriptDir%Service.7z"
 set "sevenZipExe=%scriptDir%7z.exe"
-set "destinationFolder=C:\ProgramData\DottoressaIorio"
+set "destinationFolder=C:\ProgramData\Praxiom"
 set "licenseDestination=%destinationFolder%\license.dat"
-set "service=DottoressaIorio.App"
+set "service=Praxiom.App"
 set "app=DottoressaIorio.App.exe"
 set "dbBackupFolder=_db_backup"
 set "legacyBackupDb=C:\Program Files\DottoressaIorio\_db_backup\app.db"
@@ -237,7 +237,7 @@ if exist "%restoreScriptSource%" (
 )
 
 rem Configure and install Playwright browser binaries in ProgramData for service account usage.
-set "PLAYWRIGHT_BROWSERS_PATH=C:\ProgramData\DottoressaIorio\ms-playwright"
+set "PLAYWRIGHT_BROWSERS_PATH=C:\ProgramData\Praxiom\ms-playwright"
 if not exist "%PLAYWRIGHT_BROWSERS_PATH%" mkdir "%PLAYWRIGHT_BROWSERS_PATH%"
 setx /M PLAYWRIGHT_BROWSERS_PATH "%PLAYWRIGHT_BROWSERS_PATH%" >nul 2>nul
 if exist "%destinationFolder%\playwright.ps1" (
@@ -416,7 +416,7 @@ endlocal & exit /b %exitCode%
 sc query "%service%" >> "%logFile%" 2>&1
 sc queryex "%service%" >> "%logFile%" 2>&1
 set "DIAG_FILE=%scriptDir%service-diagnostics.tmp.log"
-powershell -NoProfile -Command "$ErrorActionPreference='Continue'; try { Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-15)} -ErrorAction Stop | Where-Object { $_.ProviderName -match 'ASP.NET|Application Error|.NET Runtime|IIS AspNetCore Module V2' -or $_.Message -match 'DottoressaIorio|DottoressaIorio.App.exe|Kestrel|address already in use|failed to start' } | Select-Object -First 20 TimeCreated, ProviderName, Id, LevelDisplayName, Message | Format-List | Out-String -Width 4096 | Set-Content -Encoding UTF8 -Path $env:DIAG_FILE } catch { $_ | Out-String | Set-Content -Encoding UTF8 -Path $env:DIAG_FILE }"
+powershell -NoProfile -Command "$ErrorActionPreference='Continue'; try { Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-15)} -ErrorAction Stop | Where-Object { $_.ProviderName -match 'ASP.NET|Application Error|.NET Runtime|IIS AspNetCore Module V2' -or $_.Message -match 'Praxiom|Praxiom.App|DottoressaIorio|DottoressaIorio.App.exe|Kestrel|address already in use|failed to start' } | Select-Object -First 20 TimeCreated, ProviderName, Id, LevelDisplayName, Message | Format-List | Out-String -Width 4096 | Set-Content -Encoding UTF8 -Path $env:DIAG_FILE } catch { $_ | Out-String | Set-Content -Encoding UTF8 -Path $env:DIAG_FILE }"
 if exist "%scriptDir%service-diagnostics.tmp.log" (
     >> "%logFile%" type "%scriptDir%service-diagnostics.tmp.log"
     del /q "%scriptDir%service-diagnostics.tmp.log" >nul 2>nul

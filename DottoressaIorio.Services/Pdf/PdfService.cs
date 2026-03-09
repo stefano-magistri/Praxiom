@@ -84,7 +84,7 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
         if (!IsProductionEnvironment())
             return;
 
-        const string playwrightPath = @"C:\ProgramData\DottoressaIorio\ms-playwright";
+        const string playwrightPath = @"C:\ProgramData\Praxiom\ms-playwright";
         Directory.CreateDirectory(playwrightPath);
         Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", playwrightPath);
     }

@@ -30,8 +30,8 @@ if %errorlevel% neq 0 (
 )
 
 rem Define installation and service variables.
-set "destinationFolder=C:\ProgramData\DottoressaIorio"
-set "service=DottoressaIorio.App"
+set "destinationFolder=C:\ProgramData\Praxiom"
+set "service=Praxiom.App"
 set "dbBackupFolder=_db_backup"
 set "backupTaskName=Praxiom Online Backup"
 set "legacyBackupTaskName=DottoressaIorio Online Backup"
@@ -41,7 +41,7 @@ set "backupTimestamp="
 
 if not "%oneDriveRoot%"=="" (
     if exist "%oneDriveRoot%\" (
-        set "oneDriveBackupFolder=%oneDriveRoot%\DottoressaIorio\_db_backup"
+        set "oneDriveBackupFolder=%oneDriveRoot%\Praxiom\_db_backup"
         for /f "usebackq delims=" %%T in (`powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"`) do (
             if not "%%T"=="" set "backupTimestamp=%%T"
         )

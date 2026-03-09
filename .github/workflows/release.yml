@@ -60,11 +60,11 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DottoressaIorioInstaller-${{ github.ref_name }}
-          path: Setup/Output/DottoressaIorioInstaller.exe
+          name: PraxiomSetup-${{ github.ref_name }}
+          path: Setup/Output/PraxiomSetup.exe
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: Setup/Output/DottoressaIorioInstaller.exe
+          files: Setup/Output/PraxiomSetup.exe
           generate_release_notes: true

@@ -17,7 +17,7 @@ public static class LocalLicenseDefaults
     public static string LicensePath =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "DottoressaIorio",
+            "Praxiom",
             LicenseFileName);
 
     public const string PublicKeyPem = """

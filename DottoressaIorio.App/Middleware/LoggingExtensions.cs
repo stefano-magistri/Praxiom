@@ -19,7 +19,7 @@ public static class LoggingExtensions
 
         var productionLogFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "DottoressaIorio",
+            "Praxiom",
             "logs",
             "DottoressaIorio.App.log");
         return (LogEventLevel.Information, LogEventLevel.Warning, productionLogFilePath);

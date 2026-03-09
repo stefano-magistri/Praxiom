@@ -1,8 +1,8 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$BackupPath,
-    [string]$ServiceName = "DottoressaIorio.App",
-    [string]$AppRoot = "C:\ProgramData\DottoressaIorio"
+    [string]$ServiceName = "Praxiom.App",
+    [string]$AppRoot = "C:\ProgramData\Praxiom"
 )
 
 $ErrorActionPreference = "Stop"

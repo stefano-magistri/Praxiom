@@ -108,5 +108,5 @@ jobs:
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DottoressaIorioInstaller
-          path: Setup/Output/DottoressaIorioInstaller.exe
+          name: PraxiomSetup
+          path: Setup/Output/PraxiomSetup.exe
