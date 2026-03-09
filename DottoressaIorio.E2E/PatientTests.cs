@@ -44,6 +44,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 
         await Expect(page.GetByText(placeOfBirth)).ToBeVisibleAsync();
         await Expect(page.GetByText(notes)).ToBeVisibleAsync();
+        await Expect(page.GetByTestId("patient-age")).ToHaveTextAsync($"{CalculateAge(new DateTime(1985, 5, 12))} anni");
     }
 
     [Fact]
@@ -180,5 +181,17 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Pazienti");
         await FillLiveFieldAsync(page.Locator("#search"), firstName);
         await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
+    }
+
+    private static int CalculateAge(DateTime dateOfBirth)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - dateOfBirth.Year;
+        if (dateOfBirth.Date > today.AddYears(-age))
+        {
+            age--;
+        }
+
+        return age;
     }
 }

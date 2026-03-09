@@ -157,7 +157,7 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
             ($"{otherPrefix}", "Bianchi", $"{otherPrefix.ToLowerInvariant()}@example.test", new DateTime(1981, 1, 1))
         ]);
 
-        await Fixture.SeedTherapiesAsync(patientIds[0], ["Terapia filtro; confermata"]);
+        await Fixture.SeedTherapiesAsync(patientIds[0], ["Terapia filtro, \"confermata\""]);
         await Fixture.SeedTherapiesAsync(patientIds[1], ["Terapia esclusa"]);
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
@@ -175,8 +175,9 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
 
         var content = await File.ReadAllTextAsync(downloadPath!, Encoding.UTF8);
 
+        Assert.Contains($"Export pazienti e terapie - {DateTime.Today:dd/MM/yyyy}", content);
         Assert.Contains(matchingPrefix, content);
         Assert.DoesNotContain(otherPrefix, content);
-        Assert.Contains("\"Terapia filtro; confermata\"", content);
+        Assert.Contains("\"Terapia filtro, \"\"confermata\"\"\"", content);
     }
 }

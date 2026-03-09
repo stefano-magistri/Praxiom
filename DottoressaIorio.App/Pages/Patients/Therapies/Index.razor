@@ -13,60 +13,12 @@
 }
 else
 {
-    <div class="card patient-summary-card mb-4">
-        <div class="card-body p-4">
-            <div class="row g-4">
-                <div class="col-12 col-lg-6">
-                    <dl class="row mb-0 patient-summary-list">
-                        <dt class="col-sm-5">Data di nascita</dt>
-                        <dd class="col-sm-7">@patient.DateOfBirth?.ToString("dd/MM/yyyy")</dd>
+    <div class="mb-4">
+        <PatientContextCard Patient="patient"/>
 
-                        <dt class="col-sm-5">Numero di telefono</dt>
-                        <dd class="col-sm-7">
-                            @if (!string.IsNullOrWhiteSpace(patient.PhoneNumber))
-                            {
-                                <a href="tel:@patient.PhoneNumber">@patient.PhoneNumber</a>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </dd>
-
-                        <dt class="col-sm-5">Email</dt>
-                        <dd class="col-sm-7">
-                            @if (!string.IsNullOrWhiteSpace(patient.Email))
-                            {
-                                <a href="mailto:@patient.Email">@patient.Email</a>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </dd>
-                    </dl>
-                </div>
-
-                <div class="col-12 col-lg-6">
-                    <dl class="row mb-0 patient-summary-list">
-                        <dt class="col-sm-5">Luogo di nascita</dt>
-                        <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(patient.PlaceOfBirth) ? "-" : patient.PlaceOfBirth)</dd>
-
-                        <dt class="col-sm-5">Sesso</dt>
-                        <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(patient.Gender) ? "-" : patient.Gender)</dd>
-
-                        <dt class="col-sm-5">Note</dt>
-                        <dd class="col-sm-7 patient-notes">
-                            @(string.IsNullOrWhiteSpace(patient.Notes) ? "Nessuna nota" : patient.Notes)
-                        </dd>
-                    </dl>
-                </div>
-            </div>
-
-            <div class="patient-action-row mt-4">
-                <AnchorButton ButtonClass="primary" Url="@($"/patient/{PatientId}/edit/")" IconClass="oi oi-pencil" ButtonText="Modifica"></AnchorButton>
-                <AnchorButton ButtonClass="outline-danger btn-delete-soft" Url="@($"/patient/{PatientId}/delete/")" IconClass="oi oi-trash" ButtonText="Rimuovi"></AnchorButton>
-            </div>
+        <div class="patient-action-row mt-4">
+            <AnchorButton ButtonClass="primary" Url="@($"/patient/{PatientId}/edit/")" IconClass="oi oi-pencil" ButtonText="Modifica"></AnchorButton>
+            <AnchorButton ButtonClass="outline-danger btn-delete-soft" Url="@($"/patient/{PatientId}/delete/")" IconClass="oi oi-trash" ButtonText="Rimuovi"></AnchorButton>
         </div>
     </div>
 
@@ -161,7 +113,7 @@ else
 
     private string PatientPageTitle => patient == null
         ? "Paziente"
-        : FormatFullName(patient.FirstName, patient.LastName);
+        : FormatDisplayName(patient.Title, patient.FirstName, patient.LastName);
 
     private Therapy? LatestTherapy => allTherapies
         .OrderByDescending(t => t.CreatedDate)
@@ -268,4 +220,14 @@ else
             fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
     }
 
+    private static string FormatDisplayName(string? title, string? firstName, string? lastName)
+    {
+        var fullName = FormatFullName(firstName, lastName);
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return fullName;
+        }
+
+        return string.IsNullOrWhiteSpace(fullName) ? title : $"{title} {fullName}";
+    }
 }

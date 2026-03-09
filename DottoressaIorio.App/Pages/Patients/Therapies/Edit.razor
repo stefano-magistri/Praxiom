@@ -6,7 +6,9 @@
 @inject NavigationManager navigationManager
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
-<ActionPageHeader Title="Modifica Terapia" Subtitle="@FormattedPatientName"/>
+<ActionPageHeader Title="Modifica Terapia"/>
+
+<PatientContextCard Patient="patient" ShowHeaderName="true"/>
 
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
     <DataAnnotationsValidator/>

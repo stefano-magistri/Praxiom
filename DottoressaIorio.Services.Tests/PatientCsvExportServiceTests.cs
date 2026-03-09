@@ -9,18 +9,27 @@ public class PatientCsvExportServiceTests
     private readonly PatientCsvExportService _service = new();
 
     [Fact]
+    public void GenerateCsv_ShouldExportTitleLineCorrectly()
+    {
+        var csv = GetCsvText(_service.GenerateCsv([]));
+        var lines = SplitLines(csv);
+
+        Assert.Equal($"Export pazienti e terapie - {DateTime.Today:dd/MM/yyyy}", lines[0]);
+    }
+
+    [Fact]
     public void GenerateCsv_ShouldExportHeaderWithItalianColumnNames()
     {
         var csv = GetCsvText(_service.GenerateCsv([]));
+        var lines = SplitLines(csv);
 
-        Assert.StartsWith("IdPaziente;Nome;Cognome;DataDiNascita;IdTerapia;DataTerapia;DescrizioneTerapia;DataCreazione", csv);
+        Assert.Equal("Nome,Cognome,DataNascita,Eta,DataTerapia,DescrizioneTerapia,DataCreazione", lines[2]);
     }
 
     [Fact]
     public void GenerateCsv_ShouldExportOneRowPerPatientTherapyAssociation()
     {
         var patient = CreatePatient(
-            10,
             "Mario",
             "Rossi",
             new DateTime(1980, 2, 1),
@@ -28,31 +37,28 @@ public class PatientCsvExportServiceTests
             new Therapy
             {
                 TherapyId = 101,
-                PatientId = 10,
                 Description = "Terapia 1",
                 CreatedDate = new DateTime(2025, 2, 3)
             },
             new Therapy
             {
                 TherapyId = 102,
-                PatientId = 10,
                 Description = "Terapia 2",
                 CreatedDate = new DateTime(2025, 2, 4)
             });
 
         var csv = GetCsvText(_service.GenerateCsv([patient]));
-        var lines = csv.TrimEnd().Split(Environment.NewLine);
+        var lines = SplitLines(csv);
 
-        Assert.Equal(3, lines.Length);
-        Assert.Contains("10;Mario;Rossi;1980-02-01;101;2025-02-03;Terapia 1;2024-01-15", lines);
-        Assert.Contains("10;Mario;Rossi;1980-02-01;102;2025-02-04;Terapia 2;2024-01-15", lines);
+        Assert.Equal(5, lines.Length);
+        Assert.Contains(lines, line => line.Contains(",04/02/2025,Terapia 2,15/01/2024"));
+        Assert.Contains(lines, line => line.Contains(",03/02/2025,Terapia 1,15/01/2024"));
     }
 
     [Fact]
-    public void GenerateCsv_ShouldUseSemicolonSeparator()
+    public void GenerateCsv_ShouldUseCommaSeparator()
     {
         var patient = CreatePatient(
-            1,
             "Mario",
             "Rossi",
             new DateTime(1980, 1, 1),
@@ -60,45 +66,41 @@ public class PatientCsvExportServiceTests
             new Therapy
             {
                 TherapyId = 2,
-                PatientId = 1,
                 Description = "Test",
                 CreatedDate = new DateTime(2025, 1, 1)
             });
 
         var csv = GetCsvText(_service.GenerateCsv([patient]));
-        var row = csv.TrimEnd().Split(Environment.NewLine)[1];
+        var row = SplitLines(csv)[3];
 
-        Assert.Equal(7, row.Count(ch => ch == ';'));
+        Assert.Equal(6, row.Count(ch => ch == ','));
     }
 
     [Fact]
-    public void GenerateCsv_ShouldEscapeValuesContainingSemicolons()
+    public void GenerateCsv_ShouldEscapeValuesContainingCommas()
     {
         var patient = CreatePatient(
-            1,
             "Mario",
-            "Rossi;Verdi",
+            "Rossi,Verdi",
             new DateTime(1980, 1, 1),
             new DateTime(2024, 1, 1),
             new Therapy
             {
                 TherapyId = 2,
-                PatientId = 1,
-                Description = "Dose; mattina",
+                Description = "Dose, mattina",
                 CreatedDate = new DateTime(2025, 1, 1)
             });
 
         var csv = GetCsvText(_service.GenerateCsv([patient]));
 
-        Assert.Contains("\"Rossi;Verdi\"", csv);
-        Assert.Contains("\"Dose; mattina\"", csv);
+        Assert.Contains("\"Rossi,Verdi\"", csv);
+        Assert.Contains("\"Dose, mattina\"", csv);
     }
 
     [Fact]
     public void GenerateCsv_ShouldEscapeValuesContainingDoubleQuotes()
     {
         var patient = CreatePatient(
-            1,
             "Mario",
             "Rossi",
             new DateTime(1980, 1, 1),
@@ -106,7 +108,6 @@ public class PatientCsvExportServiceTests
             new Therapy
             {
                 TherapyId = 2,
-                PatientId = 1,
                 Description = "Terapia \"test\"",
                 CreatedDate = new DateTime(2025, 1, 1)
             });
@@ -120,7 +121,6 @@ public class PatientCsvExportServiceTests
     public void GenerateCsv_ShouldEscapeValuesContainingLineBreaks()
     {
         var patient = CreatePatient(
-            1,
             "Mario",
             "Rossi",
             new DateTime(1980, 1, 1),
@@ -128,7 +128,6 @@ public class PatientCsvExportServiceTests
             new Therapy
             {
                 TherapyId = 2,
-                PatientId = 1,
                 Description = "riga1\r\nriga2",
                 CreatedDate = new DateTime(2025, 1, 1)
             });
@@ -142,7 +141,6 @@ public class PatientCsvExportServiceTests
     public void GenerateCsv_ShouldEmitUtf8Content()
     {
         var patient = CreatePatient(
-            1,
             "Già",
             "Perché",
             new DateTime(1980, 1, 1),
@@ -150,17 +148,101 @@ public class PatientCsvExportServiceTests
             new Therapy
             {
                 TherapyId = 2,
-                PatientId = 1,
                 Description = "Terapia è",
                 CreatedDate = new DateTime(2025, 1, 1)
             });
 
         var bytes = _service.GenerateCsv([patient]);
+        var content = Encoding.UTF8.GetString(bytes);
 
         Assert.True(bytes.AsSpan().StartsWith(Encoding.UTF8.Preamble));
-        Assert.Contains("Già", Encoding.UTF8.GetString(bytes));
-        Assert.Contains("Perché", Encoding.UTF8.GetString(bytes));
-        Assert.Contains("Terapia è", Encoding.UTF8.GetString(bytes));
+        Assert.Contains("Già", content);
+        Assert.Contains("Perché", content);
+        Assert.Contains("Terapia è", content);
+    }
+
+    [Fact]
+    public void GenerateCsv_ShouldInsertBlankRowBetweenDifferentPatients()
+    {
+        var firstPatient = CreatePatient(
+            "Mario",
+            "Bianchi",
+            new DateTime(1980, 1, 1),
+            new DateTime(2024, 1, 1),
+            new Therapy
+            {
+                TherapyId = 1,
+                Description = "Prima",
+                CreatedDate = new DateTime(2025, 1, 2)
+            });
+        var secondPatient = CreatePatient(
+            "Anna",
+            "Rossi",
+            new DateTime(1990, 1, 1),
+            new DateTime(2024, 1, 1),
+            new Therapy
+            {
+                TherapyId = 2,
+                Description = "Seconda",
+                CreatedDate = new DateTime(2025, 1, 1)
+            });
+
+        var csv = GetCsvText(_service.GenerateCsv([secondPatient, firstPatient]));
+        var lines = SplitLines(csv);
+
+        Assert.StartsWith("Mario,Bianchi", lines[3]);
+        Assert.Equal(string.Empty, lines[4]);
+    }
+
+    [Fact]
+    public void GenerateCsv_ShouldFormatDatesAsDdMmYyyy()
+    {
+        var patient = CreatePatient(
+            "Mario",
+            "Rossi",
+            new DateTime(1980, 2, 1),
+            new DateTime(2024, 1, 15),
+            new Therapy
+            {
+                TherapyId = 2,
+                Description = "Test",
+                CreatedDate = new DateTime(2025, 2, 4)
+            });
+
+        var csv = GetCsvText(_service.GenerateCsv([patient]));
+        var dataLine = SplitLines(csv)[3];
+
+        Assert.Contains("01/02/1980", dataLine);
+        Assert.Contains("04/02/2025", dataLine);
+        Assert.Contains("15/01/2024", dataLine);
+    }
+
+    [Fact]
+    public void GenerateCsv_ShouldIncludeCalculatedAgeCorrectly()
+    {
+        var dateOfBirth = DateTime.Today.AddYears(-40);
+        if (dateOfBirth > DateTime.Today)
+        {
+            dateOfBirth = dateOfBirth.AddDays(-1);
+        }
+
+        var patient = CreatePatient(
+            "Mario",
+            "Rossi",
+            dateOfBirth,
+            new DateTime(2024, 1, 15),
+            new Therapy
+            {
+                TherapyId = 2,
+                Description = "Test",
+                CreatedDate = new DateTime(2025, 2, 4)
+            });
+
+        var csv = GetCsvText(_service.GenerateCsv([patient]));
+        var dataLine = SplitLines(csv)[3];
+        var expectedAge = PatientAgeCalculator.CalculateAge(dateOfBirth);
+
+        Assert.Contains($",{expectedAge},", dataLine);
     }
 
     private static string GetCsvText(byte[] bytes)
@@ -168,8 +250,12 @@ public class PatientCsvExportServiceTests
         return Encoding.UTF8.GetString(bytes);
     }
 
+    private static string[] SplitLines(string csv)
+    {
+        return csv.TrimEnd().TrimStart('\uFEFF').Split(Environment.NewLine);
+    }
+
     private static Patient CreatePatient(
-        int patientId,
         string firstName,
         string lastName,
         DateTime dateOfBirth,
@@ -178,7 +264,6 @@ public class PatientCsvExportServiceTests
     {
         return new Patient
         {
-            PatientId = patientId,
             FirstName = firstName,
             LastName = lastName,
             DateOfBirth = dateOfBirth,

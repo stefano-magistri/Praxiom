@@ -5,14 +5,13 @@ namespace DottoressaIorio.Services.Patients;
 
 public sealed class PatientCsvExportService
 {
-    private const string Separator = ";";
+    private const string Separator = ",";
     private static readonly string[] HeaderColumns =
     [
-        "IdPaziente",
         "Nome",
         "Cognome",
-        "DataDiNascita",
-        "IdTerapia",
+        "DataNascita",
+        "Eta",
         "DataTerapia",
         "DescrizioneTerapia",
         "DataCreazione"
@@ -21,23 +20,44 @@ public sealed class PatientCsvExportService
     public byte[] GenerateCsv(IList<Patient> patients)
     {
         var builder = new StringBuilder();
+        builder.AppendLine($"Export pazienti e terapie - {DateTime.Today:dd/MM/yyyy}");
+        builder.AppendLine();
         builder.AppendLine(string.Join(Separator, HeaderColumns));
 
-        foreach (var patient in patients)
+        var patientGroups = patients
+            .Select(patient => new
+            {
+                Patient = patient,
+                Therapies = (patient.Therapies ?? [])
+                    .OrderByDescending(t => t.CreatedDate)
+                    .ThenByDescending(t => t.TherapyId)
+                    .ToList()
+            })
+            .Where(group => group.Therapies.Count > 0)
+            .OrderBy(group => group.Patient.LastName)
+            .ThenBy(group => group.Patient.FirstName)
+            .ToList();
+
+        for (var patientIndex = 0; patientIndex < patientGroups.Count; patientIndex++)
         {
-            foreach (var therapy in (patient.Therapies ?? [])
-                         .OrderBy(t => t.CreatedDate)
-                         .ThenBy(t => t.TherapyId))
+            var patient = patientGroups[patientIndex].Patient;
+            var age = PatientAgeCalculator.CalculateAge(patient.DateOfBirth);
+
+            foreach (var therapy in patientGroups[patientIndex].Therapies)
             {
                 builder.AppendJoin(Separator,
-                    patient.PatientId.ToString(),
                     Escape(patient.FirstName),
                     Escape(patient.LastName),
                     FormatDate(patient.DateOfBirth),
-                    therapy.TherapyId.ToString(),
+                    age?.ToString() ?? string.Empty,
                     FormatDate(therapy.CreatedDate),
                     Escape(therapy.Description),
                     FormatDate(patient.CreatedDate));
+                builder.AppendLine();
+            }
+
+            if (patientIndex < patientGroups.Count - 1)
+            {
                 builder.AppendLine();
             }
         }
@@ -48,7 +68,7 @@ public sealed class PatientCsvExportService
 
     private static string FormatDate(DateTime? value)
     {
-        return value?.ToString("yyyy-MM-dd") ?? string.Empty;
+        return value?.ToString("dd/MM/yyyy") ?? string.Empty;
     }
 
     private static string Escape(string? value)
@@ -59,7 +79,7 @@ public sealed class PatientCsvExportService
         }
 
         var escapedValue = value.Replace("\"", "\"\"");
-        return escapedValue.IndexOfAny([';', '"', '\r', '\n']) >= 0
+        return escapedValue.IndexOfAny([',', '"', '\r', '\n']) >= 0
             ? $"\"{escapedValue}\""
             : escapedValue;
     }
