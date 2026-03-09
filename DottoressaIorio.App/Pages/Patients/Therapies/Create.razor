@@ -9,34 +9,38 @@
 
 <ActionPageHeader Title="Nuova Terapia"/>
 
-<PatientContextCard Patient="patient" ShowHeaderName="true"/>
+<div class="therapy-editor-shell">
+    <PatientContextCard Patient="patient" ShowHeaderName="true"/>
 
-<EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
-    <DataAnnotationsValidator/>
-    <ValidationWarningAlert Message="@warningMessage"/>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="TemplateId">Precompilato:</label>
-            <select id="TemplateId" @onchange="TemplateChanged" class="form-select">
-                <option value="0">Seleziona...</option>
-                @foreach (var template in templates)
-                {
-                    <option value="@template.Id">@template.Title</option>
-                }
-            </select>
+    <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation therapy-editor-form" novalidate>
+        <DataAnnotationsValidator/>
+        <ValidationWarningAlert Message="@warningMessage"/>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="TemplateId">Precompilato:</label>
+                <select id="TemplateId" @onchange="TemplateChanged" class="form-select">
+                    <option value="0">Seleziona...</option>
+                    @foreach (var template in templates)
+                    {
+                        <option value="@template.Id">@template.Title</option>
+                    }
+                </select>
+            </div>
         </div>
-    </div>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="Description">Descrizione:</label>
-            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control"/>
-            <ValidationMessage For="@(() => model.Description)"/>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Description">Descrizione:</label>
+                <InputTextArea id="Description" @bind-Value="model.Description" class="form-control therapy-description-field"/>
+                <ValidationMessage For="@(() => model.Description)"/>
+            </div>
         </div>
-    </div>
-    <hr class="my-4">
-    <CancelButton Url="@($"/patient/{Id}/")"/>
-    <SubmitButton/>
-</EditForm>
+        <hr class="my-4">
+        <div class="therapy-editor-actions">
+            <CancelButton Url="@($"/patient/{Id}/")"/>
+            <SubmitButton/>
+        </div>
+    </EditForm>
+</div>
 
 @code {
     [Parameter] public int Id { get; set; }

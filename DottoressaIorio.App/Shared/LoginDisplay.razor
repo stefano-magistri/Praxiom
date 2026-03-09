@@ -1,10 +1,29 @@
-﻿@inject IWebHostEnvironment Environment
+@inject IWebHostEnvironment Environment
 <AuthorizeView>
-    <div class="px-4 auth" data-testid="user-greeting">
-        Ciao, @context.User.Identity?.Name!
+    <div class="px-4 auth-shell" data-testid="user-greeting">
+        <div class="auth">
+            <span class="auth-label">Accesso</span>
+            <span class="auth-name">@FormatDisplayName(context.User.Identity?.Name)</span>
+        </div>
         @if (!Environment.IsProduction())
         {
-            <small class="text-muted">@Environment.EnvironmentName</small>
+            <span class="auth-env-badge">@Environment.EnvironmentName</span>
         }
     </div>
 </AuthorizeView>
+
+@code {
+    private static string FormatDisplayName(string? identityName)
+    {
+        if (string.IsNullOrWhiteSpace(identityName))
+        {
+            return "Utente";
+        }
+
+        var normalized = identityName.Replace('/', '\\');
+        var separatorIndex = normalized.LastIndexOf('\\');
+        return separatorIndex >= 0 && separatorIndex < normalized.Length - 1
+            ? normalized[(separatorIndex + 1)..]
+            : normalized;
+    }
+}

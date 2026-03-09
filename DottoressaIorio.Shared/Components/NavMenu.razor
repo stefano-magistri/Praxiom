@@ -24,18 +24,8 @@
                 </NavLink>
             </li>
             <li class="nav-item">
-                <NavLink class="nav-link" href="create-patient" data-testid="create-patient-nav-link" @onclick="CloseSidebar">
-                    <span data-feather="plus-circle" aria-hidden="true"></span> Aggiungi Paziente
-                </NavLink>
-            </li>
-            <li class="nav-item">
                 <NavLink class="nav-link" href="therapy-templates" data-testid="therapy-templates-nav-link" @onclick="CloseSidebar">
                     <span data-feather="layers"></span> Terapie Precompilate
-                </NavLink>
-            </li>
-            <li class="nav-item">
-                <NavLink class="nav-link" href="create-therapy-template" data-testid="create-therapy-template-nav-link" @onclick="CloseSidebar">
-                    <span data-feather="plus-circle" aria-hidden="true"></span> Aggiungi Precompilato
                 </NavLink>
             </li>
             <li class="nav-item">
@@ -50,8 +40,11 @@
             </li>
             <li class="sidebar-footer">
                 <div class="copyright">
-                    <div>Versione @AppVersion</div>
-                    <a href="@SupportLink">Supporto</a>
+                    <div class="copyright-version-wrap">
+                        <span class="copyright-label">Versione</span>
+                        <span class="copyright-version">@AppVersion</span>
+                    </div>
+                    <a class="copyright-support" href="@SupportLink">Supporto</a>
                 </div>
             </li>
         </ul>

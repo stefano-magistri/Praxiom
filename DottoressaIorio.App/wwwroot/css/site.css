@@ -489,13 +489,54 @@ main form.needs-validation {
 }
 
 .auth {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .45rem;
     color: #f1fbff;
     font-weight: 600;
 }
 
+.auth-shell {
+    display: inline-flex;
+    align-items: center;
+    gap: .7rem;
+}
+
+.auth-label {
+    color: rgba(241, 251, 255, .72);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.auth-name {
+    color: #ffffff;
+    font-size: .95rem;
+    font-weight: 700;
+}
+
+.auth-env-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: .18rem .5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .14);
+    color: rgba(241, 251, 255, .82);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
 @media (max-width: 768px) {
-    .auth {
+    .auth-shell {
         margin-right: 60px;
+        gap: .45rem;
+    }
+
+    .auth {
+        gap: .35rem;
     }
 }
 
@@ -513,11 +554,43 @@ main form.needs-validation {
 }
 
 .copyright {
-    padding: .85rem .1rem .35rem .1rem;
+    margin: .8rem .15rem .2rem;
+    padding: .8rem .85rem .9rem;
+    border-top: 1px solid #dde7ee;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .72) 0%, rgba(241, 246, 250, .92) 100%);
+    border-radius: 14px;
     text-align: left;
     color: #637a8e;
     font-size: .8rem;
     line-height: 1.45;
+}
+
+.copyright-version-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: .08rem;
+    margin-bottom: .5rem;
+}
+
+.copyright-label {
+    color: #8193a3;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.copyright-version {
+    color: #2a455b;
+    font-size: .88rem;
+    font-weight: 700;
+}
+
+.copyright-support {
+    display: inline-flex;
+    align-items: center;
+    padding: .2rem 0;
+    font-weight: 600;
 }
 
 .copyright a {
@@ -579,11 +652,21 @@ body {
     flex: 1 1 20rem;
 }
 
+.patients-toolbar-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .6rem;
+}
+
 .patients-export-hint {
-    margin-top: -.25rem;
-    margin-bottom: 1rem;
+    margin-top: -.4rem;
+    margin-bottom: .9rem;
     color: var(--ink-muted);
-    font-size: .95rem;
+    font-size: .84rem;
+    font-weight: 500;
+    opacity: .82;
 }
 
 .patients-card {
@@ -609,27 +692,40 @@ body {
 }
 
 .patient-context-heading {
-    margin-bottom: 1rem;
+    margin-bottom: .8rem;
     color: #163246;
     font-size: 1.2rem;
     font-weight: 700;
 }
 
+.patient-context-card .row {
+    --bs-gutter-x: .85rem;
+    --bs-gutter-y: .6rem;
+}
+
+.patient-summary-list {
+    --bs-gutter-x: .45rem;
+    font-size: .98rem;
+}
+
 .patient-summary-list dt {
-    margin-bottom: .45rem;
+    margin-bottom: .25rem;
+    padding-right: .18rem;
     color: #4c6076;
     font-weight: 700;
     white-space: nowrap;
 }
 
 .patient-summary-list dd {
-    margin-bottom: .45rem;
+    margin-bottom: .25rem;
+    padding-left: .18rem;
     color: var(--ink);
 }
 
 .patient-notes-section {
     border-top: 1px solid #e6edf4;
-    padding-top: 1rem;
+    margin-top: .85rem !important;
+    padding-top: .8rem;
 }
 
 .patient-contact-row {
@@ -762,10 +858,107 @@ main .patients-table-wrapper {
     min-width: 8.6rem;
 }
 
+.btn-create-therapy-inline {
+    min-width: 7.15rem;
+    padding-inline: .6rem;
+    font-size: .9rem;
+    font-weight: 600;
+    color: #215e7b;
+    border-color: #b8cfdd;
+    background: #f8fbfd;
+}
+
+.btn-create-therapy-inline:hover,
+.btn-create-therapy-inline:focus {
+    color: #174a62;
+    border-color: #9fbfd2;
+    background: #eef6fa;
+}
+
 .btn-delete-soft {
     color: #9aa8b8;
     border-color: #d7e1ea;
     background: #fff;
+}
+
+.therapy-editor-shell {
+    max-width: 980px;
+}
+
+.therapy-editor-shell .patient-context-card {
+    margin-bottom: 1rem !important;
+}
+
+.therapy-editor-form {
+    margin-top: .7rem;
+}
+
+.therapy-editor-form textarea.therapy-description-field {
+    min-height: 240px;
+    height: min(38vh, 320px);
+}
+
+.therapy-editor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+@media (min-width: 992px) {
+    .sidebar .nav-link {
+        padding: .46rem .66rem;
+        font-size: .95rem;
+    }
+
+    #sidebarMenu .nav {
+        gap: .2rem;
+    }
+
+    .form-label,
+    .needs-validation label {
+        margin: .45rem 0 .3rem;
+        font-size: .95rem;
+    }
+
+    .form-control,
+    .form-select {
+        padding: .5rem .68rem;
+        font-size: .96rem;
+    }
+
+    main form.needs-validation {
+        margin: .85rem 0;
+        padding: 1.25rem;
+    }
+
+    main form.needs-validation .mb-3 {
+        margin-bottom: .85rem !important;
+    }
+
+    .table thead th,
+    .patients-table thead th {
+        padding: .74rem .72rem;
+        font-size: .78rem;
+    }
+
+    .table tbody td {
+        padding: .7rem .72rem;
+        font-size: .95rem;
+    }
+
+    .patient-context-card .row {
+        --bs-gutter-x: .75rem;
+        --bs-gutter-y: .55rem;
+    }
+
+    .patient-summary-list {
+        --bs-gutter-x: .38rem;
+    }
+
+    .patients-table > tbody > tr > td {
+        padding-top: .8rem;
+        padding-bottom: .8rem;
+    }
 }
 
 .btn-delete-soft:hover,

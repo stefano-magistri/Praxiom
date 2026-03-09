@@ -10,13 +10,21 @@
                 <SearchBox Id="search"
                            Value="@SearchTerm"
                            OnInput="SearchPatients"
+                           AutoFocus="true"
                            Placeholder="Cerca paziente per nome, cognome o entrambi"/>
             </div>
-            <a class="btn btn-outline-primary"
-               data-testid="export-csv-link"
-               href="@GetCsvExportUrl()">
-                <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Esporta CSV
-            </a>
+            <div class="patients-toolbar-actions">
+                <a class="btn btn-primary"
+                   data-testid="create-patient-page-link"
+                   href="/create-patient">
+                    <span class="oi oi-plus px-1" aria-hidden="true"></span>Nuovo Paziente
+                </a>
+                <a class="btn btn-outline-primary"
+                   data-testid="export-csv-link"
+                   href="@GetCsvExportUrl()">
+                    <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Esporta CSV
+                </a>
+            </div>
         </div>
 
         <p class="patients-export-hint">Esporta CSV (usa i filtri attivi)</p>
@@ -66,7 +74,7 @@
                             </td>
                             <td class="text-end" @onclick:stopPropagation="true">
                                 <div class="patient-row-actions">
-                                    <AnchorButton ButtonClass="primary btn-create-therapy" Url="@($"/patient/{patient.PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Crea terapia"></AnchorButton>
+                                    <AnchorButton ButtonClass="outline-primary btn-create-therapy-inline" Url="@($"/patient/{patient.PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Crea terapia"></AnchorButton>
                                     <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditPatient(patient.PatientId)" IconClass="oi oi-pencil"></ActionButton>
                                     <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDeletePatient(patient.PatientId)" IconClass="oi oi-trash"></ActionButton>
                                 </div>

@@ -23,7 +23,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         var phone = $"333{Random.Shared.Next(100000, 999999)}";
         var notes = $"Note test {seed}";
 
-        await page.GetByTestId("create-patient-nav-link").ClickAsync();
+        await page.GetByTestId("create-patient-page-link").ClickAsync();
 
         await FillBoundFieldAsync(page.Locator("#FirstName"), firstName);
         await FillBoundFieldAsync(page.Locator("#LastName"), lastName);
