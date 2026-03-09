@@ -21,20 +21,23 @@ public class PatientRepository : GenericRepository<Patient>
     }
 
     /// <summary>
-    ///     Creates a base query for patients that excludes deleted records and orders by last name and first name.
+    ///     Creates a base query for patients that excludes deleted records and orders by latest visit date descending.
     /// </summary>
-    /// <returns>An IQueryable of patients with the specified filters and ordering.</returns>
+    /// <returns>An IQueryable of patients with therapies loaded and the specified ordering applied.</returns>
     private IQueryable<Patient> BaseQuery()
     {
         return context.Patients
-            .OrderBy(x => x.LastName)
+            .Include(x => x.Therapies)
+            .OrderByDescending(x => x.Therapies.Max(t => (DateTime?)t.CreatedDate).HasValue)
+            .ThenByDescending(x => x.Therapies.Max(t => (DateTime?)t.CreatedDate))
+            .ThenBy(x => x.LastName)
             .ThenBy(x => x.FirstName);
     }
 
     /// <summary>
-    ///     Retrieves all non-deleted patients ordered by last name and first name.
+    ///     Retrieves all non-deleted patients ordered by latest visit date descending.
     /// </summary>
-    /// <returns>A list of all active patients in alphabetical order.</returns>
+    /// <returns>A list of all active patients ordered for the patient list.</returns>
     public async Task<IList<Patient>> GetAllOrderedAsync()
     {
         return await BaseQuery().ToListAsync();
@@ -57,7 +60,7 @@ public class PatientRepository : GenericRepository<Patient>
     /// <returns>A list of matching patients with their therapies loaded.</returns>
     public async Task<IList<Patient>> SearchPatientsWithTherapiesAsync(string searchTerm)
     {
-        return await ApplySearch(BaseQuery().Include(p => p.Therapies), searchTerm).ToListAsync();
+        return await ApplySearch(BaseQuery(), searchTerm).ToListAsync();
     }
 
     /// <summary>

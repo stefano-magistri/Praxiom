@@ -859,9 +859,10 @@ main .patients-table-wrapper {
 }
 
 .btn-create-therapy-inline {
-    min-width: 7.15rem;
-    padding-inline: .6rem;
-    font-size: .9rem;
+    min-width: 2.35rem;
+    width: 2.35rem;
+    padding-inline: 0;
+    font-size: 1rem;
     font-weight: 600;
     color: #215e7b;
     border-color: #b8cfdd;

@@ -6,6 +6,8 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
+@using DottoressaIorio.Services.Therapies
+@using Microsoft.AspNetCore.Components
 
 <ActionPageHeader Title="Nuova Terapia"/>
 
@@ -18,7 +20,7 @@
         <div class="row g-3">
             <div class="col-12">
                 <label for="TemplateId">Precompilato:</label>
-                <select id="TemplateId" @onchange="TemplateChanged" class="form-select">
+                <select id="TemplateId" value="@selectedTemplateId" @onchange="TemplateChanged" class="form-select">
                     <option value="0">Seleziona...</option>
                     @foreach (var template in templates)
                     {
@@ -42,12 +44,39 @@
     </EditForm>
 </div>
 
+@if (showTemplateConflictDialog)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="templateConflictTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="templateConflictTitle" class="modal-title">Sostituire il testo esistente oppure aggiungerlo?</h5>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmTemplateReplace">Sostituisci</button>
+                    <button type="button" class="btn btn-outline-primary" @onclick="ConfirmTemplateAppend">Aggiungi</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="CancelTemplateChange">Annulla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     [Parameter] public int Id { get; set; }
     private Patient? patient;
-    private readonly Therapy model = new();
+    [SupplyParameterFromQuery(Name = "duplicateFrom")] public int? DuplicateFromTherapyId { get; set; }
+
+    private Therapy model = new();
     private IList<TherapyTemplate> templates = [];
     private string warningMessage = "";
+    private int selectedTemplateId;
+    private int appliedTemplateId;
+    private int? loadedDuplicateTherapyId;
+    private bool showTemplateConflictDialog;
+    private int pendingTemplateId;
+    private string pendingTemplateDescription = string.Empty;
     private string FormattedPatientName => patient == null
         ? string.Empty
         : FormatFullName(patient.FirstName, patient.LastName);
@@ -60,6 +89,18 @@
     protected override async Task OnParametersSetAsync()
     {
         patient = await patientRepository.GetByIdAsync(Id);
+
+        if (DuplicateFromTherapyId.HasValue && DuplicateFromTherapyId != loadedDuplicateTherapyId)
+        {
+            var sourceTherapy = await repository.GetByIdAsync(DuplicateFromTherapyId.Value);
+            if (sourceTherapy != null && sourceTherapy.PatientId == Id)
+            {
+                model = TherapyDraftService.CreateDuplicate(sourceTherapy, DateTime.Today);
+                loadedDuplicateTherapyId = DuplicateFromTherapyId;
+            }
+        }
+
+        model.PatientId = Id;
     }
 
     private async Task SaveAsync()
@@ -90,12 +131,62 @@
     {
         if (!int.TryParse(args.Value?.ToString(), out var id) || id <= 0)
         {
+            selectedTemplateId = 0;
+            appliedTemplateId = 0;
             model.Description = string.Empty;
             return;
         }
 
         var selected = await templateRepository.GetByIdAsync(id);
-        model.Description = selected?.Description ?? string.Empty;
+        if (selected == null)
+        {
+            selectedTemplateId = appliedTemplateId;
+            return;
+        }
+
+        selectedTemplateId = id;
+        var templateDescription = selected.Description ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(model.Description))
+        {
+            model.Description = templateDescription;
+            appliedTemplateId = id;
+            return;
+        }
+
+        pendingTemplateId = id;
+        pendingTemplateDescription = templateDescription;
+        showTemplateConflictDialog = true;
+    }
+
+    private Task ConfirmTemplateReplace()
+    {
+        model.Description = TherapyDraftService.ApplyTemplate(
+            model.Description,
+            pendingTemplateDescription,
+            TherapyTemplateApplyMode.Replace);
+        appliedTemplateId = pendingTemplateId;
+        showTemplateConflictDialog = false;
+        return Task.CompletedTask;
+    }
+
+    private Task ConfirmTemplateAppend()
+    {
+        model.Description = TherapyDraftService.ApplyTemplate(
+            model.Description,
+            pendingTemplateDescription,
+            TherapyTemplateApplyMode.Append);
+        appliedTemplateId = pendingTemplateId;
+        showTemplateConflictDialog = false;
+        return Task.CompletedTask;
+    }
+
+    private Task CancelTemplateChange()
+    {
+        selectedTemplateId = appliedTemplateId;
+        pendingTemplateId = 0;
+        pendingTemplateDescription = string.Empty;
+        showTemplateConflictDialog = false;
+        return Task.CompletedTask;
     }
 
     private static string FormatFullName(string? firstName, string? lastName)

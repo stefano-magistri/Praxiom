@@ -123,22 +123,42 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    ///     Tests that the GetAllOrderedAsync method returns all non-deleted patients ordered by last name and first name.
+    ///     Tests that the GetAllOrderedAsync method returns all non-deleted patients ordered by latest visit date.
     /// </summary>
     [Fact]
-    public async Task GetAllOrderedAsync_ShouldReturnAllPatientsOrdered()
+    public async Task GetAllOrderedAsync_ShouldPrioritizeMostRecentlyVisitedPatientsAndKeepNeverVisitedLast()
     {
-        var result = await GetAllOrderedAsync();
-        Assert.Equal(data.Count(p => !p.Deleted), result.Count); // Excluding deleted patients
-        // Assert that patients are ordered by last name then first name
-        for (var i = 1; i < result.Count; i++)
+        await SeedPatientsAsync();
+        _context.Patients.Add(new Patient
         {
-            Assert.True(
-                string.Compare(result[i - 1].LastName, result[i].LastName, StringComparison.OrdinalIgnoreCase) <= 0);
-            if (string.Equals(result[i - 1].LastName, result[i].LastName, StringComparison.OrdinalIgnoreCase))
-                Assert.True(string.Compare(result[i - 1].FirstName, result[i].FirstName,
-                    StringComparison.OrdinalIgnoreCase) <= 0);
-        }
+            PatientId = 4,
+            FirstName = "Anna",
+            LastName = "Zero",
+            CreatedDate = DateTime.Now,
+            DateOfBirth = DateTime.ParseExact("02/01/1992", "dd/MM/yyyy", CultureInfo.InvariantCulture),
+            Email = "anna@example.test"
+        });
+        _context.Therapies.AddRange(
+            new Therapy
+            {
+                TherapyId = 10,
+                PatientId = 1,
+                Description = "Older visit",
+                CreatedDate = new DateTime(2026, 3, 1)
+            },
+            new Therapy
+            {
+                TherapyId = 11,
+                PatientId = 2,
+                Description = "Latest visit",
+                CreatedDate = new DateTime(2026, 3, 5)
+            });
+        await _context.SaveChangesAsync();
+
+        var repository = new PatientRepository(_context);
+        var result = await repository.GetAllOrderedAsync();
+
+        Assert.Equal([2, 1, 4], result.Select(patient => patient.PatientId));
     }
 
     /// <summary>

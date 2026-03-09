@@ -185,6 +185,13 @@ public class PatientsBase : ComponentBase
         return FormatTitleCase(fullName);
     }
 
+    protected static DateTime? GetLastVisitDate(Patient patient)
+    {
+        return patient.Therapies?.Count > 0
+            ? patient.Therapies.Max(therapy => therapy.CreatedDate)
+            : null;
+    }
+
     protected static string FormatTitleCase(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
