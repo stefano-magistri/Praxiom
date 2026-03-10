@@ -45,7 +45,7 @@ public class HtmlExtensionsTests
     public void GetHtml_ShouldHandleNullString()
     {
         // Arrange
-        string? nullText = null;
+        string nullText = null;
 
         // Act
         var htmlResult = StringExtensions.GetHtml(nullText);
