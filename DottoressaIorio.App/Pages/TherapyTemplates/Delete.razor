@@ -12,7 +12,7 @@
 @code {
     [Parameter] public int Id { get; set; }
 
-    private TherapyTemplate model;
+    private TherapyTemplate? model;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -21,6 +21,12 @@
 
     private async Task SaveAsync()
     {
+        if (model is null)
+        {
+            navigationManager.NavigateTo("/therapy-templates");
+            return;
+        }
+
         await repository.DeleteAsync(model);
         await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo("/therapy-templates");

@@ -17,7 +17,7 @@ public class Therapy : IDataHandler
     ///     Gets or sets the description of the therapy or treatment.
     /// </summary>
     [Required(ErrorMessage = "La descrizione è richiesta.")]
-    public string Description { get; set; }
+    public string Description { get; set; } = string.Empty;
 
     /// <summary>
     ///     Gets or sets the identifier of the patient associated with this therapy.
@@ -27,7 +27,7 @@ public class Therapy : IDataHandler
     /// <summary>
     ///     Gets or sets the patient associated with this therapy.
     /// </summary>
-    public Patient Patient { get; set; }
+    public Patient Patient { get; set; } = null!;
 
     /// <summary>
     ///     Gets or sets the date when the therapy record was created.

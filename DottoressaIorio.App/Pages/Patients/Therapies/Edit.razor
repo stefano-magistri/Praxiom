@@ -10,32 +10,35 @@
 
 <PatientContextCard Patient="patient" ShowHeaderName="true"/>
 
-<EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
-    <DataAnnotationsValidator/>
-    <ValidationWarningAlert Message="@warningMessage"/>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="Description">Descrizione:</label>
-            <MinimalRichTextEditor InputId="Description"
-                                   AriaLabel="Descrizione terapia"
-                                   TestId="therapy-description-editor"
-                                   Value="@EditorDescription"
-                                   ValueChanged="OnDescriptionChanged"/>
-            <div class="therapy-description-help">Formato supportato nel PDF: paragrafi, grassetto, corsivo, elenco puntato e numerato.</div>
-            <ValidationMessage For="@(() => model.Description)"/>
+@if (model is not null)
+{
+    <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
+        <DataAnnotationsValidator/>
+        <ValidationWarningAlert Message="@warningMessage"/>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Description">Descrizione:</label>
+                <MinimalRichTextEditor InputId="Description"
+                                       AriaLabel="Descrizione terapia"
+                                       TestId="therapy-description-editor"
+                                       Value="@EditorDescription"
+                                       ValueChanged="OnDescriptionChanged"/>
+                <div class="therapy-description-help">Formato supportato nel PDF: paragrafi, grassetto, corsivo, elenco puntato e numerato.</div>
+                <ValidationMessage For="@(() => model.Description)"/>
+            </div>
         </div>
-    </div>
 
-    <hr class="my-4">
-    <CancelButton Url="@($"/patient/{model.PatientId}/")"/>
-    <SubmitButton/>
-</EditForm>
+        <hr class="my-4">
+        <CancelButton Url="@($"/patient/{model.PatientId}/")"/>
+        <SubmitButton/>
+    </EditForm>
+}
 
 @code {
     [Parameter] public int Id { get; set; }
 
     private Patient? patient;
-    private Therapy model;
+    private Therapy? model;
     private string warningMessage = "";
     private string FormattedPatientName => patient == null
         ? string.Empty
@@ -55,6 +58,12 @@
     {
         try
         {
+            if (model is null)
+            {
+                navigationManager.NavigateTo("/");
+                return;
+            }
+
             model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
             await repository.UpdateAsync(model);
             await unitOfWork.SaveChangesAsync();
@@ -89,7 +98,11 @@
 
     private Task OnDescriptionChanged(string value)
     {
-        model.Description = value;
+        if (model is not null)
+        {
+            model.Description = value;
+        }
+
         return Task.CompletedTask;
     }
 

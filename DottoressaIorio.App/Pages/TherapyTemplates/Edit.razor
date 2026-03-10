@@ -6,38 +6,41 @@
 
 <PageHeader Title="Modifica Terapia Precompilata"/>
 
-<EditForm Model="@model" OnValidSubmit="@SaveTask" class="needs-validation" novalidate>
-    <DataAnnotationsValidator/>
-    <ValidationWarningAlert Message="@warningMessage"/>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="Title">Titolo:</label>
-            <InputText id="Title" @bind-Value="model.Title" class="form-control" autocomplete="off"/>
-            <ValidationMessage For="@(() => model.Title)"/>
+@if (model is not null)
+{
+    <EditForm Model="@model" OnValidSubmit="@SaveTask" class="needs-validation" novalidate>
+        <DataAnnotationsValidator/>
+        <ValidationWarningAlert Message="@warningMessage"/>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Title">Titolo:</label>
+                <InputText id="Title" @bind-Value="model.Title" class="form-control" autocomplete="off"/>
+                <ValidationMessage For="@(() => model.Title)"/>
+            </div>
         </div>
-    </div>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="Description">Descrizione:</label>
-            <MinimalRichTextEditor InputId="TemplateDescription"
-                                   AriaLabel="Descrizione terapia precompilata"
-                                   TestId="template-description-editor"
-                                   Value="@EditorDescription"
-                                   ValueChanged="OnDescriptionChanged"/>
-            <div class="therapy-description-help">Formato supportato nel PDF: paragrafi, grassetto, corsivo, elenco puntato e numerato.</div>
-            <ValidationMessage For="@(() => model.Description)"/>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Description">Descrizione:</label>
+                <MinimalRichTextEditor InputId="TemplateDescription"
+                                       AriaLabel="Descrizione terapia precompilata"
+                                       TestId="template-description-editor"
+                                       Value="@EditorDescription"
+                                       ValueChanged="OnDescriptionChanged"/>
+                <div class="therapy-description-help">Formato supportato nel PDF: paragrafi, grassetto, corsivo, elenco puntato e numerato.</div>
+                <ValidationMessage For="@(() => model.Description)"/>
+            </div>
         </div>
-    </div>
-    <hr class="my-4">
-    <CancelButton Url="/therapy-templates"/>
-    <AnchorButton ButtonText="Rimuovi" ButtonClass="outline-danger btn-delete-soft" Url="@($"/therapy-template/{Id}/delete/")"></AnchorButton>
-    <SubmitButton/>
-</EditForm>
+        <hr class="my-4">
+        <CancelButton Url="/therapy-templates"/>
+        <AnchorButton ButtonText="Rimuovi" ButtonClass="outline-danger btn-delete-soft" Url="@($"/therapy-template/{Id}/delete/")"></AnchorButton>
+        <SubmitButton/>
+    </EditForm>
+}
 
 @code {
     [Parameter] public int Id { get; set; }
 
-    private TherapyTemplate model;
+    private TherapyTemplate? model;
     private string warningMessage = "";
     private string EditorDescription => StringExtensions.ToEditorValue(model?.Description);
 
@@ -50,6 +53,12 @@
     {
         try
         {
+            if (model is null)
+            {
+                navigationManager.NavigateTo("/therapy-templates");
+                return;
+            }
+
             model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
             await repository.UpdateAsync(model);
             await unitOfWork.SaveChangesAsync();
@@ -72,7 +81,11 @@
 
     private Task OnDescriptionChanged(string value)
     {
-        model.Description = value;
+        if (model is not null)
+        {
+            model.Description = value;
+        }
+
         return Task.CompletedTask;
     }
 

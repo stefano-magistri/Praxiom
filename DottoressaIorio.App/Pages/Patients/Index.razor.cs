@@ -20,29 +20,29 @@ public class PatientsBase : ComponentBase
     /// <summary>
     ///     Cached list of all patients loaded from the repository.
     /// </summary>
-    private IList<Patient> patients;
+    private IList<Patient> patients = [];
 
     /// <summary>
     ///     Repository used to query patient data.
     /// </summary>
     [Inject]
-    public PatientRepository Repository { get; set; }
+    public PatientRepository Repository { get; set; } = null!;
 
     /// <summary>
     ///     Navigation manager used to navigate between pages.
     /// </summary>
     [Inject]
-    public NavigationManager NavigationManager { get; set; }
+    public NavigationManager NavigationManager { get; set; } = null!;
 
     /// <summary>
     ///     The subset of patients displayed on the current page after filtering and pagination.
     /// </summary>
-    protected IList<Patient> DisplayedPatients { get; set; }
+    protected IList<Patient> DisplayedPatients { get; set; } = [];
 
     /// <summary>
     ///     The list of patients matching the current search term.
     /// </summary>
-    protected IList<Patient> FilteredPatients { get; set; }
+    protected IList<Patient> FilteredPatients { get; set; } = [];
 
     /// <summary>
     ///     The current page number (1-based).

@@ -7,7 +7,7 @@
     </Authorized>
     <NotAuthorized>
         <p>Non sei autorizzato a visualizzare questo contenuto.</p>
-        @if (!Environment.IsProduction())
+        @if (!Environment.IsProduction() && authenticationStateTask is not null)
         {
             var authenticationState = authenticationStateTask.Result;
             var user = authenticationState.User;
@@ -25,9 +25,9 @@
 </AuthorizeView>
 
 @code {
-    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private Task<AuthenticationState> authenticationStateTask;
+    private Task<AuthenticationState>? authenticationStateTask;
 
     protected override async Task OnInitializedAsync()
     {
