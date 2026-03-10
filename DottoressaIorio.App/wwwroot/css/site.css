@@ -488,6 +488,30 @@ main form.needs-validation {
     border-radius: 12px;
 }
 
+.trial-shell-banner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    align-items: center;
+    border: 1px solid #d7c17a;
+    background: linear-gradient(180deg, #fff8df 0%, #fff3c6 100%);
+    color: #5b4304;
+}
+
+.trial-shell-banner-expired {
+    border-color: #d49a9a;
+    background: linear-gradient(180deg, #fde9e9 0%, #f9d9d9 100%);
+    color: #7d1f1f;
+}
+
+.trial-inline-message {
+    margin-top: -.15rem;
+    margin-bottom: .8rem;
+    color: #8a5a00;
+    font-size: .9rem;
+    font-weight: 600;
+}
+
 .auth {
     display: inline-flex;
     align-items: baseline;

@@ -80,6 +80,11 @@ public class PatientRepository : GenericRepository<Patient>
             p.DateOfBirth == dateOfBirth);
     }
 
+    public Task<int> CountAsync()
+    {
+        return context.Patients.CountAsync();
+    }
+
     private static string NormalizeSearchToken(string? value)
     {
         return (value ?? string.Empty).Trim().ToLower();

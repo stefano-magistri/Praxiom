@@ -2,6 +2,7 @@
 
 @inject TherapyTemplateRepository repository
 @inject NavigationManager navigationManager
+@inject ILicenseService licenseService
 
 
 <PageHeader Title="Terapie Precompilate"/>
@@ -16,15 +17,34 @@
                            Placeholder="Cerca terapia precompilata per titolo o descrizione"/>
             </div>
             <div class="patients-toolbar-actions">
-                <a class="btn btn-primary"
-                   data-testid="create-therapy-template-page-link"
-                   href="/create-therapy-template"
-                   title="Nuova Terapia Precompilata"
-                   aria-label="Nuova Terapia Precompilata">
-                    <span class="oi oi-plus" aria-hidden="true"></span>
-                </a>
+                @if (licenseService.IsTrialExpired)
+                {
+                    <button class="btn btn-primary"
+                            data-testid="create-therapy-template-page-link"
+                            type="button"
+                            title="Nuova Terapia Precompilata"
+                            aria-label="Nuova Terapia Precompilata"
+                            disabled>
+                        <span class="oi oi-plus" aria-hidden="true"></span>
+                    </button>
+                }
+                else
+                {
+                    <a class="btn btn-primary"
+                       data-testid="create-therapy-template-page-link"
+                       href="/create-therapy-template"
+                       title="Nuova Terapia Precompilata"
+                       aria-label="Nuova Terapia Precompilata">
+                        <span class="oi oi-plus" aria-hidden="true"></span>
+                    </a>
+                }
             </div>
         </div>
+
+        @if (!string.IsNullOrWhiteSpace(CreationInlineMessage))
+        {
+            <p class="trial-inline-message">@CreationInlineMessage</p>
+        }
 
         @if (DisplayedTemplates.Count == 0)
         {
@@ -85,12 +105,15 @@
     private IList<TherapyTemplate> therapyTemplates = [];
     private IList<TherapyTemplate> filteredTemplates = [];
     private IList<TherapyTemplate> DisplayedTemplates { get; set; } = [];
+    private string CreationInlineMessage { get; set; } = string.Empty;
     private int CurrentPage { get; set; } = 1;
     private string SearchTerm { get; set; } = string.Empty;
     private int TotalPages => filteredTemplates.Count == 0 ? 1 : (int)Math.Ceiling((double)filteredTemplates.Count / PageSize);
 
     protected override async Task OnInitializedAsync()
     {
+        await licenseService.InitializeAsync();
+        CreationInlineMessage = await licenseService.GetTherapyTemplateCreationBlockMessageAsync() ?? string.Empty;
         therapyTemplates = await repository.GetAllOrderedAsync();
         await UpdateDisplayedTemplates();
     }

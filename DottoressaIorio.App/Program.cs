@@ -23,6 +23,8 @@ try
     var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
     var runOnlineBackup = args.Any(argument => argument.Equals("--online-backup", StringComparison.OrdinalIgnoreCase));
     var useDemoDatabase = args.Any(argument => argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
+    var useTrialActive = args.Any(argument => argument.Equals("--trial-active", StringComparison.OrdinalIgnoreCase));
+    var useTrialExpired = args.Any(argument => argument.Equals("--trial-expired", StringComparison.OrdinalIgnoreCase));
     var databaseRootPath = configuration["DatabaseRootPath"]
                            ?? (isWindowsService ? AppContext.BaseDirectory : builder.Environment.ContentRootPath);
 
@@ -66,6 +68,14 @@ try
 
     builder.Services.AddPdfServices();
     builder.Services.AddLocalLicenseServices(configuration);
+    builder.Services.AddSingleton(new LicenseLaunchOverride
+    {
+        Mode = useTrialExpired
+            ? LicenseLaunchMode.TrialExpired
+            : useTrialActive
+                ? LicenseLaunchMode.TrialActive
+                : LicenseLaunchMode.None
+    });
     builder.Services.AddOnlineSqliteBackup(options =>
     {
         options.AppRootPath = databaseRootPath;
@@ -75,26 +85,15 @@ try
     if (runOnlineBackup && useDemoDatabase)
         throw new InvalidOperationException("Cannot use --online-backup and --demo together.");
 
+    if (useTrialActive && useTrialExpired)
+        throw new InvalidOperationException("Cannot use --trial-active and --trial-expired together.");
+
     if (useDemoDatabase)
         builder.ConfigureDemoDatabase();
 
     var app = builder.Build();
-    var licenseService = app.Services.GetRequiredService<ILocalLicenseService>();
     var onlineBackupService = app.Services.GetRequiredService<IOnlineBackupService>();
     var onlineBackupOptions = app.Services.GetRequiredService<OnlineBackupOptions>();
-
-    if (app.Environment.IsDevelopment())
-    {
-        Log.Warning("Skipping local license validation in Development.");
-    }
-    else
-    {
-        var licenseValidationResult = licenseService.ValidateCurrentLicense(allowedUsername);
-        if (!licenseValidationResult.IsValid)
-        {
-            throw new InvalidOperationException($"Local license validation failed: {licenseValidationResult.Failure}.");
-        }
-    }
 
     if (runOnlineBackup)
     {
@@ -107,6 +106,17 @@ try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         dbContext.Database.Migrate();
+        var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
+        await licenseService.InitializeAsync();
+
+        if (useTrialActive || useTrialExpired)
+        {
+            Log.Warning("License launch override enabled: {Mode}.", useTrialExpired ? "TrialExpired" : "TrialActive");
+        }
+        else if (!app.Environment.IsDevelopment() && !licenseService.IsLicensed)
+        {
+            Log.Warning("License file missing or invalid. Trial mode is active.");
+        }
     }
 
     app.Lifetime.ApplicationStarted.Register(() =>

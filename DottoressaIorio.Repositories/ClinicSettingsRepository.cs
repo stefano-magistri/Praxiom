@@ -43,6 +43,7 @@ public sealed class ClinicSettingsRepository(ApplicationDbContext context) : ICl
         target.Phone = Normalize(settings.Phone);
         target.Email = Normalize(settings.Email);
         target.FooterText = Normalize(settings.FooterText);
+        target.TrialStartUtc = settings.TrialStartUtc;
 
         await context.SaveChangesAsync();
     }

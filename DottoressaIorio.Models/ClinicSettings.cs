@@ -26,6 +26,8 @@ public class ClinicSettings
 
     public string FooterText { get; set; } = string.Empty;
 
+    public DateTime? TrialStartUtc { get; set; }
+
     public static ClinicSettings CreateDefault()
     {
         return new ClinicSettings();

@@ -43,6 +43,11 @@ public class TherapyTemplateRepository : GenericRepository<TherapyTemplate>
             .AnyAsync(x => x.Title.ToLower() == normalizedTitle);
     }
 
+    public Task<int> CountAsync()
+    {
+        return context.TherapyTemplates.CountAsync();
+    }
+
     private static string NormalizeTitle(string? title)
     {
         return (title ?? string.Empty).Trim().ToLower();

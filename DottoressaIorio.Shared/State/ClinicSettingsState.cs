@@ -39,7 +39,8 @@ public sealed class ClinicSettingsState(IClinicSettingsRepository repository)
             Address = settings.Address,
             Phone = settings.Phone,
             Email = settings.Email,
-            FooterText = settings.FooterText
+            FooterText = settings.FooterText,
+            TrialStartUtc = settings.TrialStartUtc
         };
     }
 }
