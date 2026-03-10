@@ -1,11 +1,15 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using DottoressaIorio.Models;
 
 namespace DottoressaIorio.Services.Patients;
 
 public sealed class PatientCsvExportService
 {
-    private const string Separator = ",";
+    private const string Separator = ";";
+    private static readonly Regex SupportedRichTextTagRegex = new(
+        @"</?(p|br|ul|ol|li|strong|b|em|i|div|section|article|span)\b[^>]*>",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly string[] HeaderColumns =
     [
         "Nome",
@@ -20,7 +24,7 @@ public sealed class PatientCsvExportService
     public byte[] GenerateCsv(IList<Patient> patients)
     {
         var builder = new StringBuilder();
-        builder.AppendLine($"Export pazienti e terapie - {DateTime.Today:dd/MM/yyyy}");
+        builder.AppendLine($";;;;;;;Export pazienti e terapie - {DateTime.Today:dd/MM/yyyy}");
         builder.AppendLine();
         builder.AppendLine(string.Join(Separator, HeaderColumns));
 
@@ -51,7 +55,7 @@ public sealed class PatientCsvExportService
                     FormatDate(patient.DateOfBirth),
                     age?.ToString() ?? string.Empty,
                     FormatDate(therapy.CreatedDate),
-                    Escape(therapy.Description),
+                    Escape(FormatDescription(therapy.Description)),
                     FormatDate(patient.CreatedDate));
                 builder.AppendLine();
             }
@@ -64,6 +68,23 @@ public sealed class PatientCsvExportService
 
         var contentBytes = Encoding.UTF8.GetBytes(builder.ToString());
         return [.. Encoding.UTF8.Preamble, .. contentBytes];
+    }
+
+    private static string FormatDescription(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        if (!value.Contains('<', StringComparison.Ordinal))
+        {
+            return RichTextFormatting.ToPlainText(value);
+        }
+
+        return SupportedRichTextTagRegex.IsMatch(value)
+            ? RichTextFormatting.ToPlainText(value)
+            : value;
     }
 
     private static string FormatDate(DateTime? value)
@@ -79,7 +100,7 @@ public sealed class PatientCsvExportService
         }
 
         var escapedValue = value.Replace("\"", "\"\"");
-        return escapedValue.IndexOfAny([',', '"', '\r', '\n']) >= 0
+        return escapedValue.IndexOfAny([';', '"', '\r', '\n']) >= 0
             ? $"\"{escapedValue}\""
             : escapedValue;
     }
