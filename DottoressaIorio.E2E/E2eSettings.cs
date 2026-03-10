@@ -4,7 +4,7 @@ namespace DottoressaIorio.E2E;
 
 public sealed class E2eSettings
 {
-    public string BaseUrl { get; init; } = "https://localhost:7013";
+    public string BaseUrl { get; init; } = "https://127.0.0.1:0";
     public bool Headless { get; init; } = true;
     public LoginSettings Login { get; init; } = new();
 

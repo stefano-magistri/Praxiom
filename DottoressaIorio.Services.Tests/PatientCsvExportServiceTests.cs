@@ -163,6 +163,27 @@ public class PatientCsvExportServiceTests
     }
 
     [Fact]
+    public void GenerateCsv_ShouldPreservePlainTextContainingAngleBrackets()
+    {
+        var patient = CreatePatient(
+            "Mario",
+            "Rossi",
+            new DateTime(1980, 1, 1),
+            new DateTime(2024, 1, 1),
+            new Therapy
+            {
+                TherapyId = 2,
+                Description = "Dose <bassa> dopo pranzo",
+                CreatedDate = new DateTime(2025, 1, 1)
+            });
+
+        var csv = GetCsvText(_service.GenerateCsv([patient]));
+        var dataLine = SplitLines(csv)[3];
+
+        Assert.Contains("Dose <bassa> dopo pranzo", dataLine);
+    }
+
+    [Fact]
     public void GenerateCsv_ShouldEmitUtf8Content()
     {
         var patient = CreatePatient(

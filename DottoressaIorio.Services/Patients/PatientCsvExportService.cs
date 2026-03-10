@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using DottoressaIorio.Models;
 
 namespace DottoressaIorio.Services.Patients;
@@ -6,6 +7,9 @@ namespace DottoressaIorio.Services.Patients;
 public sealed class PatientCsvExportService
 {
     private const string Separator = ";";
+    private static readonly Regex SupportedRichTextTagRegex = new(
+        @"</?(p|br|ul|ol|li|strong|b|em|i|div|section|article|span)\b[^>]*>",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly string[] HeaderColumns =
     [
         "Nome",
@@ -51,7 +55,7 @@ public sealed class PatientCsvExportService
                     FormatDate(patient.DateOfBirth),
                     age?.ToString() ?? string.Empty,
                     FormatDate(therapy.CreatedDate),
-                    Escape(RichTextFormatting.ToPlainText(therapy.Description)),
+                    Escape(FormatDescription(therapy.Description)),
                     FormatDate(patient.CreatedDate));
                 builder.AppendLine();
             }
@@ -64,6 +68,23 @@ public sealed class PatientCsvExportService
 
         var contentBytes = Encoding.UTF8.GetBytes(builder.ToString());
         return [.. Encoding.UTF8.Preamble, .. contentBytes];
+    }
+
+    private static string FormatDescription(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        if (!value.Contains('<', StringComparison.Ordinal))
+        {
+            return RichTextFormatting.ToPlainText(value);
+        }
+
+        return SupportedRichTextTagRegex.IsMatch(value)
+            ? RichTextFormatting.ToPlainText(value)
+            : value;
     }
 
     private static string FormatDate(DateTime? value)

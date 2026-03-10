@@ -3,7 +3,8 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
-using System.Management;
+using System.Net;
+using System.Net.Sockets;
 using DottoressaIorio.Services.Licensing;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.Data.Sqlite;
@@ -35,7 +36,7 @@ public sealed class PlaywrightFixture : IAsyncLifetime
     {
         raw.SetProvider(new SQLite3Provider_e_sqlcipher());
         Batteries_V2.Init();
-        Settings = E2eSettings.Load();
+        Settings = ResolveRuntimeSettings(E2eSettings.Load());
         await StartApplicationAsync();
         Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
         _browser = await LaunchBrowserWithInstallFallbackAsync();
@@ -208,8 +209,6 @@ public sealed class PlaywrightFixture : IAsyncLifetime
 
     private async Task StartApplicationAsync()
     {
-        StopLeftoverApplicationHosts();
-
         _tempDirectory = Path.Combine(Path.GetTempPath(), "DottoressaIorio.E2E", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDirectory);
 
@@ -312,40 +311,55 @@ public sealed class PlaywrightFixture : IAsyncLifetime
                 .Trim());
     }
 
-    private static void StopLeftoverApplicationHosts()
+    private static E2eSettings ResolveRuntimeSettings(E2eSettings settings)
     {
-        if (!OperatingSystem.IsWindows())
+        if (!Uri.TryCreate(settings.BaseUrl, UriKind.Absolute, out var configuredBaseUrl))
         {
-            return;
+            throw new InvalidOperationException($"Invalid E2E base URL: '{settings.BaseUrl}'.");
         }
 
-        using var searcher = new ManagementObjectSearcher(
-            "SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name = 'dotnet.exe'");
-
-        foreach (ManagementObject processInfo in searcher.Get())
+        if (configuredBaseUrl.Scheme is not ("http" or "https"))
         {
-            var commandLine = processInfo["CommandLine"]?.ToString();
-            if (string.IsNullOrWhiteSpace(commandLine) ||
-                !commandLine.Contains("DottoressaIorio.App", StringComparison.OrdinalIgnoreCase) ||
-                !commandLine.Contains("dotnet", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
+            throw new InvalidOperationException(
+                $"Unsupported E2E base URL scheme '{configuredBaseUrl.Scheme}'. Use http or https.");
+        }
 
-            if (!int.TryParse(processInfo["ProcessId"]?.ToString(), out var processId))
+        if (configuredBaseUrl.Port != 0)
+        {
+            return new E2eSettings
             {
-                continue;
-            }
+                BaseUrl = configuredBaseUrl.GetLeftPart(UriPartial.Authority),
+                Headless = settings.Headless,
+                Login = settings.Login
+            };
+        }
 
-            try
-            {
-                using var process = Process.GetProcessById(processId);
-                process.Kill(entireProcessTree: true);
-                process.WaitForExit();
-            }
-            catch (Exception)
-            {
-            }
+        var builder = new UriBuilder(configuredBaseUrl)
+        {
+            Host = IPAddress.Loopback.ToString(),
+            Port = GetFreeTcpPort()
+        };
+
+        return new E2eSettings
+        {
+            BaseUrl = builder.Uri.GetLeftPart(UriPartial.Authority),
+            Headless = settings.Headless,
+            Login = settings.Login
+        };
+    }
+
+    private static int GetFreeTcpPort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+
+        try
+        {
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+        finally
+        {
+            listener.Stop();
         }
     }
 
