@@ -13,7 +13,7 @@
 @code {
     [Parameter] public int Id { get; set; }
 
-    private Therapy? model;
+    private Therapy model;
     private string CancelUrl => model == null ? "/" : $"/patient/{model.PatientId}/";
 
     protected override async Task OnParametersSetAsync()
@@ -23,12 +23,6 @@
 
     private async Task SaveAsync()
     {
-        if (model is null)
-        {
-            navigationManager.NavigateTo("/");
-            return;
-        }
-
         await repository.DeleteAsync(model);
         await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo($"/patient/{model.PatientId}/");

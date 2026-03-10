@@ -23,13 +23,13 @@ public class Patient : IDataHandler
     ///     Gets or sets the first name of the patient.
     /// </summary>
     [Required(ErrorMessage = "Il Nome é obbligatorio.")]
-    public string FirstName { get; set; } = string.Empty;
+    public string FirstName { get; set; }
 
     /// <summary>
     ///     Gets or sets the last name of the patient.
     /// </summary>
     [Required(ErrorMessage = "Il Cognome é obbligatorio.")]
-    public string LastName { get; set; } = string.Empty;
+    public string LastName { get; set; }
 
     /// <summary>
     ///     Gets or sets the date of birth of the patient.
@@ -71,7 +71,7 @@ public class Patient : IDataHandler
     /// <summary>
     ///     Gets or sets the list of therapies associated with the patient.
     /// </summary>
-    public List<Therapy> Therapies { get; set; } = [];
+    public List<Therapy> Therapies { get; set; }
 
     /// <summary>
     ///     Gets or sets the date when the patient record was created.

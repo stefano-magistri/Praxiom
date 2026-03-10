@@ -13,7 +13,7 @@
 @code {
     [Parameter] public int Id { get; set; }
 
-    private Patient? model;
+    private Patient model;
     private string FormattedPatientName => model == null
         ? string.Empty
         : FormatFullName(model.FirstName, model.LastName);
@@ -25,12 +25,6 @@
 
     private async Task SaveAsync()
     {
-        if (model is null)
-        {
-            navigationManager.NavigateTo("/");
-            return;
-        }
-
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             var therapies = await therapyRepository.GetAllAsync(Id);

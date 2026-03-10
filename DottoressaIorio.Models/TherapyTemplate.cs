@@ -17,13 +17,13 @@ public class TherapyTemplate : IDataHandler
     ///     Gets or sets the title of the therapy template.
     /// </summary>
     [Required(ErrorMessage = "Il titolo è richiesto.")]
-    public string Title { get; set; } = string.Empty;
+    public string Title { get; set; }
 
     /// <summary>
     ///     Gets or sets the description of the therapy template.
     /// </summary>
     [Required(ErrorMessage = "La descrizione è richiesta.")]
-    public string Description { get; set; } = string.Empty;
+    public string Description { get; set; }
 
     /// <summary>
     ///     Gets or sets the date when the therapy template was created.
