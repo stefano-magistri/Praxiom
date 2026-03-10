@@ -5,7 +5,7 @@ namespace DottoressaIorio.Services.Patients;
 
 public sealed class PatientCsvExportService
 {
-    private const string Separator = ",";
+    private const string Separator = ";";
     private static readonly string[] HeaderColumns =
     [
         "Nome",
@@ -20,7 +20,7 @@ public sealed class PatientCsvExportService
     public byte[] GenerateCsv(IList<Patient> patients)
     {
         var builder = new StringBuilder();
-        builder.AppendLine($"Export pazienti e terapie - {DateTime.Today:dd/MM/yyyy}");
+        builder.AppendLine($";;;;;;;Export pazienti e terapie - {DateTime.Today:dd/MM/yyyy}");
         builder.AppendLine();
         builder.AppendLine(string.Join(Separator, HeaderColumns));
 
@@ -51,7 +51,7 @@ public sealed class PatientCsvExportService
                     FormatDate(patient.DateOfBirth),
                     age?.ToString() ?? string.Empty,
                     FormatDate(therapy.CreatedDate),
-                    Escape(therapy.Description),
+                    Escape(RichTextFormatting.ToPlainText(therapy.Description)),
                     FormatDate(patient.CreatedDate));
                 builder.AppendLine();
             }
@@ -79,7 +79,7 @@ public sealed class PatientCsvExportService
         }
 
         var escapedValue = value.Replace("\"", "\"\"");
-        return escapedValue.IndexOfAny([',', '"', '\r', '\n']) >= 0
+        return escapedValue.IndexOfAny([';', '"', '\r', '\n']) >= 0
             ? $"\"{escapedValue}\""
             : escapedValue;
     }
