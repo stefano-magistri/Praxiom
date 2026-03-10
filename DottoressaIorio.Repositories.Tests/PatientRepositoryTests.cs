@@ -82,7 +82,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     [InlineData("jane", 1)]
     [InlineData("jane smith", 1)]
     [InlineData("smith jane", 1)]
-    public async Task SearchPatientsAsync_ShouldReturnExpectedResults(string searchTerm, int expectedCount)
+    public async Task SearchPatientsAsync_ShouldReturnExpectedResults(string? searchTerm, int expectedCount)
     {
         var result = await SearchPatientsAsync(searchTerm);
         Assert.Equal(expectedCount, result.Count);
