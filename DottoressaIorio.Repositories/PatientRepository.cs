@@ -48,7 +48,7 @@ public class PatientRepository : GenericRepository<Patient>
     /// </summary>
     /// <param name="searchTerm">The term to search for in patient names.</param>
     /// <returns>A list of patients matching the search criteria.</returns>
-    public async Task<IList<Patient>> SearchPatientsAsync(string searchTerm)
+    public async Task<IList<Patient>> SearchPatientsAsync(string? searchTerm)
     {
         return await ApplySearch(BaseQuery(), searchTerm).ToListAsync();
     }
@@ -58,7 +58,7 @@ public class PatientRepository : GenericRepository<Patient>
     /// </summary>
     /// <param name="searchTerm">The term to search for in patient names.</param>
     /// <returns>A list of matching patients with their therapies loaded.</returns>
-    public async Task<IList<Patient>> SearchPatientsWithTherapiesAsync(string searchTerm)
+    public async Task<IList<Patient>> SearchPatientsWithTherapiesAsync(string? searchTerm)
     {
         return await ApplySearch(BaseQuery(), searchTerm).ToListAsync();
     }
