@@ -30,7 +30,10 @@ jobs:
         run: dotnet build DottoressaIorio.slnx --configuration Release --no-restore
 
       - name: Run unit tests
-        run: dotnet test DottoressaIorio.slnx --configuration Release --no-build --verbosity normal --filter "Category!=Integration&Category!=E2E"
+        run: |
+          dotnet test DottoressaIorio.App.Tests/DottoressaIorio.App.Tests.csproj --configuration Release --no-build --verbosity normal
+          dotnet test DottoressaIorio.Repositories.Tests/DottoressaIorio.Repositories.Tests.csproj --configuration Release --no-build --verbosity normal
+          dotnet test DottoressaIorio.Services.Tests/DottoressaIorio.Services.Tests.csproj --configuration Release --no-build --verbosity normal --filter "Category!=Integration"
 
       - name: Install Playwright browsers
         run: pwsh DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
