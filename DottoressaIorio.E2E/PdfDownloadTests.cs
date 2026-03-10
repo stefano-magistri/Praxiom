@@ -24,7 +24,8 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
         var patientId = await CreatePatientAsync(page, firstName, lastName, email, dateOfBirth);
         await CreateTherapyAsync(page, patientId, therapyDescription);
 
-        await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
+            .ToBeVisibleAsync();
 
         var pdfUrlCompletion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         void OnResponse(object? _, IResponse response)

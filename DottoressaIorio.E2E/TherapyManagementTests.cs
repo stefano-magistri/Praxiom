@@ -28,10 +28,12 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await Expect(page.Locator("#TemplateId option").Filter(new LocatorFilterOptions { HasText = templateTitle }))
             .ToHaveCountAsync(1);
         await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = templateTitle });
-        await Expect(page.Locator("#Description")).ToHaveValueAsync(templateDescription);
+        await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(templateDescription);
 
         await SubmitCreateTherapyFormAsync(page);
-        await Expect(page.GetByText(templateDescription)).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
+            .ToBeVisibleAsync();
+        await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
     }
 
     [Fact]
@@ -55,7 +57,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await row.Locator("button").Nth(1).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica Terapia");
 
-        await FillBoundFieldAsync(page.Locator("#Description"), editedDescription);
+        await FillTherapyDescriptionAsync(page, editedDescription);
         await SubmitEditTherapyFormAsync(page);
         await Expect(page.GetByText(editedDescription)).ToBeVisibleAsync();
 
@@ -92,14 +94,16 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await Expect(page.Locator("#TemplateId option").Filter(new LocatorFilterOptions { HasText = templateTitle }))
             .ToHaveCountAsync(1);
         await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = templateTitle });
-        await Expect(page.Locator("#Description")).ToHaveValueAsync(templateDescription);
+        await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(templateDescription);
 
         await page.Locator("#TemplateId").SelectOptionAsync("0");
-        await Expect(page.Locator("#Description")).ToHaveValueAsync(string.Empty);
+        await Expect(page.GetByTestId("therapy-description-editor")).ToHaveTextAsync(string.Empty);
 
-        await FillBoundFieldAsync(page.Locator("#Description"), manualDescription);
+        await FillTherapyDescriptionAsync(page, manualDescription);
         await SubmitCreateTherapyFormAsync(page);
-        await Expect(page.GetByText(manualDescription)).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
+            .ToBeVisibleAsync();
+        await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
     }
 
     [Fact]

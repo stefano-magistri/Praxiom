@@ -895,6 +895,59 @@ main .patients-table-wrapper {
     height: min(38vh, 320px);
 }
 
+.minimal-rich-text-editor {
+    border: 1px solid #c8d8e3;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.minimal-rich-text-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    padding: .45rem;
+    border-bottom: 1px solid #dbe4ee;
+    background: #f7fafc;
+}
+
+.minimal-rich-text-toolbar.ql-toolbar.ql-snow,
+.minimal-rich-text-editor .ql-toolbar.ql-snow {
+    border: 0;
+}
+
+.minimal-rich-text-toolbar button {
+    border-radius: 8px;
+}
+
+.minimal-rich-text-surface,
+.minimal-rich-text-editor .ql-container.ql-snow {
+    border: 0;
+}
+
+.minimal-rich-text-editor .ql-container {
+    font-family: var(--font-body);
+    font-size: .98rem;
+}
+
+.minimal-rich-text-editor .ql-editor {
+    min-height: 240px;
+    max-height: 380px;
+    overflow-y: auto;
+    color: var(--ink);
+}
+
+.minimal-rich-text-editor .ql-editor p,
+.minimal-rich-text-editor .ql-editor li {
+    color: var(--ink);
+}
+
+.therapy-description-help {
+    margin-top: .45rem;
+    color: var(--ink-muted);
+    font-size: .88rem;
+}
+
 .therapy-editor-actions {
     display: flex;
     flex-wrap: wrap;

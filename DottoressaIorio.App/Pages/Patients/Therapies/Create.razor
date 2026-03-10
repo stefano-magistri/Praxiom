@@ -31,7 +31,12 @@
     <div class="row g-3">
         <div class="col-12">
             <label for="Description">Descrizione:</label>
-            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control"/>
+            <MinimalRichTextEditor InputId="Description"
+                                   AriaLabel="Descrizione terapia"
+                                   TestId="therapy-description-editor"
+                                   Value="@EditorDescription"
+                                   ValueChanged="OnDescriptionChanged"/>
+            <div class="therapy-description-help">Formato supportato nel PDF: paragrafi, grassetto, corsivo, elenco puntato e numerato.</div>
             <ValidationMessage For="@(() => model.Description)"/>
         </div>
     </div>
@@ -76,6 +81,7 @@
     private string FormattedPatientName => patient == null
         ? string.Empty
         : FormatFullName(patient.FirstName, patient.LastName);
+    private string EditorDescription => StringExtensions.ToEditorValue(model.Description);
 
     protected override async Task OnInitializedAsync()
     {
@@ -104,6 +110,7 @@
         try
         {
             model.PatientId = Id;
+            model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
             await repository.AddAsync(model);
             await unitOfWork.SaveChangesAsync();
             try
@@ -195,6 +202,12 @@
 
         return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
             fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
+    }
+
+    private Task OnDescriptionChanged(string value)
+    {
+        model.Description = value;
+        return Task.CompletedTask;
     }
 
 }
