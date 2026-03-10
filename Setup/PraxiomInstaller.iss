@@ -54,6 +54,9 @@ Name: "{group}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: 
 Name: "{autodesktop}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"; Tasks: desktopicon
 
 [Code]
+const
+  ExistingInstallUninstallRegKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{A53D1775-E8B2-4E8D-9FB3-52312AA1E7A4}_is1';
+
 var
   LicenseRequestPage: TInputQueryWizardPage;
   ConfigPage: TInputQueryWizardPage;
@@ -62,9 +65,13 @@ var
   RestoreFilePage: TInputFileWizardPage;
   LicenseRequestNoteLabel: TNewStaticText;
 
+function InitializeSetup(): Boolean; forward;
 function GetMachineId(Value: string): string; forward;
 function GetAllowedUsername(Value: string): string; forward;
 
+function TryGetExistingUninstaller(var UninstallCommand: string): Boolean; forward;
+function SplitCommandLine(const CommandLine: string; var FileName: string; var Parameters: string): Boolean; forward;
+function PromptForExistingInstallAction(const UninstallCommand: string): Boolean; forward;
 function IsValidServiceUrl(const Url: string): Boolean; forward;
 function ExtractPortFromUrl(const Url: string): Integer; forward;
 function IsPortInUse(PortValue: Integer): Boolean; forward;
@@ -72,6 +79,18 @@ function GetUninstallParams(Value: string): string; forward;
 function ShouldRestoreDatabase(): Boolean; forward;
 function GetRestoreBackupPath(): string; forward;
 function ValidateSelectedLicense(): Boolean; forward;
+
+function InitializeSetup(): Boolean;
+var
+  ExistingUninstaller: string;
+begin
+  Result := True;
+
+  if not TryGetExistingUninstaller(ExistingUninstaller) then
+    Exit;
+
+  Result := PromptForExistingInstallAction(ExistingUninstaller);
+end;
 
 procedure InitializeWizard;
 var
@@ -286,6 +305,87 @@ end;
 function GetRestoreBackupPath(): string;
 begin
   Result := Trim(RestoreFilePage.Values[0]);
+end;
+
+function TryGetExistingUninstaller(var UninstallCommand: string): Boolean;
+begin
+  Result :=
+    RegQueryStringValue(HKLM64, ExistingInstallUninstallRegKey, 'UninstallString', UninstallCommand) or
+    RegQueryStringValue(HKLM, ExistingInstallUninstallRegKey, 'UninstallString', UninstallCommand);
+  Result := Result and (Trim(UninstallCommand) <> '');
+end;
+
+function SplitCommandLine(const CommandLine: string; var FileName: string; var Parameters: string): Boolean;
+var
+  TrimmedCommand: string;
+  ClosingQuotePos: Integer;
+  SeparatorPos: Integer;
+begin
+  Result := False;
+  FileName := '';
+  Parameters := '';
+  TrimmedCommand := Trim(CommandLine);
+  if TrimmedCommand = '' then
+    Exit;
+
+  if TrimmedCommand[1] = '"' then
+  begin
+    ClosingQuotePos := Pos('"', Copy(TrimmedCommand, 2, MaxInt));
+    if ClosingQuotePos = 0 then
+      Exit;
+
+    ClosingQuotePos := ClosingQuotePos + 1;
+    FileName := Copy(TrimmedCommand, 2, ClosingQuotePos - 2);
+    Parameters := Trim(Copy(TrimmedCommand, ClosingQuotePos + 1, MaxInt));
+    Result := True;
+    Exit;
+  end;
+
+  SeparatorPos := Pos(' ', TrimmedCommand);
+  if SeparatorPos = 0 then
+  begin
+    FileName := TrimmedCommand;
+    Result := True;
+    Exit;
+  end;
+
+  FileName := Copy(TrimmedCommand, 1, SeparatorPos - 1);
+  Parameters := Trim(Copy(TrimmedCommand, SeparatorPos + 1, MaxInt));
+  Result := True;
+end;
+
+function PromptForExistingInstallAction(const UninstallCommand: string): Boolean;
+var
+  ButtonResult: Integer;
+  UninstallFileName: string;
+  UninstallParameters: string;
+  ExecResult: Integer;
+begin
+  ButtonResult := MsgBox(
+    'Praxiom risulta giá installato su questo computer.' + #13#10 + #13#10 +
+    'Per reinstallare il software devi prima disinstallare la versione esistente.' + #13#10 + #13#10 +
+    'Scegli "Si" per aprire il programma di disinstallazione esistente oppure "No" per annullare l''installazione.',
+    mbConfirmation,
+    MB_YESNO or MB_DEFBUTTON2
+  );
+
+  if ButtonResult = IDYES then
+  begin
+    if not SplitCommandLine(UninstallCommand, UninstallFileName, UninstallParameters) then
+      MsgBox(
+        'Installazione interrotta. Impossibile individuare il programma di disinstallazione esistente. Disinstalla manualmente il software da "Programmi e funzionalita" e riprova.',
+        mbError,
+        MB_OK
+      )
+    else if not Exec(UninstallFileName, UninstallParameters, '', SW_SHOWNORMAL, ewNoWait, ExecResult) then
+      MsgBox(
+        'Installazione interrotta. Impossibile avviare il programma di disinstallazione esistente. Disinstalla manualmente il software da "Programmi e funzionalita" e riprova.',
+        mbError,
+        MB_OK
+      );
+  end;
+
+  Result := False;
 end;
 
 function ValidateSelectedLicense(): Boolean;

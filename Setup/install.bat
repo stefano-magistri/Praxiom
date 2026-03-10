@@ -295,6 +295,11 @@ if errorlevel 1 (
 
 call :waitForServiceRunning
 if errorlevel 1 (
+    call :isServiceRunning
+    if not errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Service readiness wait reported failure, but service is running. Continuing installation.
+        goto serviceReady
+    )
     >> "%logFile%" echo [%date% %time%] ERROR: Service did not reach RUNNING state.
     call :logServiceDiagnostics
     > "%statusFile%" echo ERROR: Service not running after start.
@@ -303,6 +308,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
+:serviceReady
 if exist "%destinationFolder%\%app%" (
     >> "%logFile%" echo [%date% %time%] Configuring scheduled ONLINE backup task "%backupTaskName%" for user "%backupTaskUser%".
     schtasks /Delete /TN "%legacyBackupTaskName%" /F >> "%logFile%" 2>&1
@@ -358,17 +364,17 @@ if "!validatorExitCode!"=="2" (
 )
 if "!validatorExitCode!"=="3" (
     >> "%logFile%" echo [%date% %time%] ERROR: License does not match this machine.
-    echo Questa licenza non e valida per questo computer.
+    echo Questa licenza non é valida per questo computer.
     endlocal & exit /b 1
 )
 if "!validatorExitCode!"=="4" (
     >> "%logFile%" echo [%date% %time%] ERROR: License does not match the configured Windows user.
-    echo La licenza non e valida per questo utente Windows.
+    echo La licenza non é valida per questo utente Windows.
     endlocal & exit /b 1
 )
 if "!validatorExitCode!"=="6" (
     >> "%logFile%" echo [%date% %time%] ERROR: License file is invalid or corrupted.
-    echo Il file di licenza non e valido o e danneggiato.
+    echo Il file di licenza non é valido o é danneggiato.
     endlocal & exit /b 1
 )
 
@@ -423,9 +429,13 @@ if exist "%scriptDir%service-diagnostics.tmp.log" (
 )
 exit /b 0
 
+:isServiceRunning
+powershell -NoProfile -Command "$service = Get-Service -Name '%service%' -ErrorAction SilentlyContinue; if ($null -ne $service -and $service.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Running) { exit 0 } exit 1" >nul 2>&1
+exit /b %errorlevel%
+
 :waitForServiceRunning
-for /L %%I in (1,1,20) do (
-    sc query "%service%" | findstr /R /C:"STATE[ ]*:[ ]*[0-9][0-9]*[ ]*RUNNING" >nul
+for /L %%I in (1,1,60) do (
+    call :isServiceRunning
     if not errorlevel 1 exit /b 0
     timeout /t 1 /nobreak >nul
 )
