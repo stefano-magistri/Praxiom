@@ -48,4 +48,17 @@ public class TherapyDraftServiceTests
         Assert.Equal("<p>Prima terapia</p><p>test0 test0</p>", normalized);
         Assert.Equal("Prima terapia\ntest0 test0", RichTextFormatting.ToPlainText(normalized));
     }
+
+    [Fact]
+    public void ApplyTemplate_ShouldConvertLegacyPlainTextWhenAppendingHtmlTemplate()
+    {
+        const string existingDescription = "Prima terapia";
+        const string templateDescription = "<p><strong>Mattina</strong></p>";
+
+        var result = TherapyDraftService.ApplyTemplate(existingDescription, templateDescription, TherapyTemplateApplyMode.Append);
+        var normalized = RichTextFormatting.NormalizeStoredValue(result);
+
+        Assert.Equal("<p>Prima terapia</p><p><strong>Mattina</strong></p>", normalized);
+        Assert.Equal("Prima terapia\nMattina", RichTextFormatting.ToPlainText(normalized));
+    }
 }

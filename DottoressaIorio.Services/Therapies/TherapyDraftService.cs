@@ -24,7 +24,7 @@ public static class TherapyDraftService
             TherapyTemplateApplyMode.Replace => normalizedTemplate,
             TherapyTemplateApplyMode.Append when string.IsNullOrWhiteSpace(normalizedExisting) => normalizedTemplate,
             TherapyTemplateApplyMode.Append when string.IsNullOrWhiteSpace(normalizedTemplate) => normalizedExisting,
-            TherapyTemplateApplyMode.Append => $"{normalizedExisting}{Environment.NewLine}{Environment.NewLine}{normalizedTemplate}",
+            TherapyTemplateApplyMode.Append => $"{RichTextFormatting.ToSupportedHtml(normalizedExisting)}{RichTextFormatting.ToSupportedHtml(normalizedTemplate)}",
             _ => normalizedExisting
         };
     }
