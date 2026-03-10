@@ -14,7 +14,7 @@ public static class TherapyExtensions
     /// <returns>The therapy description formatted as HTML.</returns>
     public static string GetHtmlDescription(this Therapy therapy)
     {
-        return StringExtensions.GetHtml(therapy.Description);
+        return RichTextFormatting.ToSupportedHtml(therapy.Description);
     }
 }
 
@@ -58,5 +58,20 @@ public static class StringExtensions
         res = res.Replace("<p></p>", "<p><br /></p>");
 
         return res;
+    }
+
+    public static string ToPlainText(string? value)
+    {
+        return RichTextFormatting.ToPlainText(value);
+    }
+
+    public static string NormalizeStoredRichText(string? value)
+    {
+        return RichTextFormatting.NormalizeStoredValue(value);
+    }
+
+    public static string ToEditorValue(string? value)
+    {
+        return RichTextFormatting.ToEditorValue(value);
     }
 }

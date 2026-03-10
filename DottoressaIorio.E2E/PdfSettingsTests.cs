@@ -81,11 +81,11 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
         {
             var pdfUrl = await pdfUrlCompletion.Task.WaitAsync(TimeSpan.FromSeconds(30));
             var pdfBytes = await DownloadPdfAsync(pdfUrl);
-            var pdfText = ExtractPdfText(pdfBytes);
+            var pdfText = NormalizePdfTextForAssertions(ExtractPdfText(pdfBytes));
 
-            Assert.Contains(doctorName, pdfText, StringComparison.Ordinal);
-            Assert.Contains(phone, pdfText, StringComparison.Ordinal);
-            Assert.Contains(email, pdfText, StringComparison.Ordinal);
+            Assert.Contains(NormalizePdfTextForAssertions(doctorName), pdfText, StringComparison.Ordinal);
+            Assert.Contains(NormalizePdfTextForAssertions(phone), pdfText, StringComparison.Ordinal);
+            Assert.Contains(NormalizePdfTextForAssertions(email), pdfText, StringComparison.Ordinal);
         }
         finally
         {
@@ -109,5 +109,10 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
         using var stream = new MemoryStream(pdfBytes);
         using var document = PdfDocument.Open(stream);
         return string.Join(Environment.NewLine, document.GetPages().Select(page => page.Text));
+    }
+
+    private static string NormalizePdfTextForAssertions(string value)
+    {
+        return value.Replace("ﬀ", "ff", StringComparison.Ordinal);
     }
 }

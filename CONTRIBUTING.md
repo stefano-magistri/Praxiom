@@ -36,7 +36,7 @@ Examples:
 
 ### Version Discipline
 
-This repository uses release branches (for example `release/version-2.0.0`).
+This repository uses release branches (for example `release/Praxiom`).
 
 When preparing changes, explicitly assess whether the work impacts:
 

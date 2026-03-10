@@ -65,3 +65,79 @@ window.jsCloseNavbar = () => {
         bootstrapCollapse.hide();
     }
 }
+
+window.dottoressaRichText = (() => {
+    const editors = {};
+
+    const looksLikeHtml = (value) => /<[a-z!/][^>]*>/i.test(value || '');
+
+    const setEditorValue = (quill, value) => {
+        quill.setContents([]);
+        if (!value) {
+            return;
+        }
+
+        if (looksLikeHtml(value)) {
+            quill.clipboard.dangerouslyPasteHTML(value);
+            return;
+        }
+
+        quill.setText(value);
+    };
+
+    const getSemanticHtml = (quill) => {
+        if (!quill || !quill.getText || !quill.getSemanticHTML) {
+            return '';
+        }
+
+        if (quill.getText().trim().length === 0) {
+            return '';
+        }
+
+        return quill.getSemanticHTML().trim();
+    };
+
+    return {
+        init: (editorId, toolbarId, dotNetRef, initialValue) => {
+            const editorElement = document.getElementById(editorId);
+            if (!editorElement) {
+                return;
+            }
+
+            const quill = new Quill(editorElement, {
+                theme: 'snow',
+                placeholder: 'Scrivi la terapia...',
+                modules: {
+                    toolbar: `#${toolbarId}`
+                }
+            });
+
+            setEditorValue(quill, initialValue);
+            quill.on('text-change', (_, __, source) => {
+                if (source !== 'user') {
+                    return;
+                }
+
+                dotNetRef.invokeMethodAsync('OnHtmlChanged', getSemanticHtml(quill));
+            });
+
+            editors[editorId] = { quill, dotNetRef };
+        },
+        setValue: (editorId, value) => {
+            const instance = editors[editorId];
+            if (!instance) {
+                return;
+            }
+
+            setEditorValue(instance.quill, value);
+        },
+        dispose: (editorId) => {
+            const instance = editors[editorId];
+            if (!instance) {
+                return;
+            }
+
+            delete editors[editorId];
+        }
+    };
+})();

@@ -19,7 +19,12 @@
     <div class="row g-3">
         <div class="col-12">
             <label for="Description">Descrizione</label>
-            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control"/>
+            <MinimalRichTextEditor InputId="TemplateDescription"
+                                   AriaLabel="Descrizione terapia precompilata"
+                                   TestId="template-description-editor"
+                                   Value="@EditorDescription"
+                                   ValueChanged="OnDescriptionChanged"/>
+            <div class="therapy-description-help">Formato supportato nel PDF: paragrafi, grassetto, corsivo, elenco puntato e numerato.</div>
             <ValidationMessage For="@(() => model.Description)"/>
         </div>
     </div>
@@ -31,6 +36,7 @@
 @code {
     private readonly TherapyTemplate model = new();
     private string warningMessage = "";
+    private string EditorDescription => StringExtensions.ToEditorValue(model.Description);
 
     private async Task SaveAsync()
     {
@@ -42,6 +48,7 @@
 
         try
         {
+            model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
             await repository.AddAsync(model);
             await unitOfWork.SaveChangesAsync();
             try
@@ -59,6 +66,12 @@
         {
             warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
         }
+    }
+
+    private Task OnDescriptionChanged(string value)
+    {
+        model.Description = value;
+        return Task.CompletedTask;
     }
 
 }

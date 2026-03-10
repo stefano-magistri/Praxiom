@@ -13,7 +13,9 @@ public class PdfHtmlBuilder
     <style>
         body {{ font-family: Calibri, sans-serif; }}
         .h2 {{ font-size: 16px; font-weight: bold; margin: 0 0 20px 0; }}
-        p {{ font-size: 14px; margin: 0; }}
+        p, ul, ol {{ font-size: 14px; margin: 0 0 8px 0; }}
+        ul, ol {{ padding-left: 20px; }}
+        li {{ margin: 0 0 4px 0; }}
     </style>
 </head>
 <body>

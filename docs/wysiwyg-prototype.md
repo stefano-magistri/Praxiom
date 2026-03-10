@@ -1,0 +1,29 @@
+# WYSIWYG prototype decision
+
+- Trial surface: patient therapy description only.
+- Chosen editor: Quill 2 via a direct JSInterop wrapper and locally hosted assets.
+- Why: free, small enough for one screen, semantic HTML output via `getSemanticHTML()`, and less lock-in than adding a Blazor wrapper package for a single prototype.
+- Compared options:
+  - `Blazored.TextEditor`: quickest Quill wrapper, but unnecessary wrapper/API surface for this trial and historically coupled to older Quill packaging.
+  - Direct Quill JSInterop: smallest long-term integration for one field, keeps toolbar/features under local control, works offline once assets are hosted in `wwwroot`.
+  - TinyMCE: capable, but heavier for this use case and not needed for the narrow formatting subset.
+- Stored value: existing `string Description` field, no schema change.
+- Supported subset:
+  - paragraphs
+  - line breaks
+  - bold/strong
+  - italic/emphasis
+  - unordered list items
+  - ordered list items
+- Intentionally not supported:
+  - images
+  - tables
+  - links
+  - colors
+  - fonts
+  - alignment
+  - arbitrary pasted HTML
+- PDF compatibility rule: server-side normalization strips unsupported markup before PDF generation and plain-text display/search paths.
+- Main risks:
+  - HTML storage remains a future migration risk if richer formatting is requested later.
+  - Browser editor HTML and PDF HTML can diverge if the supported subset expands without matching server normalization/tests.

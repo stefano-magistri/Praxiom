@@ -29,6 +29,28 @@ public class PdfHtmlBuilderTests
     }
 
     [Fact]
+    public void BuildHtml_ShouldRenderOnlySupportedDescriptionMarkup()
+    {
+        var builder = new PdfHtmlBuilder();
+        var therapy = new Therapy
+        {
+            Patient = new Patient
+            {
+                Title = "Dr.",
+                FirstName = "Jane",
+                LastName = "Doe"
+            },
+            Description = "<p><strong>Mattina</strong></p><ul><li>Acqua</li></ul><script>alert('x')</script>"
+        };
+
+        var html = builder.BuildHtml(therapy);
+
+        Assert.Contains("<strong>Mattina</strong>", html, StringComparison.Ordinal);
+        Assert.Contains("<ul><li>Acqua</li></ul>", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("<script>", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void BuildHeaderHtml_ShouldReplacePlaceholders()
     {
         var builder = new PdfHtmlBuilder();

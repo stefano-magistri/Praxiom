@@ -68,7 +68,7 @@ else
                         {
                             <tr>
                                 <td>@t.CreatedDate.ToString("dd/MM/yyyy")</td>
-                                <td class="text-truncate truncate-small">@t.Description</td>
+                                <td class="text-truncate truncate-small">@GetDescriptionPreview(t.Description)</td>
                                 <td class="text-end">
                                     <div class="table-row-actions">
                                         <a class="btn btn-outline-primary"
@@ -213,7 +213,7 @@ else
         var term = TherapySearchTerm.Trim();
         filteredTherapies = allTherapies
             .Where(t =>
-                (!string.IsNullOrWhiteSpace(t.Description) && t.Description.Contains(term, StringComparison.CurrentCultureIgnoreCase)) ||
+                StringExtensions.ToPlainText(t.Description).Contains(term, StringComparison.CurrentCultureIgnoreCase) ||
                 t.CreatedDate.ToString("dd/MM/yyyy").Contains(term, StringComparison.CurrentCultureIgnoreCase))
             .ToList();
 
@@ -241,5 +241,10 @@ else
         }
 
         return string.IsNullOrWhiteSpace(fullName) ? title : $"{title} {fullName}";
+    }
+
+    private static string GetDescriptionPreview(string? description)
+    {
+        return StringExtensions.ToPlainText(description);
     }
 }

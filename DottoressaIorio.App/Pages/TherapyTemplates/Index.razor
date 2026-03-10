@@ -55,7 +55,7 @@
                     {
                         <tr>
                             <td class="text-truncate truncate-small">@FormatTitleCase(template.Title)</td>
-                            <td class="text-truncate truncate-big">@template.Description</td>
+                            <td class="text-truncate truncate-big">@GetDescriptionPreview(template.Description)</td>
                             <td class="text-end">
                                 <div class="table-row-actions">
                                     <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEdit(template.Id)" IconClass="oi oi-pencil"></ActionButton>
@@ -145,7 +145,7 @@
         filteredTemplates = therapyTemplates
             .Where(t =>
                 (!string.IsNullOrWhiteSpace(t.Title) && t.Title.Contains(term, StringComparison.CurrentCultureIgnoreCase)) ||
-                (!string.IsNullOrWhiteSpace(t.Description) && t.Description.Contains(term, StringComparison.CurrentCultureIgnoreCase)))
+                StringExtensions.ToPlainText(t.Description).Contains(term, StringComparison.CurrentCultureIgnoreCase))
             .ToList();
 
         return Task.CompletedTask;
@@ -170,6 +170,11 @@
 
         return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
             value.ToLower(System.Globalization.CultureInfo.CurrentCulture));
+    }
+
+    private static string GetDescriptionPreview(string? description)
+    {
+        return StringExtensions.ToPlainText(description);
     }
 
 }

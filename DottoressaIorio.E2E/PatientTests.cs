@@ -141,7 +141,9 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 
         var patientId = await CreatePatientAsync(page, firstName, lastName, email, "1981-01-01");
         await CreateTherapyAsync(page, patientId, therapyDescription);
-        await Expect(page.GetByText(therapyDescription)).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
+            .ToBeVisibleAsync();
+        await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
 
         await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
@@ -171,8 +173,9 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await CreateTherapyAsync(page, patientId, therapyDescription1);
         await CreateTherapyAsync(page, patientId, therapyDescription2);
 
-        await Expect(page.GetByText(therapyDescription1)).ToBeVisibleAsync();
-        await Expect(page.GetByText(therapyDescription2)).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
+            .ToBeVisibleAsync();
+        await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(2);
 
         await page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Paziente");
