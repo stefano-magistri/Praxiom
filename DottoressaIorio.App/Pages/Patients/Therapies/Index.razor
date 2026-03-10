@@ -71,7 +71,19 @@ else
                                 <td class="text-truncate truncate-small">@t.Description</td>
                                 <td class="text-end">
                                     <div class="table-row-actions">
-                                        <ActionButton ButtonClass="primary" ButtonText="PDF" OnClick="() => PrintAsync(t.TherapyId)" IconClass="oi oi-data-transfer-download"></ActionButton>
+                                        <a class="btn btn-outline-primary"
+                                           href="@($"/patient/{PatientId}/create-therapy?duplicateFrom={t.TherapyId}")"
+                                           title="Duplica terapia"
+                                           aria-label="Duplica terapia">
+                                            <span class="oi oi-layers" aria-hidden="true"></span>
+                                        </a>
+                                        <button type="button"
+                                                class="btn btn-primary"
+                                                title="Scarica PDF"
+                                                aria-label="Scarica PDF"
+                                                @onclick="() => PrintAsync(t.TherapyId)">
+                                            <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
+                                        </button>
                                         <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditTherapy(t.TherapyId)" IconClass="oi oi-pencil"></ActionButton>
                                         <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDeleteTherapy(t.TherapyId)" IconClass="oi oi-trash"></ActionButton>
                                     </div>
