@@ -2,7 +2,7 @@ using Microsoft.Data.Sqlite;
 
 namespace DottoressaIorio.Services.SqlLiteEncryption;
 
-public class SqlLiteDbEncryptionService(string key, string? databaseRootPath = null)
+public class SqlLiteDbEncryptionService(string? key, string? databaseRootPath = null)
 {
     private const string EncryptedDbPath = "app.db";
     private const string UnencryptedDbPath = "app_unencrypted.db";

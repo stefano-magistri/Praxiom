@@ -44,7 +44,7 @@ public static class StringExtensions
     /// </summary>
     /// <param name="value">The string to convert to HTML.</param>
     /// <returns>The input string formatted as HTML paragraphs.</returns>
-    public static string GetHtml(string value)
+    public static string GetHtml(string? value)
     {
         if (string.IsNullOrEmpty(value))
             return string.Empty;
