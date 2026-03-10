@@ -58,10 +58,9 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
             new PageGotoOptions { WaitUntil = WaitUntilState.Load });
         await WaitForInteractiveReadyAsync(page);
         var titleInput = page.Locator("#Title");
-        var descriptionInput = page.Locator("#Description");
         await Expect(titleInput).ToBeVisibleAsync();
         await FillBoundFieldAsync(titleInput, title);
-        await FillBoundFieldAsync(descriptionInput, description);
+        await FillTemplateDescriptionAsync(page, description);
         await SubmitTemplateFormAsync(page);
     }
 
@@ -79,20 +78,37 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
         var editor = page.GetByTestId("therapy-description-editor");
         if (await editor.CountAsync() > 0 && await editor.First.IsVisibleAsync())
         {
-            await editor.First.ClickAsync();
-            await page.Keyboard.PressAsync("Control+A");
-            await page.Keyboard.PressAsync("Backspace");
-            if (!string.IsNullOrEmpty(value))
-            {
-                await page.Keyboard.InsertTextAsync(value);
-            }
-
-            await page.Keyboard.PressAsync("Tab");
-            await Task.Delay(50);
+            await FillRichTextEditorAsync(page, editor.First, value);
             return;
         }
 
         await FillBoundFieldAsync(page.Locator("#Description"), value);
+    }
+
+    protected static async Task FillTemplateDescriptionAsync(IPage page, string value)
+    {
+        var editor = page.GetByTestId("template-description-editor");
+        if (await editor.CountAsync() > 0 && await editor.First.IsVisibleAsync())
+        {
+            await FillRichTextEditorAsync(page, editor.First, value);
+            return;
+        }
+
+        await FillBoundFieldAsync(page.Locator("#Description"), value);
+    }
+
+    private static async Task FillRichTextEditorAsync(IPage page, ILocator editor, string value)
+    {
+        await editor.ClickAsync();
+        await page.Keyboard.PressAsync("Control+A");
+        await page.Keyboard.PressAsync("Backspace");
+        if (!string.IsNullOrEmpty(value))
+        {
+            await page.Keyboard.InsertTextAsync(value);
+        }
+
+        await page.Keyboard.PressAsync("Tab");
+        await Task.Delay(50);
     }
 
     protected static async Task FillBoundFieldAsync(ILocator locator, string value)

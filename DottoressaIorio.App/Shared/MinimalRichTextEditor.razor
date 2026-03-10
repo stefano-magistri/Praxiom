@@ -26,6 +26,7 @@
     private readonly string ToolbarId = $"toolbar_{Guid.NewGuid():N}";
     private DotNetObjectReference<MinimalRichTextEditor>? _reference;
     private bool _initialized;
+    private bool _suppressNextParameterSync;
     private string _lastSyncedValue = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -49,6 +50,13 @@
             return;
         }
 
+        if (_suppressNextParameterSync)
+        {
+            _lastSyncedValue = nextValue;
+            _suppressNextParameterSync = false;
+            return;
+        }
+
         _lastSyncedValue = nextValue;
         await JsRuntime.InvokeVoidAsync("dottoressaRichText.setValue", EditorId, nextValue);
     }
@@ -57,6 +65,7 @@
     public async Task OnHtmlChanged(string value)
     {
         _lastSyncedValue = value ?? string.Empty;
+        _suppressNextParameterSync = true;
         await ValueChanged.InvokeAsync(_lastSyncedValue);
     }
 

@@ -24,7 +24,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
 
         await page.GetByTestId("create-therapy-template-page-link").ClickAsync();
         await FillBoundFieldAsync(page.Locator("#Title"), addedTitle);
-        await FillBoundFieldAsync(page.Locator("#Description"), addedDescription);
+        await FillTemplateDescriptionAsync(page, addedDescription);
         await SubmitTemplateFormAsync(page);
 
         await FilterTemplatesAsync(page, addedTitle);
@@ -35,7 +35,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica Terapia Precompilata");
 
         await FillBoundFieldAsync(page.Locator("#Title"), editedTitle);
-        await FillBoundFieldAsync(page.Locator("#Description"), editedDescription);
+        await FillTemplateDescriptionAsync(page, editedDescription);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
 
@@ -68,7 +68,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
 
         await page.GetByTestId("create-therapy-template-page-link").ClickAsync();
         await FillBoundFieldAsync(page.Locator("#Title"), title);
-        await FillBoundFieldAsync(page.Locator("#Description"), description);
+        await FillTemplateDescriptionAsync(page, description);
         await SubmitTemplateFormAsync(page);
 
         await FilterTemplatesAsync(page, title);
@@ -88,7 +88,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         var description = $"Template description {seed}";
 
         await FillBoundFieldAsync(page.Locator("#Title"), title);
-        await FillBoundFieldAsync(page.Locator("#Description"), description);
+        await FillTemplateDescriptionAsync(page, description);
         await SubmitTemplateFormAsync(page);
 
         await page.GotoAsync("/create-therapy-template", new PageGotoOptions
@@ -97,7 +97,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         });
         await WaitForInteractiveReadyAsync(page);
         await FillBoundFieldAsync(page.Locator("#Title"), title);
-        await FillBoundFieldAsync(page.Locator("#Description"), $"Another description {seed}");
+        await FillTemplateDescriptionAsync(page, $"Another description {seed}");
         await SubmitTemplateFormExpectDuplicateAsync(page);
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Aggiungi Terapia Precompilata");
