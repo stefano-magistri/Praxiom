@@ -45,7 +45,7 @@
     protected override async Task OnParametersSetAsync()
     {
         var nextValue = Value ?? string.Empty;
-        if (!_initialized || string.Equals(nextValue, _lastSyncedValue, StringComparison.Ordinal))
+        if (!_initialized)
         {
             return;
         }
@@ -54,6 +54,11 @@
         {
             _lastSyncedValue = nextValue;
             _suppressNextParameterSync = false;
+            return;
+        }
+
+        if (string.Equals(nextValue, _lastSyncedValue, StringComparison.Ordinal))
+        {
             return;
         }
 

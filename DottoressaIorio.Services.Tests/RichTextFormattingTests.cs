@@ -91,4 +91,20 @@ public class RichTextFormattingTests
 
         Assert.Equal("<p>Legacy text</p>", html);
     }
+
+    [Fact]
+    public void ToSupportedHtml_ShouldPreserveSpacesBetweenInlineElements()
+    {
+        var html = RichTextFormatting.ToSupportedHtml("<p><strong>Mattina</strong> <em>sera</em></p>");
+
+        Assert.Equal("<p><strong>Mattina</strong> <em>sera</em></p>", html);
+    }
+
+    [Fact]
+    public void ToPlainText_ShouldPreserveSpacesBetweenInlineElements()
+    {
+        var text = RichTextFormatting.ToPlainText("<p><strong>Mattina</strong> <em>sera</em></p>");
+
+        Assert.Equal("Mattina sera", text);
+    }
 }

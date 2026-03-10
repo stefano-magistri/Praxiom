@@ -321,7 +321,7 @@ public static class RichTextFormatting
     {
         return node.NodeType == HtmlNodeType.Comment
                || node.NodeType == HtmlNodeType.Document
-               || string.IsNullOrWhiteSpace(node.InnerHtml) && node.Name.Equals("#text", StringComparison.OrdinalIgnoreCase);
+               || string.IsNullOrEmpty(node.InnerHtml) && node.Name.Equals("#text", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string DecodeTextContent(string value)
