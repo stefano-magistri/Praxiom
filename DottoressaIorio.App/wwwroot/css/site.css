@@ -882,10 +882,6 @@ main .patients-table-wrapper {
     background: #fff;
 }
 
-.therapy-editor-shell {
-    max-width: 980px;
-}
-
 .therapy-editor-shell .patient-context-card {
     margin-bottom: 1rem !important;
 }
