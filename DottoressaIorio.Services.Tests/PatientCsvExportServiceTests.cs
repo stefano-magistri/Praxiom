@@ -298,7 +298,47 @@ public class PatientCsvExportServiceTests
 
     private static string[] SplitLines(string csv)
     {
-        return csv.TrimEnd().TrimStart('\uFEFF').Split(Environment.NewLine);
+        var normalized = csv.TrimEnd().TrimStart('\uFEFF');
+        var lines = new List<string>();
+        var currentLine = new StringBuilder();
+        var insideQuotes = false;
+
+        for (var i = 0; i < normalized.Length; i++)
+        {
+            var ch = normalized[i];
+
+            if (ch == '"')
+            {
+                if (insideQuotes && i + 1 < normalized.Length && normalized[i + 1] == '"')
+                {
+                    currentLine.Append("\"\"");
+                    i++;
+                    continue;
+                }
+
+                insideQuotes = !insideQuotes;
+                currentLine.Append(ch);
+                continue;
+            }
+
+            if (!insideQuotes && (ch == '\r' || ch == '\n'))
+            {
+                lines.Add(currentLine.ToString());
+                currentLine.Clear();
+
+                if (ch == '\r' && i + 1 < normalized.Length && normalized[i + 1] == '\n')
+                {
+                    i++;
+                }
+
+                continue;
+            }
+
+            currentLine.Append(ch);
+        }
+
+        lines.Add(currentLine.ToString());
+        return [.. lines];
     }
 
     private static Patient CreatePatient(
