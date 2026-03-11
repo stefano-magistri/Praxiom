@@ -15,28 +15,41 @@ $appRoot = "C:\ProgramData\Praxiom"
 $localBackupRoot = Join-Path $appRoot "_db_backup"
 $retentionCount = 360
 
-function Get-ConfiguredEncryptionKey {
+function Get-StoredEncryptionKey {
     param(
         [Parameter(Mandatory = $true)]
         [string]$AppRoot
     )
 
-    $configPaths = @(
-        (Join-Path $AppRoot "appsettings.json"),
-        (Join-Path $AppRoot "appsettings.Production.json")
-    )
+    $secretPath = Join-Path $AppRoot "secrets\encryption-key.json"
+    if (-not (Test-Path -Path $secretPath -PathType Leaf)) {
+        return $null
+    }
 
-    $encryptionKey = $null
-    foreach ($configPath in $configPaths) {
-        if (-not (Test-Path -Path $configPath -PathType Leaf)) {
-            continue
-        }
+    $config = Get-Content -Raw -Path $secretPath | ConvertFrom-Json
+    $property = $config.PSObject.Properties["EncryptionKey"]
+    if ($null -ne $property -and -not [string]::IsNullOrWhiteSpace($property.Value)) {
+        return $property.Value
+    }
 
-        $config = Get-Content -Raw -Path $configPath | ConvertFrom-Json
-        $property = $config.PSObject.Properties["EncryptionKey"]
-        if ($null -ne $property) {
-            $encryptionKey = $property.Value
-        }
+    $protectionProperty = $config.PSObject.Properties["Protection"]
+    $payloadProperty = $config.PSObject.Properties["Payload"]
+    if ($null -eq $protectionProperty -or $null -eq $payloadProperty) {
+        return $null
+    }
+
+    if ($protectionProperty.Value -ne "DPAPI-LocalMachine" -or [string]::IsNullOrWhiteSpace($payloadProperty.Value)) {
+        return $null
+    }
+
+    $protectedBytes = [Convert]::FromBase64String($payloadProperty.Value)
+    $rawBytes = [System.Security.Cryptography.ProtectedData]::Unprotect(
+        $protectedBytes,
+        $null,
+        [System.Security.Cryptography.DataProtectionScope]::LocalMachine)
+    $encryptionKey = [System.Text.Encoding]::UTF8.GetString($rawBytes)
+    if ([string]::IsNullOrWhiteSpace($encryptionKey)) {
+        return $null
     }
 
     return $encryptionKey
@@ -50,7 +63,7 @@ function Get-DatabasePath {
 
     $encryptedPath = Join-Path $AppRoot "app.db"
     $unencryptedPath = Join-Path $AppRoot "app_unencrypted.db"
-    $configuredEncryptionKey = Get-ConfiguredEncryptionKey -AppRoot $AppRoot
+    $configuredEncryptionKey = Get-StoredEncryptionKey -AppRoot $AppRoot
     $preferredPath = if ([string]::IsNullOrWhiteSpace($configuredEncryptionKey)) {
         $unencryptedPath
     }

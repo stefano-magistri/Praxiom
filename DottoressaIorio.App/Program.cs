@@ -28,7 +28,8 @@ try
 
     if (isWindowsService) builder.Host.UseWindowsService();
 
-    var encryptionKey = configuration["EncryptionKey"]!;
+    var encryptionKeyResolver = new EncryptionKeyResolver(configuration, builder.Environment.EnvironmentName);
+    var encryptionKey = encryptionKeyResolver.Resolve();
     var allowedUsername = configuration["Authentication:AllowedUsername"]!;
 
     // Read the "UseNegotiate" setting from the configuration file

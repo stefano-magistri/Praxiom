@@ -28,7 +28,7 @@ Setup\build-installer.bat
 - Single-user workflow optimized for one doctor on one Windows machine.
 - Fast CRUD and search flows for patients, therapies, and therapy templates.
 - Therapy PDF generation through Playwright Chromium for consistent printing output.
-- Optional encrypted SQLite storage (`EncryptionKey`) with unencrypted fallback.
+- Optional encrypted SQLite storage with installed local key store and Development config fallback.
 - Windows service + installer scripts for repeatable deployment and upgrades.
 - Local signed license file bound to one Windows machine and one Windows user.
 - Soft-delete model to preserve records while keeping UI lists clean.
@@ -164,7 +164,6 @@ Relevant keys:
 
 ```json
 {
-  "EncryptionKey": "<key>",
   "Authentication": {
     "UseNegotiate": true,
     "AllowedUsername": "DOMAIN\\username"
@@ -209,8 +208,12 @@ Prototype limitations:
 ## Data and Storage
 
 - Database files are created under app base directory (`AppContext.BaseDirectory`).
-- With `EncryptionKey`: app uses `app.db` and applies `PRAGMA key`.
-- Without `EncryptionKey`: app uses `app_unencrypted.db`.
+- Installed encryption key path: `C:\ProgramData\Praxiom\secrets\encryption-key.json`.
+- Installer writes the key there during setup, wrapped with Windows DPAPI LocalMachine protection.
+- Production/non-Development reads the key from that local file and fails at startup if the file is missing, unreadable, or empty.
+- Development still falls back to `EncryptionKey` in local config (for example `appsettings.Development.json`) if the local file is absent.
+- With an encryption key: app uses `app.db` and applies `PRAGMA key`.
+- Without an encryption key: app uses `app_unencrypted.db`.
 - Soft-delete is used for entities (`Deleted=true`) with global EF filters.
 - `TherapyTemplate.Title` is unique among non-deleted rows.
 

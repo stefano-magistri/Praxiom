@@ -2,6 +2,9 @@
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
+#ifndef EncryptionKey
+  #error EncryptionKey define is required.
+#endif
 
 [Setup]
 AppId={{A53D1775-E8B2-4E8D-9FB3-52312AA1E7A4}
@@ -277,7 +280,8 @@ begin
   Result :=
     '--silent --allowed-username ' + AddQuotes(GetAllowedUsername('')) +
     ' --app-url ' + AddQuotes(ConfigPage.Values[0]) +
-    ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]);
+    ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]) +
+    ' --encryption-key ' + AddQuotes('{#EncryptionKey}');
   if ShouldRestoreDatabase() then
     Result := Result + ' --skip-auto-db-restore';
 end;
