@@ -26,33 +26,28 @@ function Get-StoredEncryptionKey {
         return $null
     }
 
-    $config = Get-Content -Raw -Path $secretPath | ConvertFrom-Json
-    $property = $config.PSObject.Properties["EncryptionKey"]
-    if ($null -ne $property -and -not [string]::IsNullOrWhiteSpace($property.Value)) {
-        return $property.Value
-    }
-
-    $protectionProperty = $config.PSObject.Properties["Protection"]
-    $payloadProperty = $config.PSObject.Properties["Payload"]
-    if ($null -eq $protectionProperty -or $null -eq $payloadProperty) {
+    $helperPath = Join-Path $AppRoot "_setup\setup-helper.exe"
+    if (-not (Test-Path -Path $helperPath -PathType Leaf)) {
         return $null
     }
 
-    if ($protectionProperty.Value -ne "DPAPI-LocalMachine" -or [string]::IsNullOrWhiteSpace($payloadProperty.Value)) {
-        return $null
-    }
+    $tempFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $process = Start-Process -FilePath $helperPath -ArgumentList @("read-secret", "--secret-file", $secretPath) -Wait -PassThru -NoNewWindow -RedirectStandardOutput $tempFile
+        if ($process.ExitCode -ne 0) {
+            return $null
+        }
 
-    $protectedBytes = [Convert]::FromBase64String($payloadProperty.Value)
-    $rawBytes = [System.Security.Cryptography.ProtectedData]::Unprotect(
-        $protectedBytes,
-        $null,
-        [System.Security.Cryptography.DataProtectionScope]::LocalMachine)
-    $encryptionKey = [System.Text.Encoding]::UTF8.GetString($rawBytes)
-    if ([string]::IsNullOrWhiteSpace($encryptionKey)) {
-        return $null
-    }
+        $encryptionKey = Get-Content -Raw -Path $tempFile
+        if ([string]::IsNullOrWhiteSpace($encryptionKey)) {
+            return $null
+        }
 
-    return $encryptionKey
+        return $encryptionKey.Trim()
+    }
+    finally {
+        Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Get-DatabasePath {

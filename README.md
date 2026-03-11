@@ -209,7 +209,7 @@ Prototype limitations:
 
 - Database files are created under app base directory (`AppContext.BaseDirectory`).
 - Installed encryption key path: `C:\ProgramData\Praxiom\secrets\encryption-key.json`.
-- Installer writes the key there during setup, wrapped with Windows DPAPI LocalMachine protection.
+- Installer writes the key there during setup using Windows DPAPI LocalMachine protection via the bundled setup helper.
 - Production/non-Development reads the key from that local file and fails at startup if the file is missing, unreadable, or empty.
 - Development still falls back to `EncryptionKey` in local config (for example `appsettings.Development.json`) if the local file is absent.
 - With an encryption key: app uses `app.db` and applies `PRAGMA key`.

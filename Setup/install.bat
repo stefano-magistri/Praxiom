@@ -11,6 +11,7 @@ set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
 set "statusFile=%~dp0install.status"
 set "licenseValidatorExe=%scriptDir%setup-helper.exe"
+set "secretHelperExe=%scriptDir%setup-helper.exe"
 set "licenseValidatorProject=%scriptDir%..\DottoressaIorio.LicenseGenerator\DottoressaIorio.LicenseGenerator.csproj"
 
 > "%logFile%" echo [%date% %time%] Installer script started.
@@ -106,6 +107,7 @@ if not exist "%licenseFile%" (
 if not exist "%licenseValidatorExe%" (
     if exist "%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe" (
         set "licenseValidatorExe=%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"
+        set "secretHelperExe=%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"
     )
 )
 echo %appUrl% | findstr /I "://">nul
@@ -451,9 +453,11 @@ endlocal & exit /b %exitCode%
 setlocal
 set "keyFile=%~1"
 set "keyValue=%~2"
-set "KEY_FILE=%keyFile%"
-set "KEY_VALUE=%keyValue%"
-powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $path=$env:KEY_FILE; $directory=[System.IO.Path]::GetDirectoryName($path); if(-not [string]::IsNullOrWhiteSpace($directory) -and -not (Test-Path -Path $directory -PathType Container)){ New-Item -Path $directory -ItemType Directory -Force | Out-Null }; $rawBytes=[System.Text.Encoding]::UTF8.GetBytes($env:KEY_VALUE); $protectedBytes=[System.Security.Cryptography.ProtectedData]::Protect($rawBytes, $null, [System.Security.Cryptography.DataProtectionScope]::LocalMachine); @{ Format='v1'; Protection='DPAPI-LocalMachine'; Payload=[Convert]::ToBase64String($protectedBytes) } | ConvertTo-Json | Set-Content -Encoding UTF8 -Path $path"
+if not exist "%secretHelperExe%" (
+    endlocal
+    exit /b 1
+)
+"%secretHelperExe%" write-secret --secret-file "%keyFile%" --value "%keyValue%" >nul 2>> "%logFile%"
 if errorlevel 1 (
     endlocal
     exit /b 1
