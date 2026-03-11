@@ -36,19 +36,19 @@ function Get-StoredEncryptionKey {
 
     $helperPath = Join-Path $AppRoot "_setup\setup-helper.exe"
     if (-not (Test-Path -Path $helperPath -PathType Leaf)) {
-        return $null
+        throw "Encrypted configuration detected at '$secretPath', but setup helper was not found at '$helperPath'."
     }
 
     $tempFile = [System.IO.Path]::GetTempFileName()
     try {
         $process = Start-Process -FilePath $helperPath -ArgumentList @("read-secret", "--secret-file", $secretPath) -Wait -PassThru -NoNewWindow -RedirectStandardOutput $tempFile
         if ($process.ExitCode -ne 0) {
-            return $null
+            throw "Failed to read encrypted key from '$secretPath' using '$helperPath'. Exit code: $($process.ExitCode)."
         }
 
         $encryptionKey = Get-Content -Raw -Path $tempFile
         if ([string]::IsNullOrWhiteSpace($encryptionKey)) {
-            return $null
+            throw "Encrypted configuration detected at '$secretPath', but the decrypted key value was empty."
         }
 
         return $encryptionKey.Trim()
