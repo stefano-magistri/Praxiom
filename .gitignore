@@ -403,17 +403,14 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-/DottoressaIorio.App/app.db-shm
-/DottoressaIorio.App/app.db-wal
-/DottoressaIorio.App/app.db
-/Setup/Service
-/Setup/Service.7z
-/Setup/Output/
-/Setup/tmp/
-/Setup/tmp/
-query
-DottoressaIorio.E2E/appsettings.Local.json
+
+#Custom ignores
+DottoressaIorio.App/app*.db*
 DottoressaIorio.App/_db_backup/*
 DottoressaIorio.App/_runtime/*
-DottoressaIorio.App/app_unencrypted.db
+DottoressaIorio.E2E/appsettings.Local.json
+query
+Setup/Output/
 Setup/Praxiom Licenses/*
+Setup/Service.7z
+Setup/tmp/
