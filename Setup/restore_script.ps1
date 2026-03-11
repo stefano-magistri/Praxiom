@@ -23,31 +23,39 @@ if (-not (Test-Path -Path $backupRoot -PathType Container)) {
     New-Item -Path $backupRoot -ItemType Directory | Out-Null
 }
 
-function Get-ConfiguredEncryptionKey {
+function Get-StoredEncryptionKey {
     param(
         [Parameter(Mandatory = $true)]
         [string]$AppRoot
     )
 
-    $configPaths = @(
-        (Join-Path $AppRoot "appsettings.json"),
-        (Join-Path $AppRoot "appsettings.Production.json")
-    )
-
-    $encryptionKey = $null
-    foreach ($configPath in $configPaths) {
-        if (-not (Test-Path -Path $configPath -PathType Leaf)) {
-            continue
-        }
-
-        $config = Get-Content -Raw -Path $configPath | ConvertFrom-Json
-        $property = $config.PSObject.Properties["EncryptionKey"]
-        if ($null -ne $property) {
-            $encryptionKey = $property.Value
-        }
+    $secretPath = Join-Path $AppRoot "secrets\encryption-key.json"
+    if (-not (Test-Path -Path $secretPath -PathType Leaf)) {
+        return $null
     }
 
-    return $encryptionKey
+    $helperPath = Join-Path $AppRoot "_setup\setup-helper.exe"
+    if (-not (Test-Path -Path $helperPath -PathType Leaf)) {
+        throw "Encrypted configuration detected at '$secretPath', but setup helper was not found at '$helperPath'."
+    }
+
+    $tempFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $process = Start-Process -FilePath $helperPath -ArgumentList @("read-secret", "--secret-file", $secretPath) -Wait -PassThru -NoNewWindow -RedirectStandardOutput $tempFile
+        if ($process.ExitCode -ne 0) {
+            throw "Failed to read encrypted key from '$secretPath' using '$helperPath'. Exit code: $($process.ExitCode)."
+        }
+
+        $encryptionKey = Get-Content -Raw -Path $tempFile
+        if ([string]::IsNullOrWhiteSpace($encryptionKey)) {
+            throw "Encrypted configuration detected at '$secretPath', but the decrypted key value was empty."
+        }
+
+        return $encryptionKey.Trim()
+    }
+    finally {
+        Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Get-RestoreDestinationDbPath {
@@ -58,7 +66,7 @@ function Get-RestoreDestinationDbPath {
 
     $encryptedPath = Join-Path $AppRoot "app.db"
     $unencryptedPath = Join-Path $AppRoot "app_unencrypted.db"
-    $configuredEncryptionKey = Get-ConfiguredEncryptionKey -AppRoot $AppRoot
+    $configuredEncryptionKey = Get-StoredEncryptionKey -AppRoot $AppRoot
     $preferredPath = if ([string]::IsNullOrWhiteSpace($configuredEncryptionKey)) {
         $unencryptedPath
     }

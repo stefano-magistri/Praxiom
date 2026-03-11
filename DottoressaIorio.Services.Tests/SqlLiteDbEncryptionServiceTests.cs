@@ -1,5 +1,6 @@
 using DottoressaIorio.Services.SqlLiteEncryption;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Configuration;
 using SQLitePCL;
 using System.IO;
 
@@ -133,11 +134,161 @@ public class SqlLiteDbEncryptionServiceTests
         }
     }
 
+    [Fact]
+    public void ResolveKey_LocalStoragePresent_ReturnsStoredKey()
+    {
+        var tempDir = CreateTempDirectory();
+        try
+        {
+            var keyFilePath = Path.Combine(tempDir, "secrets", "encryption-key.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(keyFilePath)!);
+            File.WriteAllText(keyFilePath, """{"EncryptionKey":"stored-key"}""");
+
+            var resolver = new EncryptionKeyResolver(new ConfigurationBuilder().Build(), "Production", keyFilePath);
+
+            var encryptionKey = resolver.Resolve();
+
+            Assert.Equal("stored-key", encryptionKey);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDir);
+        }
+    }
+
+    [Fact]
+    public void ResolveKey_NonDevelopmentWithoutLocalStorage_ThrowsClearError()
+    {
+        var tempDir = CreateTempDirectory();
+        try
+        {
+            var keyFilePath = Path.Combine(tempDir, "secrets", "encryption-key.json");
+            var resolver = new EncryptionKeyResolver(new ConfigurationBuilder().Build(), "Production", keyFilePath);
+
+            var ex = Assert.Throws<InvalidOperationException>(() => resolver.Resolve());
+
+            Assert.Contains(keyFilePath, ex.Message);
+            Assert.Contains("required outside Development", ex.Message);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDir);
+        }
+    }
+
+    [Fact]
+    public void ResolveKey_DevelopmentWithoutLocalStorage_FallsBackToConfiguration()
+    {
+        var tempDir = CreateTempDirectory();
+        try
+        {
+            var keyFilePath = Path.Combine(tempDir, "secrets", "encryption-key.json");
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["EncryptionKey"] = "dev-config-key" })
+                .Build();
+
+            var resolver = new EncryptionKeyResolver(configuration, "Development", keyFilePath);
+
+            var encryptionKey = resolver.Resolve();
+
+            Assert.Equal("dev-config-key", encryptionKey);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDir);
+        }
+    }
+
+    [Fact]
+    public void ResolveKey_DevelopmentExplicitEmptyConfiguration_OverridesLocalStorage()
+    {
+        var tempDir = CreateTempDirectory();
+        try
+        {
+            var keyFilePath = Path.Combine(tempDir, "secrets", "encryption-key.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(keyFilePath)!);
+            File.WriteAllText(keyFilePath, """{"EncryptionKey":"stored-key"}""");
+
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["EncryptionKey"] = string.Empty })
+                .Build();
+
+            var resolver = new EncryptionKeyResolver(configuration, "Development", keyFilePath);
+
+            var encryptionKey = resolver.Resolve();
+
+            Assert.Equal(string.Empty, encryptionKey);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDir);
+        }
+    }
+
+    [Fact]
+    public void ResolveKey_MovedKeySource_StillOpensExistingEncryptedDatabase()
+    {
+        var tempDir = CreateTempDirectory();
+        try
+        {
+            var appRoot = Path.Combine(tempDir, "app-root");
+            Directory.CreateDirectory(appRoot);
+
+            var originalService = new SqlLiteDbEncryptionService("moved-key", appRoot);
+            using (var connection = originalService.CreateConnection())
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = "CREATE TABLE IF NOT EXISTS __moved_key_test (id INTEGER PRIMARY KEY);";
+                command.ExecuteNonQuery();
+            }
+
+            var keyFilePath = Path.Combine(tempDir, "secrets", "encryption-key.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(keyFilePath)!);
+            File.WriteAllText(keyFilePath, """{"EncryptionKey":"moved-key"}""");
+
+            var resolver = new EncryptionKeyResolver(new ConfigurationBuilder().Build(), "Production", keyFilePath);
+            var reopenedService = new SqlLiteDbEncryptionService(resolver.Resolve(), appRoot);
+
+            using var reopenedConnection = reopenedService.CreateConnection();
+            using var verifyCommand = reopenedConnection.CreateCommand();
+            verifyCommand.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE name='__moved_key_test';";
+            var result = Convert.ToInt32(verifyCommand.ExecuteScalar());
+
+            Assert.Equal(1, result);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDir);
+        }
+    }
+
     private static string ReadAsciiHeader(string path)
     {
         using var stream = File.OpenRead(path);
         var buffer = new byte[16];
         _ = stream.Read(buffer, 0, buffer.Length);
         return System.Text.Encoding.ASCII.GetString(buffer);
+    }
+
+    private static string CreateTempDirectory()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "DottoressaIorio.EncryptionTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static void DeleteDirectoryIfExists(string path)
+    {
+        if (!Directory.Exists(path))
+            return;
+
+        try
+        {
+            Directory.Delete(path, recursive: true);
+        }
+        catch (IOException)
+        {
+            // Best effort cleanup for transient SQLite locks.
+        }
     }
 }
