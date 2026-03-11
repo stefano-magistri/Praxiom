@@ -38,10 +38,11 @@ public class PdfHtmlBuilder
             .Replace("{{therapyDate}}", therapy.CreatedDate.ToString("dd/MM/yyyy"));
     }
 
-    public string BuildFooterHtml(string template, Therapy therapy, ClinicSettings settings)
+    public string BuildFooterHtml(string template, Therapy therapy, ClinicSettings settings, bool isTrial = false)
     {
         return template
             .Replace("{{footerText}}", Encode(settings.FooterText))
+            .Replace("{{trialLabel}}", isTrial ? BuildTrialLabel() : string.Empty)
             .Replace("{{therapyDate}}", therapy.CreatedDate.ToString("dd/MM/yyyy"))
             .Replace("{{patient}}", $"{therapy.Patient.Title} {therapy.Patient.FirstName} {therapy.Patient.LastName}");
     }
@@ -74,6 +75,11 @@ public class PdfHtmlBuilder
         }
 
         return $"<p style=\"margin:0; font-size: 15px;\"><i>{Encode(value)}</i></p>";
+    }
+
+    private static string BuildTrialLabel()
+    {
+        return "<div style=\"font-size:9px; font-weight:bold; text-align:right;\">VERSIONE DI PROVA</div>";
     }
 
     private static string Encode(string? value)

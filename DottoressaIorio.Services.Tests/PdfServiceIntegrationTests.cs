@@ -1,5 +1,6 @@
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
+using DottoressaIorio.Services.Licensing;
 using DottoressaIorio.Services.Pdf;
 using Moq;
 using Xunit.Abstractions;
@@ -16,7 +17,9 @@ public class PdfServiceIntegrationTests(ITestOutputHelper testOutputHelper)
         var builder = new PdfHtmlBuilder();
         var repository = new Mock<IClinicSettingsRepository>();
         repository.Setup(x => x.GetAsync()).ReturnsAsync(ClinicSettings.CreateDefault());
-        var service = new PdfService(builder, repository.Object);
+        var licenseService = new Mock<ILicenseService>();
+        licenseService.Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        var service = new PdfService(builder, repository.Object, licenseService.Object);
 
         var therapy = new Therapy
         {

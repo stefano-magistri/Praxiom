@@ -55,6 +55,9 @@ namespace DottoressaIorio.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("TrialStartUtc")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.ToTable("ClinicSettings");

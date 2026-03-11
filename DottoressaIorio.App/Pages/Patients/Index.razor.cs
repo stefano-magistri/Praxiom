@@ -1,5 +1,6 @@
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
+using DottoressaIorio.Services.Licensing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using System.Globalization;
@@ -34,6 +35,11 @@ public class PatientsBase : ComponentBase
     [Inject]
     public NavigationManager NavigationManager { get; set; }
 
+    [Inject]
+    public ILicenseService LicenseService { get; set; }
+
+    protected string CreationInlineMessage { get; set; } = string.Empty;
+
     /// <summary>
     ///     The subset of patients displayed on the current page after filtering and pagination.
     /// </summary>
@@ -65,6 +71,8 @@ public class PatientsBase : ComponentBase
     /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task OnInitializedAsync()
     {
+        await LicenseService.InitializeAsync();
+        CreationInlineMessage = await LicenseService.GetPatientCreationBlockMessageAsync() ?? string.Empty;
         patients = await Repository.GetAllOrderedAsync();
         await UpdateDisplayedPatients();
     }
@@ -99,6 +107,7 @@ public class PatientsBase : ComponentBase
     {
         CurrentPage = 1;
         SearchTerm = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
         await UpdateDisplayedPatients();
     }
 

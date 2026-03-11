@@ -2,6 +2,7 @@
 @inject DottoressaIorio.Repositories.IClinicSettingsRepository repository
 @inject DottoressaIorio.Shared.State.ClinicSettingsState clinicSettingsState
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
+@inject ILicenseService licenseService
 
 <PageHeader Title="Impostazioni"/>
 
@@ -19,6 +20,31 @@ else
         {
             <div class="alert alert-success" role="status">@successMessage</div>
         }
+
+        <div class="card patients-card mb-4">
+            <div class="card-body p-4">
+                <h3 class="mt-0">Stato licenza</h3>
+                <dl class="row patient-summary-list mb-0">
+                    <dt class="col-sm-4">Stato licenza</dt>
+                    <dd class="col-sm-8">@licenseService.StatusLabel</dd>
+                    @if (licenseService.TrialExpiresUtc.HasValue)
+                    {
+                        <dt class="col-sm-4">Scadenza trial</dt>
+                        <dd class="col-sm-8">@licenseService.TrialExpiresUtc.Value.ToString("dd/MM/yyyy")</dd>
+                    }
+                    @if (licenseService.RemainingTrialDays.HasValue)
+                    {
+                        <dt class="col-sm-4">Giorni rimanenti</dt>
+                        <dd class="col-sm-8">@licenseService.RemainingTrialDays.Value</dd>
+                    }
+                    @if (licenseService.IsTrial)
+                    {
+                        <dt class="col-sm-4">Limiti trial</dt>
+                        <dd class="col-sm-8">@licenseService.TrialLimitsSummary</dd>
+                    }
+                </dl>
+            </div>
+        </div>
 
         <div class="row g-3">
             <div class="col-12">
@@ -95,6 +121,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await licenseService.InitializeAsync();
         model = await clinicSettingsState.GetAsync();
         originalModel = Clone(model);
         isEditMode = false;
@@ -165,7 +192,8 @@ else
             Address = settings.Address,
             Phone = settings.Phone,
             Email = settings.Email,
-            FooterText = settings.FooterText
+            FooterText = settings.FooterText,
+            TrialStartUtc = settings.TrialStartUtc
         };
     }
 }

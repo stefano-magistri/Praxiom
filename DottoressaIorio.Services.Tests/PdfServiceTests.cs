@@ -80,4 +80,21 @@ public class PdfHtmlBuilderTests
 
         Assert.Equal("Footer test Terapia 01/01/2023 - Dr. John Doe", footer);
     }
+
+    [Fact]
+    public void BuildFooterHtml_WhenTrial_ShouldIncludeTrialLabel()
+    {
+        var builder = new PdfHtmlBuilder();
+        var settings = new ClinicSettings { FooterText = "Footer test" };
+
+        var therapy = new Therapy
+        {
+            CreatedDate = new DateTime(2023, 1, 1),
+            Patient = new Patient { Title = "Dr.", FirstName = "John", LastName = "Doe" }
+        };
+
+        var footer = builder.BuildFooterHtml("{{trialLabel}}", therapy, settings, isTrial: true);
+
+        Assert.Contains("VERSIONE DI PROVA", footer, StringComparison.Ordinal);
+    }
 }

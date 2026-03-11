@@ -1,6 +1,7 @@
 @using System.Reflection
 @inherits LayoutComponentBase
 @inject DottoressaIorio.Shared.Branding.ProductBrandingOptions Branding
+@inject ILicenseService LicenseService
 
 <PageTitle>@Branding.ProductName v. @AppVersion</PageTitle>
 
@@ -16,6 +17,24 @@
         <div class="row">
             <NavMenu AppVersion="@AppVersion"/>
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 p-3 app-main">
+                @if (LicenseService.IsTrialExpired)
+                {
+                    <div class="alert alert-danger trial-shell-banner trial-shell-banner-expired" role="alert">
+                        @LicenseService.TrialExpiredMessage
+                    </div>
+                }
+                else if (LicenseService.IsTrial)
+                {
+                    <div class="alert alert-warning trial-shell-banner" role="status">
+                        <strong>Versione di prova attiva</strong>
+                        <span>Scade il @LicenseService.TrialExpiresUtc?.ToString("dd/MM/yyyy")</span>
+                        @if (LicenseService.RemainingTrialDays.HasValue)
+                        {
+                            <span>• @GetRemainingDaysLabel(LicenseService.RemainingTrialDays.Value)</span>
+                        }
+                        <span>• Limiti: @LicenseService.TrialLimitsSummary.ToLowerInvariant()</span>
+                    </div>
+                }
                 @Body
             </main>
         </div>
@@ -25,6 +44,18 @@
 
 @code {
     private static readonly string AppVersion = ResolveAppVersion();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LicenseService.InitializeAsync();
+    }
+
+    private static string GetRemainingDaysLabel(int remainingDays)
+    {
+        return remainingDays == 1
+            ? "scadenza tra 1 giorno"
+            : $"scadenza tra {remainingDays} giorni";
+    }
 
     private static string ResolveAppVersion()
     {

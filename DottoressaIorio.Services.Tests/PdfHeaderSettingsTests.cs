@@ -1,5 +1,6 @@
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
+using DottoressaIorio.Services.Licensing;
 using DottoressaIorio.Services.Pdf;
 using Moq;
 
@@ -23,7 +24,9 @@ public class PdfHeaderSettingsTests
             FooterText = "Footer Test"
         });
 
-        var service = new PdfService(new PdfHtmlBuilder(), repository.Object);
+        var licenseService = new Mock<ILicenseService>();
+        licenseService.Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        var service = new PdfService(new PdfHtmlBuilder(), repository.Object, licenseService.Object);
         var therapy = new Therapy
         {
             Patient = new Patient

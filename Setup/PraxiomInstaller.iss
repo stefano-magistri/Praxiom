@@ -145,8 +145,8 @@ begin
   LicenseFilePage := CreateInputFilePage(
     LicenseRequestPage.ID,
     'File licenza',
-    'Seleziona il file di licenza ricevuto dal fornitore.',
-    'Il file di licenza verra verificato subito e copiato in ProgramData.'
+    'Seleziona il file di licenza ricevuto dal fornitore, se disponibile.',
+    'Se non selezioni alcun file, l''applicazione verra installata in modalita di prova.'
   );
   LicenseFilePage.Add('Percorso file licenza:', 'File licenza (*.dat)|*.dat|Tutti i file (*.*)|*.*', '.dat');
 
@@ -233,21 +233,14 @@ begin
 
   if CurPageID = LicenseFilePage.ID then
   begin
-    if Trim(LicenseFilePage.Values[0]) = '' then
-    begin
-      MsgBox('Il file di licenza e obbligatorio.', mbError, MB_OK);
-      Result := False;
-      Exit;
-    end;
-
-    if not FileExists(Trim(LicenseFilePage.Values[0])) then
+    if (Trim(LicenseFilePage.Values[0]) <> '') and (not FileExists(Trim(LicenseFilePage.Values[0]))) then
     begin
       MsgBox('Il file di licenza selezionato non esiste.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    if not ValidateSelectedLicense() then
+    if (Trim(LicenseFilePage.Values[0]) <> '') and (not ValidateSelectedLicense()) then
     begin
       Result := False;
       Exit;
@@ -283,9 +276,10 @@ function GetInstallParams(Value: string): string;
 begin
   Result :=
     '--silent --allowed-username ' + AddQuotes(GetAllowedUsername('')) +
-    ' --app-url ' + AddQuotes(ConfigPage.Values[0]) +
-    ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]) +
-    ' --encryption-key ' + AddQuotes('{#EncryptionKey}');
+    ' --app-url ' + AddQuotes(ConfigPage.Values[0]);
+  if Trim(LicenseFilePage.Values[0]) <> '' then
+    Result := Result + ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]);
+  Result := Result + ' --encryption-key ' + AddQuotes('{#EncryptionKey}');
   if ShouldRestoreDatabase() then
     Result := Result + ' --skip-auto-db-restore';
 end;

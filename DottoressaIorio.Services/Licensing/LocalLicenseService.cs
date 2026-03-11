@@ -256,9 +256,12 @@ public static class LocalLicenseServiceCollectionExtensions
     public static IServiceCollection AddLocalLicenseServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton(LocalLicenseSettings.FromConfiguration(configuration));
+        services.AddSingleton(new LicenseLaunchOverride());
         services.AddSingleton<ILocalLicenseFileReader, LocalLicenseFileReader>();
         services.AddSingleton<IMachineIdProvider, RegistryMachineIdProvider>();
         services.AddSingleton<ILocalLicenseService, LocalLicenseService>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<ILicenseService, LicenseService>();
         return services;
     }
 }

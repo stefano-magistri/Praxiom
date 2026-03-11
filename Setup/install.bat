@@ -86,19 +86,13 @@ if "%allowedUsername%"=="" (
     if "%interactive%"=="1" pause
     exit /b 1
 )
-if "%licenseFile%"=="" (
-    >> "%logFile%" echo [%date% %time%] ERROR: Missing required parameter --license-file.
-    echo Missing required parameter --license-file.
-    if "%interactive%"=="1" pause
-    exit /b 1
-)
 if "%encryptionKey%"=="" (
     >> "%logFile%" echo [%date% %time%] ERROR: Missing required parameter --encryption-key.
     echo Missing required parameter --encryption-key.
     if "%interactive%"=="1" pause
     exit /b 1
 )
-if not exist "%licenseFile%" (
+if not "%licenseFile%"=="" if not exist "%licenseFile%" (
     >> "%logFile%" echo [%date% %time%] ERROR: License file "%licenseFile%" not found.
     echo License file not found: "%licenseFile%"
     if "%interactive%"=="1" pause
@@ -113,10 +107,14 @@ if not exist "%licenseValidatorExe%" (
 echo %appUrl% | findstr /I "://">nul
 if errorlevel 1 set "appUrl=http://%appUrl%"
 >> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore% licenseFile=%licenseFile%
-call :validateLicense "%licenseFile%" "%allowedUsername%"
-if errorlevel 1 (
-    if "%interactive%"=="1" pause
-    exit /b 1
+if not "%licenseFile%"=="" (
+    call :validateLicense "%licenseFile%" "%allowedUsername%"
+    if errorlevel 1 (
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] No license file provided. Installation will continue with automatic trial mode.
 )
 call :validateUrl "%appUrl%"
 if errorlevel 1 (
@@ -198,14 +196,21 @@ if not exist "%destinationFolder%" mkdir "%destinationFolder%"
 if not exist "%destinationFolder%\%dbBackupFolder%" mkdir "%destinationFolder%\%dbBackupFolder%"
 if not exist "%secretsFolder%" mkdir "%secretsFolder%"
 
-copy /Y "%licenseFile%" "%licenseDestination%" >nul
-if errorlevel 1 (
-    >> "%logFile%" echo [%date% %time%] ERROR: Failed to copy license file to "%licenseDestination%".
-    echo Failed to copy license file to "%licenseDestination%".
-    if "%interactive%"=="1" pause
-    exit /b 1
+if not "%licenseFile%"=="" (
+    copy /Y "%licenseFile%" "%licenseDestination%" >nul
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] ERROR: Failed to copy license file to "%licenseDestination%".
+        echo Failed to copy license file to "%licenseDestination%".
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    >> "%logFile%" echo [%date% %time%] License file copied to "%licenseDestination%".
+) else (
+    if exist "%licenseDestination%" (
+        del /q "%licenseDestination%" >nul 2>nul
+        >> "%logFile%" echo [%date% %time%] Existing license file removed from "%licenseDestination%" to allow trial mode.
+    )
 )
->> "%logFile%" echo [%date% %time%] License file copied to "%licenseDestination%".
 
 call :writeEncryptionKeyFile "%encryptionKeyFile%" "%encryptionKey%"
 if errorlevel 1 (

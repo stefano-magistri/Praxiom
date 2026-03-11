@@ -4,6 +4,7 @@
 @inject PatientTherapyRepository repository
 @inject NavigationManager navigationManager
 @inject IJSRuntime jsRuntime
+@inject ILicenseService licenseService
 
 <PageHeader Title="@PatientPageTitle"></PageHeader>
 
@@ -24,7 +25,16 @@ else
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h3 class="mb-0">Terapie</h3>
-        <AnchorButton ButtonClass="primary btn-create-therapy" Url="@($"/patient/{PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Nuova Terapia"></AnchorButton>
+        @if (licenseService.IsTrialExpired)
+        {
+            <button type="button" class="btn btn-primary btn-create-therapy" disabled>
+                <span class="oi oi-plus px-1" aria-hidden="true"></span>Nuova Terapia
+            </button>
+        }
+        else
+        {
+            <AnchorButton ButtonClass="primary btn-create-therapy" Url="@($"/patient/{PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Nuova Terapia"></AnchorButton>
+        }
     </div>
 
     <div class="card therapies-card">
@@ -134,6 +144,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        await licenseService.InitializeAsync();
         patient = await patientRepository.GetByIdAsync(PatientId);
         allTherapies = (await repository.GetAllAsync(PatientId))
             .OrderByDescending(t => t.CreatedDate)

@@ -4,6 +4,7 @@
         <label for="@Id" class="form-label">@Label</label>
     }
     <input id="@Id"
+           name="@Name"
            type="text"
            class="form-control"
            value="@Value"
@@ -19,6 +20,8 @@
     [Parameter] [EditorRequired] public string Id { get; set; } = string.Empty;
 
     [Parameter] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string Name { get; set; } = string.Empty;
 
     [Parameter] public string Value { get; set; } = string.Empty;
 

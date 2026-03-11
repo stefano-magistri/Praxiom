@@ -8,28 +8,51 @@
         <div class="patients-toolbar mb-3">
             <div class="patients-toolbar-search">
                 <SearchBox Id="search"
+                           Name="search"
                            Value="@SearchTerm"
                            OnInput="SearchPatients"
                            AutoFocus="true"
                            Placeholder="Cerca paziente per nome o cognome..."/>
             </div>
             <div class="patients-toolbar-actions">
-                <a class="btn btn-primary"
-                   data-testid="create-patient-page-link"
-                   href="/create-patient"
-                   title="Nuovo Paziente"
-                   aria-label="Nuovo Paziente">
-                    <span class="oi oi-plus" aria-hidden="true"></span>
-                </a>
-                <a class="btn btn-outline-primary"
-                   data-testid="export-csv-link"
-                   href="@GetCsvExportUrl()"
-                   title="Esporta CSV"
-                   aria-label="Esporta CSV">
-                    <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
-                </a>
+                @if (LicenseService.IsTrialExpired)
+                {
+                    <button class="btn btn-primary"
+                            data-testid="create-patient-page-link"
+                            type="button"
+                            title="Nuovo Paziente"
+                            aria-label="Nuovo Paziente"
+                            disabled>
+                        <span class="oi oi-plus" aria-hidden="true"></span>
+                    </button>
+                }
+                else
+                {
+                    <a class="btn btn-primary"
+                       data-testid="create-patient-page-link"
+                       href="/create-patient"
+                       title="Nuovo Paziente"
+                       aria-label="Nuovo Paziente">
+                        <span class="oi oi-plus" aria-hidden="true"></span>
+                    </a>
+                }
+                <form method="get" action="/patients/export-csv">
+                    <input type="hidden" name="search" value="@SearchTerm" />
+                    <button class="btn btn-outline-primary"
+                            data-testid="export-csv-link"
+                            type="submit"
+                            title="Esporta CSV"
+                            aria-label="Esporta CSV">
+                        <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
+                    </button>
+                </form>
             </div>
         </div>
+
+        @if (!string.IsNullOrWhiteSpace(CreationInlineMessage))
+        {
+            <p class="trial-inline-message">@CreationInlineMessage</p>
+        }
 
         <p class="patients-export-hint">Esporta CSV (usa i filtri attivi)</p>
 
@@ -78,9 +101,11 @@
                             <td class="text-end" @onclick:stopPropagation="true">
                                 <div class="patient-row-actions">
                                     <a class="btn btn-outline-secondary"
-                                       href="@($"/patient/{patient.PatientId}/create-therapy/")"
+                                       href="@(!LicenseService.IsTrialExpired ? $"/patient/{patient.PatientId}/create-therapy/" : null)"
                                        title="Nuova terapia"
-                                       aria-label="Nuova terapia">
+                                       aria-label="Nuova terapia"
+                                       @onclick:preventDefault="LicenseService.IsTrialExpired"
+                                       aria-disabled="@LicenseService.IsTrialExpired">
                                         <span class="oi oi-document" aria-hidden="true"></span>
                                     </a>
                                     <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditPatient(patient.PatientId)" IconClass="oi oi-pencil"></ActionButton>

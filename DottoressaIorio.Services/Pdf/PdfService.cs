@@ -2,11 +2,12 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
+using DottoressaIorio.Services.Licensing;
 using Microsoft.Playwright;
 
 namespace DottoressaIorio.Services.Pdf;
 
-public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinicSettingsRepository)
+public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinicSettingsRepository, ILicenseService licenseService)
 {
     public async Task<byte[]> GenerateTherapyPdfAsync(Therapy therapy)
     {
@@ -54,7 +55,8 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
         var effectiveTemplateRoot = templateRoot ?? Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
         var footerPath = Path.Combine(effectiveTemplateRoot, "footer.html");
         var settings = await clinicSettingsRepository.GetAsync();
-        return builder.BuildFooterHtml(await File.ReadAllTextAsync(footerPath), therapy, settings);
+        await licenseService.InitializeAsync();
+        return builder.BuildFooterHtml(await File.ReadAllTextAsync(footerPath), therapy, settings, licenseService.IsTrial);
     }
 
     private static async Task<IBrowser> LaunchBrowserAsync(IPlaywright playwright)

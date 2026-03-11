@@ -6,6 +6,7 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
+@inject ILicenseService licenseService
 @using DottoressaIorio.Services.Therapies
 @using Microsoft.AspNetCore.Components
 
@@ -16,6 +17,10 @@
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
     <DataAnnotationsValidator/>
     <ValidationWarningAlert Message="@warningMessage"/>
+    @if (licenseService.IsTrialExpired)
+    {
+        <div class="alert alert-danger" role="alert">@TrialExpiredMessage</div>
+    }
     <div class="row g-3">
         <div class="col-12">
             <label for="TemplateId">Precompilato:</label>
@@ -42,7 +47,14 @@
     </div>
     <hr class="my-4">
     <CancelButton Url="@($"/patient/{Id}/")"/>
-    <SubmitButton/>
+    @if (licenseService.IsTrialExpired)
+    {
+        <button type="button" class="btn btn-primary" disabled><span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva</button>
+    }
+    else
+    {
+        <SubmitButton/>
+    }
 </EditForm>
 
 @if (showTemplateConflictDialog)
@@ -65,6 +77,8 @@
 }
 
 @code {
+    private const string TrialExpiredMessage =
+        "Periodo di prova scaduto. Inserire una licenza per continuare ad utilizzare il software.";
     [Parameter] public int Id { get; set; }
     private Patient? patient;
     [SupplyParameterFromQuery(Name = "duplicateFrom")] public int? DuplicateFromTherapyId { get; set; }
@@ -85,6 +99,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await licenseService.InitializeAsync();
         templates = await templateRepository.GetAllOrderedAsync();
     }
 
@@ -107,6 +122,13 @@
 
     private async Task SaveAsync()
     {
+        var trialMessage = await licenseService.GetTherapyCreationBlockMessageAsync();
+        if (!string.IsNullOrWhiteSpace(trialMessage))
+        {
+            warningMessage = trialMessage;
+            return;
+        }
+
         try
         {
             model.PatientId = Id;
