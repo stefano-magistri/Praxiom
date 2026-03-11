@@ -5,7 +5,7 @@
 
 <div class="card patients-card" data-testid="patients-page">
     <div class="card-body p-4">
-        <form class="patients-toolbar mb-3" method="get" action="/patients/export-csv">
+        <div class="patients-toolbar mb-3">
             <div class="patients-toolbar-search">
                 <SearchBox Id="search"
                            Name="search"
@@ -36,15 +36,18 @@
                         <span class="oi oi-plus" aria-hidden="true"></span>
                     </a>
                 }
-                <button class="btn btn-outline-primary"
-                   data-testid="export-csv-link"
-                   type="submit"
-                   title="Esporta CSV"
-                   aria-label="Esporta CSV">
-                    <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
-                </button>
+                <form method="get" action="/patients/export-csv">
+                    <input type="hidden" name="search" value="@SearchTerm" />
+                    <button class="btn btn-outline-primary"
+                            data-testid="export-csv-link"
+                            type="submit"
+                            title="Esporta CSV"
+                            aria-label="Esporta CSV">
+                        <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
+                    </button>
+                </form>
             </div>
-        </form>
+        </div>
 
         @if (!string.IsNullOrWhiteSpace(CreationInlineMessage))
         {
