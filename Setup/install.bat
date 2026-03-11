@@ -5,11 +5,13 @@ set "interactive=1"
 set "allowedUsername="
 set "appUrl=http://localhost:5000"
 set "licenseFile="
+set "encryptionKey="
 set "skipAutoDbRestore=0"
 set "scriptDir=%~dp0"
 set "logFile=%~dp0install.log"
 set "statusFile=%~dp0install.status"
 set "licenseValidatorExe=%scriptDir%setup-helper.exe"
+set "secretHelperExe=%scriptDir%setup-helper.exe"
 set "licenseValidatorProject=%scriptDir%..\DottoressaIorio.LicenseGenerator\DottoressaIorio.LicenseGenerator.csproj"
 
 > "%logFile%" echo [%date% %time%] Installer script started.
@@ -57,6 +59,17 @@ if /I "%~1"=="--license-file" (
     shift
     goto parseArgs
 )
+if /I "%~1"=="--encryption-key" (
+    if "%~2"=="" (
+        echo Missing value for --encryption-key.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    set "encryptionKey=%~2"
+    shift
+    shift
+    goto parseArgs
+)
 if /I "%~1"=="--skip-auto-db-restore" (
     set "skipAutoDbRestore=1"
     shift
@@ -73,6 +86,12 @@ if "%allowedUsername%"=="" (
     if "%interactive%"=="1" pause
     exit /b 1
 )
+if "%encryptionKey%"=="" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing required parameter --encryption-key.
+    echo Missing required parameter --encryption-key.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
 if not "%licenseFile%"=="" if not exist "%licenseFile%" (
     >> "%logFile%" echo [%date% %time%] ERROR: License file "%licenseFile%" not found.
     echo License file not found: "%licenseFile%"
@@ -82,6 +101,7 @@ if not "%licenseFile%"=="" if not exist "%licenseFile%" (
 if not exist "%licenseValidatorExe%" (
     if exist "%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe" (
         set "licenseValidatorExe=%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"
+        set "secretHelperExe=%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"
     )
 )
 echo %appUrl% | findstr /I "://">nul
@@ -120,6 +140,8 @@ rem Define source file, destination folder, and service-related variables.
 set "sourceFile=%scriptDir%Service.7z"
 set "sevenZipExe=%scriptDir%7z.exe"
 set "destinationFolder=C:\ProgramData\Praxiom"
+set "secretsFolder=%destinationFolder%\secrets"
+set "encryptionKeyFile=%secretsFolder%\encryption-key.json"
 set "licenseDestination=%destinationFolder%\license.dat"
 set "service=Praxiom.App"
 set "app=DottoressaIorio.App.exe"
@@ -172,6 +194,7 @@ if not exist "%sevenZipExe%" (
 
 if not exist "%destinationFolder%" mkdir "%destinationFolder%"
 if not exist "%destinationFolder%\%dbBackupFolder%" mkdir "%destinationFolder%\%dbBackupFolder%"
+if not exist "%secretsFolder%" mkdir "%secretsFolder%"
 
 if not "%licenseFile%"=="" (
     copy /Y "%licenseFile%" "%licenseDestination%" >nul
@@ -188,6 +211,15 @@ if not "%licenseFile%"=="" (
         >> "%logFile%" echo [%date% %time%] Existing license file removed from "%licenseDestination%" to allow trial mode.
     )
 )
+
+call :writeEncryptionKeyFile "%encryptionKeyFile%" "%encryptionKey%"
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to write encryption key file "%encryptionKeyFile%".
+    echo Failed to write encryption key file.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+>> "%logFile%" echo [%date% %time%] Encryption key file written to "%encryptionKeyFile%".
 
 rem Backup current database files before replacing files.
 call :backupDbFile "app.db"
@@ -421,6 +453,22 @@ set "URL_TO_VALIDATE=%urlToValidate%"
 powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $u=$env:URL_TO_VALIDATE; if($u -notmatch '^(https?)://[^/:\s]+:\d{1,5}$'){ exit 1 }; $port=[int]($u.Split(':')[-1]); if($port -lt 1 -or $port -gt 65535){ exit 1 } else { exit 0 }"
 set "exitCode=%errorlevel%"
 endlocal & exit /b %exitCode%
+
+:writeEncryptionKeyFile
+setlocal
+set "keyFile=%~1"
+set "keyValue=%~2"
+if not exist "%secretHelperExe%" (
+    endlocal
+    exit /b 1
+)
+"%secretHelperExe%" write-secret --secret-file "%keyFile%" --value "%keyValue%" >nul 2>> "%logFile%"
+if errorlevel 1 (
+    endlocal
+    exit /b 1
+)
+endlocal
+exit /b 0
 
 :logServiceDiagnostics
 >> "%logFile%" echo [%date% %time%] Collecting service diagnostics...

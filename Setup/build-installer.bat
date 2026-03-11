@@ -18,6 +18,8 @@ set "tmpArchive=%tmpDir%\Service.7z"
 set "validatorDir=%tmpDir%\LicenseValidator"
 set "validatorExe=%validatorDir%\DottoressaIorio.LicenseGenerator.exe"
 set "versionFile=%tmpDir%\Service.version"
+set "encryptionKey=%PRAXIOM_ENCRYPTION_KEY%"
+set "developmentConfig=%repoDir%\DottoressaIorio.App\appsettings.Development.json"
 
 if not exist "%publishScript%" (
     echo Missing publish script: "%publishScript%"
@@ -31,6 +33,19 @@ if not exist "%issFile%" (
 
 if not exist "%licenseToolProject%" (
     echo Missing license tool project: "%licenseToolProject%"
+    exit /b 1
+)
+
+if "%encryptionKey%"=="" (
+    if exist "%developmentConfig%" (
+        for /f "usebackq delims=" %%K in (`powershell -NoProfile -Command "$config=Get-Content -Raw '%developmentConfig%' | ConvertFrom-Json; if($null -ne $config.EncryptionKey -and -not [string]::IsNullOrWhiteSpace($config.EncryptionKey)){ $config.EncryptionKey }"`) do (
+            if not "%%K"=="" set "encryptionKey=%%K"
+        )
+    )
+)
+
+if "%encryptionKey%"=="" (
+    echo Missing encryption key. Set PRAXIOM_ENCRYPTION_KEY or define EncryptionKey in "%developmentConfig%" before running build-installer.bat.
     exit /b 1
 )
 
@@ -91,7 +106,7 @@ if "%appVersion%"=="" (
     exit /b 1
 )
 
-"%iscc%" /DAppVersion=%appVersion% "%issFile%"
+"%iscc%" /DAppVersion=%appVersion% /DEncryptionKey=%encryptionKey% "%issFile%"
 if errorlevel 1 (
     echo Installer build failed.
     exit /b 1

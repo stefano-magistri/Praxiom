@@ -2,6 +2,9 @@
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
+#ifndef EncryptionKey
+  #error EncryptionKey define is required.
+#endif
 
 [Setup]
 AppId={{A53D1775-E8B2-4E8D-9FB3-52312AA1E7A4}
@@ -43,7 +46,7 @@ Source: "tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"; Flags: dont
 
 [Run]
 Filename: "{app}\_setup\install.bat"; Parameters: "{code:GetInstallParams}"; Flags: runhidden waituntilterminated; StatusMsg: "Configurazione del servizio Windows in corso..."
-Filename: "{code:GetConfiguredUrl}"; Description: "Apri l'applicazione al termine dell'installazione"; Flags: postinstall shellexec nowait skipifsilent
+Filename: "{code:GetConfiguredUrl}"; Description: "Apri l'applicazione al termine dell'installazione"; Flags: postinstall shellexec nowait skipifsilent; Check: ShouldOpenInstalledApplication
 
 [UninstallRun]
 Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "DottoressaIorioAppUninstall"
@@ -64,6 +67,8 @@ var
   RestoreOptionPage: TInputOptionWizardPage;
   RestoreFilePage: TInputFileWizardPage;
   LicenseRequestNoteLabel: TNewStaticText;
+  InstallFailed: Boolean;
+  InstallFailedMessage: string;
 
 function InitializeSetup(): Boolean; forward;
 function GetMachineId(Value: string): string; forward;
@@ -79,6 +84,8 @@ function GetUninstallParams(Value: string): string; forward;
 function ShouldRestoreDatabase(): Boolean; forward;
 function GetRestoreBackupPath(): string; forward;
 function ValidateSelectedLicense(): Boolean; forward;
+function ShouldOpenInstalledApplication(): Boolean; forward;
+procedure UpdateFinishedPage(); forward;
 
 function InitializeSetup(): Boolean;
 var
@@ -272,6 +279,7 @@ begin
     ' --app-url ' + AddQuotes(ConfigPage.Values[0]);
   if Trim(LicenseFilePage.Values[0]) <> '' then
     Result := Result + ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]);
+  Result := Result + ' --encryption-key ' + AddQuotes('{#EncryptionKey}');
   if ShouldRestoreDatabase() then
     Result := Result + ' --skip-auto-db-restore';
 end;
@@ -279,6 +287,11 @@ end;
 function GetConfiguredUrl(Value: string): string;
 begin
   Result := ConfigPage.Values[0];
+end;
+
+function ShouldOpenInstalledApplication(): Boolean;
+begin
+  Result := not InstallFailed;
 end;
 
 function GetMachineId(Value: string): string;
@@ -561,6 +574,15 @@ begin
 
   if LoadStringFromFile(StatusFile, StatusText) then
   begin
+    if Pos('ERROR', UpperCase(String(StatusText))) > 0 then
+    begin
+      InstallFailed := True;
+      InstallFailedMessage :=
+        'Praxiom non e stato configurato correttamente.' + #13#10 +
+        'Apri "' + ExpandConstant('{app}\_setup\install.log') + '" per i dettagli.';
+      Exit;
+    end;
+
     if Pos('WARNING', UpperCase(String(StatusText))) > 0 then
       MsgBox(
         'Installazione completata con avvisi. Apri "' +
@@ -584,6 +606,11 @@ begin
     RestoreResult
   ) then
   begin
+    InstallFailed := True;
+    InstallFailedMessage :=
+      'Praxiom non e stato configurato correttamente.' + #13#10 +
+      'Impossibile avviare lo script di ripristino del database.' + #13#10 +
+      'Apri "' + ExpandConstant('{app}\_setup\install.log') + '" per i dettagli.';
     MsgBox(
       'Impossibile avviare lo script di ripristino del database. Potrai eseguirlo manualmente in seguito da "' +
       ExpandConstant('{app}\_setup\restore_script.ps1') + '".',
@@ -595,6 +622,11 @@ begin
 
   if RestoreResult <> 0 then
   begin
+    InstallFailed := True;
+    InstallFailedMessage :=
+      'Praxiom non e stato configurato correttamente.' + #13#10 +
+      'Il ripristino del database non é riuscito.' + #13#10 +
+      'Apri "' + ExpandConstant('{app}\_setup\install.log') + '" per i dettagli.';
     MsgBox(
       'Ripristino del database non riuscito. Verifica il file di backup selezionato ed esegui "' +
       ExpandConstant('{app}\_setup\restore_script.ps1') + '" manualmente se necessario.',
@@ -605,4 +637,22 @@ begin
   end;
 
   MsgBox('Ripristino del database completato con successo.', mbInformation, MB_OK);
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID <> wpFinished then
+    Exit;
+
+  UpdateFinishedPage();
+end;
+
+procedure UpdateFinishedPage();
+begin
+  if not InstallFailed then
+    Exit;
+
+  WizardForm.FinishedHeadingLabel.Caption := 'Installazione non completata';
+  WizardForm.FinishedLabel.Caption := InstallFailedMessage;
+  WizardForm.RunList.Visible := False;
 end;
