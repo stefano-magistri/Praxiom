@@ -2,7 +2,10 @@
     <CancelButton Url="@CancelUrl"/>
     @if (!string.IsNullOrWhiteSpace(RemoveUrl))
     {
-        <AnchorButton ButtonText="@RemoveButtonText" ButtonClass="@RemoveButtonClass" Url="@RemoveUrl"/>
+        <AnchorButton ButtonText="@RemoveButtonText"
+                      ButtonClass="@RemoveButtonClass"
+                      Url="@RemoveUrl"
+                      IconClass="@RemoveButtonIconClass"/>
     }
     <SubmitButton Disabled="@SubmitDisabled"/>
 </FormActionSection>
@@ -15,6 +18,8 @@
     [Parameter] public string RemoveButtonText { get; set; } = "Rimuovi";
 
     [Parameter] public string RemoveButtonClass { get; set; } = "outline-danger btn-delete-soft";
+
+    [Parameter] public string RemoveButtonIconClass { get; set; } = "oi oi-trash";
 
     [Parameter] public bool SubmitDisabled { get; set; }
 }

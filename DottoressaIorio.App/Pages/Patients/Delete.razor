@@ -6,9 +6,18 @@
 
 <ActionPageHeader Title="Rimuovi Paziente" Subtitle="@FormattedPatientName"/>
 
-<ConfirmDeleteSection ConfirmationText="Vuoi rimuovere questo paziente?"
-                      CancelUrl="@($"/patient/{Id}/")"
-                      OnConfirm="@SaveAsync"/>
+@if (model == null)
+{
+    <p>ID paziente non valido o paziente non trovato.</p>
+}
+else
+{
+    <PatientContextCard Patient="model" ShowHeaderName="true"/>
+
+    <ConfirmDeleteSection ConfirmationText="Vuoi rimuovere questo paziente?"
+                          CancelUrl="@($"/patient/{Id}/")"
+                          OnConfirm="@SaveAsync"/>
+}
 
 @code {
     [Parameter] public int Id { get; set; }
@@ -40,14 +49,7 @@
 
     private static string FormatFullName(string? firstName, string? lastName)
     {
-        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
-        if (string.IsNullOrWhiteSpace(fullName))
-        {
-            return string.Empty;
-        }
-
-        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
-            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
+        return PatientNameFormatter.FormatFullName(firstName, lastName);
     }
 
 }

@@ -1,4 +1,8 @@
-<button type="button" class="btn btn-@ButtonClass me-2" @onclick="OnClick">
+<button type="button"
+        class="btn btn-@ButtonClass me-2"
+        @onclick="OnClick"
+        title="@Title"
+        aria-label="@ResolvedAriaLabel">
     <span class="@IconClass @(string.IsNullOrEmpty(ButtonText) ? "" : "px-1")" aria-hidden="true"></span>@ButtonText
 </button>
 
@@ -10,4 +14,12 @@
     [Parameter] [EditorRequired] public string ButtonClass { get; set; } = string.Empty;
 
     [Parameter] [EditorRequired] public string IconClass { get; set; } = string.Empty;
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public string? AriaLabel { get; set; }
+
+    private string ResolvedAriaLabel => string.IsNullOrWhiteSpace(AriaLabel)
+        ? ButtonText
+        : AriaLabel;
 }

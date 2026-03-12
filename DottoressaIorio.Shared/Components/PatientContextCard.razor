@@ -59,8 +59,22 @@
             <div class="patient-notes-section mt-4">
                 <dl class="row mb-0 patient-summary-list">
                     <dt class="col-12 col-lg-2">Note</dt>
-                    <dd class="col-12 col-lg-10 patient-notes">
-                        @(string.IsNullOrWhiteSpace(Patient.Notes) ? "Nessuna nota" : Patient.Notes)
+                    <dd class="col-12 col-lg-10">
+                        @if (string.IsNullOrWhiteSpace(Patient.Notes))
+                        {
+                            <div class="patient-notes">Nessuna nota</div>
+                        }
+                        else
+                        {
+                            <div class="patient-notes @(isNotesExpanded ? "patient-notes-expanded" : string.Empty)">
+                                @Patient.Notes
+                            </div>
+                            <button type="button"
+                                    class="btn btn-link patient-notes-toggle"
+                                    @onclick="ToggleNotes">
+                                @(isNotesExpanded ? "Mostra meno" : "Mostra tutto")
+                            </button>
+                        }
                     </dd>
                 </dl>
             </div>
@@ -71,18 +85,16 @@
 @code {
     [Parameter] public Patient? Patient { get; set; }
     [Parameter] public bool ShowHeaderName { get; set; }
+    private bool isNotesExpanded;
+
+    protected override void OnParametersSet()
+    {
+        isNotesExpanded = false;
+    }
 
     private static string FormatDisplayName(Patient patient)
     {
-        var fullName = $"{patient.FirstName ?? string.Empty} {patient.LastName ?? string.Empty}".Trim();
-        var normalizedFullName = string.IsNullOrWhiteSpace(fullName)
-            ? string.Empty
-            : System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
-                fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
-
-        return string.IsNullOrWhiteSpace(patient.Title)
-            ? normalizedFullName
-            : $"{patient.Title} {normalizedFullName}".Trim();
+        return PatientNameFormatter.FormatDisplayName(patient);
     }
 
     private static string FormatPatientAge(DateTime? dateOfBirth)
@@ -100,5 +112,10 @@
         }
 
         return $"{age} anni";
+    }
+
+    private void ToggleNotes()
+    {
+        isNotesExpanded = !isNotesExpanded;
     }
 }

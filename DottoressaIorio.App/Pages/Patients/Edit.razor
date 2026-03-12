@@ -91,7 +91,7 @@ else
         <div class="row g-3">
             <div class="col-12">
                 <label for="Notes">Note:</label>
-                <InputTextArea id="Notes" @bind-Value="model.Notes" class="form-control"/>
+                <InputTextArea id="Notes" @bind-Value="model.Notes" class="form-control patient-notes-input" rows="3"/>
             </div>
         </div>
         <StandardFormActions CancelUrl="@($"/patient/{Id}/")"
@@ -138,14 +138,7 @@ else
 
     private static string FormatFullName(string? firstName, string? lastName)
     {
-        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
-        if (string.IsNullOrWhiteSpace(fullName))
-        {
-            return string.Empty;
-        }
-
-        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
-            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
+        return PatientNameFormatter.FormatFullName(firstName, lastName);
     }
 
 }

@@ -31,7 +31,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(templateDescription);
 
         await SubmitCreateTherapyFormAsync(page);
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" }))
             .ToBeVisibleAsync();
         await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
     }
@@ -101,7 +101,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
 
         await FillTherapyDescriptionAsync(page, manualDescription);
         await SubmitCreateTherapyFormAsync(page);
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" }))
             .ToBeVisibleAsync();
         await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
     }

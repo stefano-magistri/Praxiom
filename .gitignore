@@ -405,11 +405,11 @@ FodyWeavers.xsd
 *.sln.iml
 
 #Custom ignores
+*/.artifacts/*
 DottoressaIorio.App/app*.db*
 DottoressaIorio.App/_db_backup/*
 DottoressaIorio.App/_runtime/*
 DottoressaIorio.E2E/appsettings.Local.json
-DottoressaIorio.E2E/.artifacts/*
 query
 Setup/Output/
 Setup/Praxiom Licenses/*

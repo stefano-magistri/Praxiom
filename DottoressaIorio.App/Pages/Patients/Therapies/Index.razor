@@ -23,18 +23,25 @@ else
         </div>
     </div>
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h3 class="mb-0">Terapie</h3>
+    <div class="therapy-primary-cta mb-4">
         @if (licenseService.IsTrialExpired)
         {
-            <button type="button" class="btn btn-primary btn-create-therapy" disabled>
-                <span class="oi oi-plus px-1" aria-hidden="true"></span>Nuova Terapia
+            <button type="button" class="btn btn-primary btn-create-therapy btn-create-therapy-prominent" disabled>
+                <span class="oi oi-plus px-1" aria-hidden="true"></span>Scrivi terapia
             </button>
         }
         else
         {
-            <AnchorButton ButtonClass="primary btn-create-therapy" Url="@($"/patient/{PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Nuova Terapia"></AnchorButton>
+            <AnchorButton ButtonClass="primary btn-create-therapy btn-create-therapy-prominent"
+                          Url="@($"/patient/{PatientId}/create-therapy/")"
+                          IconClass="oi oi-plus"
+                          ButtonText="Scrivi terapia"></AnchorButton>
         }
+        <p class="therapy-primary-cta-hint mb-0">Scrivi e stampa subito la terapia del paziente.</p>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h3 class="mb-0">Terapie</h3>
     </div>
 
     <div class="card therapies-card">
@@ -43,7 +50,7 @@ else
             {
                 <div class="therapy-top-actions mb-3">
                     <button type="button" class="btn btn-outline-primary" @onclick="() => PrintAsync(LatestTherapy.TherapyId)">
-                        <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Scarica ultima terapia
+                        <span class="oi oi-print px-1" aria-hidden="true"></span>Stampa ultima terapia
                     </button>
                 </div>
             }
@@ -85,17 +92,23 @@ else
                                            href="@($"/patient/{PatientId}/create-therapy?duplicateFrom={t.TherapyId}")"
                                            title="Duplica terapia"
                                            aria-label="Duplica terapia">
-                                            <span class="oi oi-layers" aria-hidden="true"></span>
+                                            <span class="oi oi-layers px-1" aria-hidden="true"></span>Duplica
                                         </a>
                                         <button type="button"
                                                 class="btn btn-primary"
-                                                title="Scarica PDF"
-                                                aria-label="Scarica PDF"
+                                                title="Stampa"
+                                                aria-label="Stampa"
                                                 @onclick="() => PrintAsync(t.TherapyId)">
-                                            <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
+                                            <span class="oi oi-print px-1" aria-hidden="true"></span>Stampa
                                         </button>
-                                        <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditTherapy(t.TherapyId)" IconClass="oi oi-pencil"></ActionButton>
-                                        <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDeleteTherapy(t.TherapyId)" IconClass="oi oi-trash"></ActionButton>
+                                        <ActionButton ButtonClass="outline-secondary"
+                                                      ButtonText="Modifica"
+                                                      OnClick="() => NavigateToEditTherapy(t.TherapyId)"
+                                                      IconClass="oi oi-pencil"></ActionButton>
+                                        <ActionButton ButtonClass="outline-danger btn-delete-soft"
+                                                      ButtonText="Elimina"
+                                                      OnClick="() => NavigateToDeleteTherapy(t.TherapyId)"
+                                                      IconClass="oi oi-trash"></ActionButton>
                                     </div>
                                 </td>
                             </tr>
@@ -233,25 +246,12 @@ else
 
     private static string FormatFullName(string? firstName, string? lastName)
     {
-        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
-        if (string.IsNullOrWhiteSpace(fullName))
-        {
-            return string.Empty;
-        }
-
-        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
-            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
+        return PatientNameFormatter.FormatFullName(firstName, lastName);
     }
 
     private static string FormatDisplayName(string? title, string? firstName, string? lastName)
     {
-        var fullName = FormatFullName(firstName, lastName);
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            return fullName;
-        }
-
-        return string.IsNullOrWhiteSpace(fullName) ? title : $"{title} {fullName}";
+        return PatientNameFormatter.FormatDisplayName(title, firstName, lastName);
     }
 
     private static string GetDescriptionPreview(string? description)
