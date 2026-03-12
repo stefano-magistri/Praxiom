@@ -21,17 +21,23 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await CreateTherapyTemplateAsync(page, templateTitle, templateDescription);
         var patientId = await CreatePatientAsync(page, $"ThNome{seed}", $"ThCognome{seed}", $"{seed}.th@example.test",
             "1981-01-01");
-
-        await page.GotoAsync($"/patient/{patientId}/create-therapy",
+        await page.GotoAsync($"/patient/{patientId}/",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
+        var writeTherapyButton = page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Scrivi terapia" });
+        await Expect(writeTherapyButton).ToBeVisibleAsync();
+        await writeTherapyButton.ClickAsync();
+        await page.Locator("#TemplateId").WaitForAsync();
+        Assert.Contains($"/patient/{patientId}/create-therapy", page.Url, StringComparison.Ordinal);
         await Expect(page.Locator("#TemplateId option").Filter(new LocatorFilterOptions { HasText = templateTitle }))
             .ToHaveCountAsync(1);
         await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = templateTitle });
         await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(templateDescription);
 
         await SubmitCreateTherapyFormAsync(page);
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" }))
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Scrivi terapia" }))
+            .ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).First)
             .ToBeVisibleAsync();
         await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
     }
@@ -101,7 +107,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
 
         await FillTherapyDescriptionAsync(page, manualDescription);
         await SubmitCreateTherapyFormAsync(page);
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" }))
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).First)
             .ToBeVisibleAsync();
         await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
     }

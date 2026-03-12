@@ -142,7 +142,9 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 
         var patientId = await CreatePatientAsync(page, firstName, lastName, email, "1981-01-01");
         await CreateTherapyAsync(page, patientId, therapyDescription);
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" }))
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Scrivi terapia" }))
+            .ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).First)
             .ToBeVisibleAsync();
         await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
 
@@ -174,7 +176,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await CreateTherapyAsync(page, patientId, therapyDescription1);
         await CreateTherapyAsync(page, patientId, therapyDescription2);
 
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" }))
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).First)
             .ToBeVisibleAsync();
         await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(2);
 

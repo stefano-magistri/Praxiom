@@ -855,9 +855,39 @@ body {
     gap: .45rem;
 }
 
-.therapy-top-actions {
+.patient-detail-summary .patient-context-card .card-body {
+    padding: 1.05rem 1.2rem !important;
+}
+
+.patient-detail-summary .patient-context-heading {
+    margin-bottom: .55rem;
+}
+
+.patient-detail-summary .patient-notes-section {
+    margin-top: .65rem !important;
+    padding-top: .65rem;
+}
+
+.therapy-section-toolbar {
     display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.therapy-section-search {
+    flex: 1 1 20rem;
+}
+
+.therapy-section-actions {
+    display: inline-flex;
+    align-items: center;
     justify-content: flex-end;
+}
+
+.therapy-section-actions .btn {
+    margin-right: 0 !important;
 }
 
 main .patients-table-wrapper {
@@ -955,22 +985,6 @@ main .patients-table-wrapper {
 
 .btn-create-therapy-prominent {
     min-width: 11.5rem;
-}
-
-.therapy-primary-cta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .85rem 1rem;
-}
-
-.therapy-primary-cta .btn {
-    margin-right: 0 !important;
-}
-
-.therapy-primary-cta-hint {
-    color: #48657a;
-    font-size: .98rem;
 }
 
 .btn-create-therapy-inline {

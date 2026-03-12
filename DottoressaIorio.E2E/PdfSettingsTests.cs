@@ -73,7 +73,7 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
         context.Response += OnResponse;
 
         var pdfResponseTask = page.WaitForPopupAsync();
-        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" })
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).First
             .ClickAsync();
         var popup = await pdfResponseTask;
 

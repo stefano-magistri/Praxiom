@@ -24,7 +24,9 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
         var patientId = await CreatePatientAsync(page, firstName, lastName, email, dateOfBirth);
         await CreateTherapyAsync(page, patientId, therapyDescription);
 
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" }))
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Scrivi terapia" }))
+            .ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).First)
             .ToBeVisibleAsync();
 
         var pdfUrlCompletion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -39,7 +41,7 @@ public sealed class PdfDownloadTests(PlaywrightFixture fixture) : E2eTestBase(fi
         context.Response += OnResponse;
 
         var popupTask = page.WaitForPopupAsync();
-        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa ultima terapia" })
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).First
             .ClickAsync();
         var popup = await popupTask;
 

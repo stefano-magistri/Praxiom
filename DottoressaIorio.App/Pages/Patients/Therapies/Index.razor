@@ -14,30 +14,13 @@
 }
 else
 {
-    <div class="mb-4">
+    <div class="patient-detail-summary mb-4">
         <PatientContextCard Patient="patient"/>
-
-        <div class="patient-action-row mt-4">
-            <AnchorButton ButtonClass="primary" Url="@($"/patient/{PatientId}/edit/")" IconClass="oi oi-pencil" ButtonText="Modifica"></AnchorButton>
-            <AnchorButton ButtonClass="outline-danger btn-delete-soft" Url="@($"/patient/{PatientId}/delete/")" IconClass="oi oi-trash" ButtonText="Rimuovi"></AnchorButton>
-        </div>
     </div>
 
-    <div class="therapy-primary-cta mb-4">
-        @if (licenseService.IsTrialExpired)
-        {
-            <button type="button" class="btn btn-primary btn-create-therapy btn-create-therapy-prominent" disabled>
-                <span class="oi oi-plus px-1" aria-hidden="true"></span>Scrivi terapia
-            </button>
-        }
-        else
-        {
-            <AnchorButton ButtonClass="primary btn-create-therapy btn-create-therapy-prominent"
-                          Url="@($"/patient/{PatientId}/create-therapy/")"
-                          IconClass="oi oi-plus"
-                          ButtonText="Scrivi terapia"></AnchorButton>
-        }
-        <p class="therapy-primary-cta-hint mb-0">Scrivi e stampa subito la terapia del paziente.</p>
+    <div class="patient-action-row patient-detail-secondary-actions mb-4">
+        <AnchorButton ButtonClass="outline-secondary" Url="@($"/patient/{PatientId}/edit/")" IconClass="oi oi-pencil" ButtonText="Modifica"></AnchorButton>
+        <AnchorButton ButtonClass="outline-danger btn-delete-soft" Url="@($"/patient/{PatientId}/delete/")" IconClass="oi oi-trash" ButtonText="Rimuovi"></AnchorButton>
     </div>
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -46,19 +29,29 @@ else
 
     <div class="card therapies-card">
         <div class="card-body p-4">
-            @if (LatestTherapy != null)
-            {
-                <div class="therapy-top-actions mb-3">
-                    <button type="button" class="btn btn-outline-primary" @onclick="() => PrintAsync(LatestTherapy.TherapyId)">
-                        <span class="oi oi-print px-1" aria-hidden="true"></span>Stampa ultima terapia
-                    </button>
+            <div class="therapy-section-toolbar mb-3">
+                <div class="therapy-section-search">
+                    <SearchBox Id="therapySearch"
+                               Value="@TherapySearchTerm"
+                               OnInput="SearchTherapies"
+                               Placeholder="Cerca terapia nella descrizione o per data (gg/MM/aaaa)"/>
                 </div>
-            }
-
-            <SearchBox Id="therapySearch"
-                       Value="@TherapySearchTerm"
-                       OnInput="SearchTherapies"
-                       Placeholder="Cerca terapia nella descrizione o per data (gg/MM/aaaa)"/>
+                <div class="therapy-section-actions">
+                    @if (licenseService.IsTrialExpired)
+                    {
+                        <button type="button" class="btn btn-primary btn-create-therapy btn-create-therapy-prominent" disabled>
+                            <span class="oi oi-plus px-1" aria-hidden="true"></span>Scrivi terapia
+                        </button>
+                    }
+                    else
+                    {
+                        <AnchorButton ButtonClass="primary btn-create-therapy btn-create-therapy-prominent"
+                                      Url="@($"/patient/{PatientId}/create-therapy/")"
+                                      IconClass="oi oi-plus"
+                                      ButtonText="Scrivi terapia"></AnchorButton>
+                    }
+                </div>
+            </div>
 
             @if (DisplayedTherapies.Any())
             {
@@ -88,12 +81,6 @@ else
                                 <td class="text-truncate truncate-small">@GetDescriptionPreview(t.Description)</td>
                                 <td class="text-end">
                                     <div class="table-row-actions">
-                                        <a class="btn btn-outline-primary"
-                                           href="@($"/patient/{PatientId}/create-therapy?duplicateFrom={t.TherapyId}")"
-                                           title="Duplica terapia"
-                                           aria-label="Duplica terapia">
-                                            <span class="oi oi-layers px-1" aria-hidden="true"></span>Duplica
-                                        </a>
                                         <button type="button"
                                                 class="btn btn-primary"
                                                 title="Stampa"
@@ -101,12 +88,22 @@ else
                                                 @onclick="() => PrintAsync(t.TherapyId)">
                                             <span class="oi oi-print px-1" aria-hidden="true"></span>Stampa
                                         </button>
-                                        <ActionButton ButtonClass="outline-secondary"
-                                                      ButtonText="Modifica"
+                                        <a class="btn btn-outline-primary patient-row-action-compact"
+                                           href="@($"/patient/{PatientId}/create-therapy?duplicateFrom={t.TherapyId}")"
+                                           title="Duplica terapia"
+                                           aria-label="Duplica terapia">
+                                            <span class="oi oi-layers" aria-hidden="true"></span>
+                                        </a>
+                                        <ActionButton ButtonClass="outline-secondary patient-row-action-compact"
+                                                      ButtonText=""
+                                                      Title="Modifica"
+                                                      AriaLabel="Modifica"
                                                       OnClick="() => NavigateToEditTherapy(t.TherapyId)"
                                                       IconClass="oi oi-pencil"></ActionButton>
-                                        <ActionButton ButtonClass="outline-danger btn-delete-soft"
-                                                      ButtonText="Elimina"
+                                        <ActionButton ButtonClass="outline-danger btn-delete-soft patient-row-action-compact"
+                                                      ButtonText=""
+                                                      Title="Elimina"
+                                                      AriaLabel="Elimina"
                                                       OnClick="() => NavigateToDeleteTherapy(t.TherapyId)"
                                                       IconClass="oi oi-trash"></ActionButton>
                                     </div>
@@ -149,11 +146,6 @@ else
     private string PatientPageTitle => patient == null
         ? "Paziente"
         : FormatDisplayName(patient.Title, patient.FirstName, patient.LastName);
-
-    private Therapy? LatestTherapy => allTherapies
-        .OrderByDescending(t => t.CreatedDate)
-        .ThenByDescending(t => t.TherapyId)
-        .FirstOrDefault();
 
     protected override async Task OnParametersSetAsync()
     {
