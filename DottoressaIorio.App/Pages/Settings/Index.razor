@@ -95,20 +95,17 @@ else
                 <InputTextArea id="FooterText" @bind-Value="model.FooterText" class="form-control" rows="3" disabled="@(!isEditMode)"/>
             </div>
         </div>
-        <hr class="my-4">
-        @if (isEditMode)
-        {
-            <button type="button" class="btn btn-secondary" @onclick="CancelEdit">
-                <span class="oi oi-x px-1" aria-hidden="true"></span>Annulla
-            </button>
-            <SubmitButton/>
-        }
-        else
-        {
-            <button type="button" class="btn btn-primary" @onclick="EnableEditMode">
-                <span class="oi oi-pencil px-1" aria-hidden="true"></span>Modifica
-            </button>
-        }
+        <FormActionSection>
+            @if (isEditMode)
+            {
+                <ActionButton ButtonText="Annulla" ButtonClass="secondary" IconClass="oi oi-x" OnClick="@CancelEdit"/>
+                <SubmitButton/>
+            }
+            else
+            {
+                <ActionButton ButtonText="Modifica" ButtonClass="primary" IconClass="oi oi-pencil" OnClick="@EnableEditMode"/>
+            }
+        </FormActionSection>
     </EditForm>
 }
 

@@ -17,10 +17,7 @@
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
     <DataAnnotationsValidator/>
     <ValidationWarningAlert Message="@warningMessage"/>
-    @if (licenseService.IsTrialExpired)
-    {
-        <div class="alert alert-danger" role="alert">@TrialExpiredMessage</div>
-    }
+    <TrialExpiredAlert/>
     <div class="row g-3">
         <div class="col-12">
             <label for="TemplateId">Precompilato:</label>
@@ -33,21 +30,14 @@
             </select>
         </div>
     </div>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="Description">Descrizione:</label>
-            <MinimalRichTextEditor InputId="Description"
-                                   AriaLabel="Descrizione terapia"
-                                   TestId="therapy-description-editor"
-                                   Value="@EditorDescription"
-                                   ValueChanged="OnDescriptionChanged"/>
-            <div class="therapy-description-help">Formato supportato nel PDF: paragrafi, grassetto, corsivo, elenco puntato e numerato.</div>
-            <ValidationMessage For="@(() => model.Description)"/>
-        </div>
-    </div>
-    <hr class="my-4">
-    <CancelButton Url="@($"/patient/{Id}/")"/>
-    <SubmitButton Disabled="@licenseService.IsTrialExpired"/>
+    <TherapyDescriptionField Label="Descrizione:"
+                             InputId="Description"
+                             AriaLabel="Descrizione terapia"
+                             TestId="therapy-description-editor"
+                             Value="@EditorDescription"
+                             ValueChanged="OnDescriptionChanged"
+                             For="@(() => model.Description)"/>
+    <StandardFormActions CancelUrl="@($"/patient/{Id}/")" SubmitDisabled="@licenseService.IsTrialExpired"/>
 </EditForm>
 
 @if (showTemplateConflictDialog)
@@ -70,8 +60,6 @@
 }
 
 @code {
-    private const string TrialExpiredMessage =
-        "Periodo di prova scaduto. Inserire una licenza per continuare ad utilizzare il software.";
     [Parameter] public int Id { get; set; }
     private Patient? patient;
     [SupplyParameterFromQuery(Name = "duplicateFrom")] public int? DuplicateFromTherapyId { get; set; }
@@ -85,9 +73,6 @@
     private bool showTemplateConflictDialog;
     private int pendingTemplateId;
     private string pendingTemplateDescription = string.Empty;
-    private string FormattedPatientName => patient == null
-        ? string.Empty
-        : FormatFullName(patient.FirstName, patient.LastName);
     private string EditorDescription => StringExtensions.ToEditorValue(model.Description);
 
     protected override async Task OnInitializedAsync()

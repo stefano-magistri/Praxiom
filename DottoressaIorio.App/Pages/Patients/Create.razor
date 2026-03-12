@@ -10,10 +10,7 @@
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
     <DataAnnotationsValidator/>
     <ValidationWarningAlert Message="@warningMessage"/>
-    @if (licenseService.IsTrialExpired)
-    {
-        <div class="alert alert-danger" role="alert">@TrialExpiredMessage</div>
-    }
+    <TrialExpiredAlert/>
     <div class="row g-3">
         <div class="col-12">
             <label for="FirstName">Nome:*</label>
@@ -42,14 +39,10 @@
             <ValidationMessage For="@(() => model.Email)"/>
         </div>
     </div>
-    <hr class="my-4">
-    <CancelButton Url="/"/>
-    <SubmitButton Disabled="@licenseService.IsTrialExpired"/>
+    <StandardFormActions CancelUrl="/" SubmitDisabled="@licenseService.IsTrialExpired"/>
 </EditForm>
 
 @code {
-    private const string TrialExpiredMessage =
-        "Periodo di prova scaduto. Inserire una licenza per continuare ad utilizzare il software.";
     private readonly Patient model = new();
     private string warningMessage = "";
 
