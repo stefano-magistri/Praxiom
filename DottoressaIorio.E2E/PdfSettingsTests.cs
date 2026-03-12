@@ -1,5 +1,6 @@
 using System.IO;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Playwright;
 using UglyToad.PdfPig;
@@ -23,6 +24,7 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
         var canceledDoctorName = $"Canceled {seed}";
         var phone = $"555{seed[..4]}";
         var email = $"pdf-settings-{seed}@example.test";
+        var footerText = $"Footer PDF {seed}";
 
         await page.GetByTestId("settings-nav-link").ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Impostazioni");
@@ -30,28 +32,39 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
         var doctorNameInput = page.Locator("#DoctorName");
         var phoneInput = page.Locator("#Phone");
         var emailInput = page.Locator("#Email");
+        var footerTextInput = page.Locator("#FooterText");
         var originalDoctorName = await doctorNameInput.InputValueAsync();
 
-        await Expect(doctorNameInput).ToBeDisabledAsync();
+        await Expect(page.GetByTestId("license-status-value")).ToBeVisibleAsync();
+        await Expect(page.GetByText("Stato licenza", new PageGetByTextOptions { Exact = true })).ToHaveCountAsync(1);
+        await Expect(page.GetByText("Piè di pagina PDF", new PageGetByTextOptions { Exact = true })).ToBeVisibleAsync();
+        await Expect(doctorNameInput).ToHaveAttributeAsync("readonly", string.Empty);
+        await Expect(phoneInput).ToHaveAttributeAsync("readonly", string.Empty);
+        await Expect(emailInput).ToHaveAttributeAsync("readonly", string.Empty);
+        await Expect(footerTextInput).ToHaveAttributeAsync("readonly", string.Empty);
+        await Expect(doctorNameInput).ToHaveClassAsync(new Regex("settings-readonly-field"));
+        Assert.Equal("default", await doctorNameInput.EvaluateAsync<string>("element => getComputedStyle(element).cursor"));
         await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Modifica" })).ToBeVisibleAsync();
 
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Modifica" }).ClickAsync();
-        await Expect(doctorNameInput).ToBeEnabledAsync();
+        await Expect(doctorNameInput).Not.ToHaveAttributeAsync("readonly", string.Empty);
+        await Expect(footerTextInput).Not.ToHaveAttributeAsync("readonly", string.Empty);
         await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Annulla" })).ToBeVisibleAsync();
 
         await FillBoundFieldAsync(doctorNameInput, canceledDoctorName);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Annulla" }).ClickAsync();
-        await Expect(doctorNameInput).ToBeDisabledAsync();
+        await Expect(doctorNameInput).ToHaveAttributeAsync("readonly", string.Empty);
         Assert.Equal(originalDoctorName, await doctorNameInput.InputValueAsync());
 
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Modifica" }).ClickAsync();
-        await Expect(doctorNameInput).ToBeEnabledAsync();
+        await Expect(doctorNameInput).Not.ToHaveAttributeAsync("readonly", string.Empty);
         await FillBoundFieldAsync(doctorNameInput, doctorName);
         await FillBoundFieldAsync(phoneInput, phone);
         await FillBoundFieldAsync(emailInput, email);
+        await FillBoundFieldAsync(footerTextInput, footerText);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
         await Expect(page.GetByText("Impostazioni salvate.")).ToBeVisibleAsync();
-        await Expect(doctorNameInput).ToBeDisabledAsync();
+        await Expect(doctorNameInput).ToHaveAttributeAsync("readonly", string.Empty);
         await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Modifica" })).ToBeVisibleAsync();
 
         var firstName = $"PdfSetNome{seed}";
@@ -86,6 +99,7 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
             Assert.Contains(NormalizePdfTextForAssertions(doctorName), pdfText, StringComparison.Ordinal);
             Assert.Contains(NormalizePdfTextForAssertions(phone), pdfText, StringComparison.Ordinal);
             Assert.Contains(NormalizePdfTextForAssertions(email), pdfText, StringComparison.Ordinal);
+            Assert.Contains(NormalizePdfTextForAssertions(footerText), pdfText, StringComparison.Ordinal);
         }
         finally
         {

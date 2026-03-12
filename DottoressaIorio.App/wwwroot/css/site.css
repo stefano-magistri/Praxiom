@@ -64,6 +64,23 @@ textarea {
     height: auto;
 }
 
+.settings-license-status-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.settings-form .settings-readonly-field[readonly] {
+    background-color: var(--surface-soft);
+    color: var(--ink-muted);
+    cursor: default;
+}
+
+.settings-form .settings-readonly-field[readonly]:focus {
+    border-color: var(--border);
+    box-shadow: none;
+}
+
 .needs-validation label {
     margin: 10px 0;
     font-weight: 600;
@@ -578,6 +595,15 @@ main form.needs-validation {
 
 .text-truncate.therapy-templates-description-cell {
     max-width: 560px;
+}
+
+.therapy-template-delete-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .sidebar-footer {

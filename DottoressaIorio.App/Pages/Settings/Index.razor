@@ -24,9 +24,8 @@ else
         <div class="card patients-card mb-4">
             <div class="card-body p-4">
                 <h3 class="mt-0">Stato licenza</h3>
+                <p class="mb-3 settings-license-status-value" data-testid="license-status-value">@licenseService.StatusLabel</p>
                 <dl class="row patient-summary-list mb-0">
-                    <dt class="col-sm-4">Stato licenza</dt>
-                    <dd class="col-sm-8">@licenseService.StatusLabel</dd>
                     @if (licenseService.TrialExpiresUtc.HasValue)
                     {
                         <dt class="col-sm-4">Scadenza trial</dt>
@@ -49,50 +48,50 @@ else
         <div class="row g-3">
             <div class="col-12">
                 <label for="DoctorName" class="form-label">Nome medico</label>
-                <InputText id="DoctorName" @bind-Value="model.DoctorName" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
+                <InputText id="DoctorName" @bind-Value="model.DoctorName" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="DoctorTitle" class="form-label">Titolo professionale</label>
-                <InputText id="DoctorTitle" @bind-Value="model.DoctorTitle" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
+                <InputText id="DoctorTitle" @bind-Value="model.DoctorTitle" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="Specialization" class="form-label">Specializzazione</label>
-                <InputText id="Specialization" @bind-Value="model.Specialization" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
+                <InputText id="Specialization" @bind-Value="model.Specialization" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="ClinicName" class="form-label">Nome studio</label>
-                <InputText id="ClinicName" @bind-Value="model.ClinicName" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
+                <InputText id="ClinicName" @bind-Value="model.ClinicName" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="Address" class="form-label">Indirizzo</label>
-                <InputTextArea id="Address" @bind-Value="model.Address" class="form-control" rows="2" disabled="@(!isEditMode)"/>
+                <InputTextArea id="Address" @bind-Value="model.Address" class="@GetFieldClass()" rows="2" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="Phone" class="form-label">Telefono</label>
-                <InputText id="Phone" @bind-Value="model.Phone" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
+                <InputText id="Phone" @bind-Value="model.Phone" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <label for="Email" class="form-label">Email</label>
-                <InputText id="Email" @bind-Value="model.Email" class="form-control" autocomplete="off" disabled="@(!isEditMode)"/>
+                <InputText id="Email" @bind-Value="model.Email" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
                 <ValidationMessage For="@(() => model.Email)"/>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-12">
-                <label for="FooterText" class="form-label">Testo piè di pagina</label>
-                <InputTextArea id="FooterText" @bind-Value="model.FooterText" class="form-control" rows="3" disabled="@(!isEditMode)"/>
+                <label for="FooterText" class="form-label">Piè di pagina PDF</label>
+                <InputTextArea id="FooterText" @bind-Value="model.FooterText" class="@GetFieldClass()" rows="3" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
             </div>
         </div>
         <FormActionSection>
@@ -175,6 +174,11 @@ else
         warningMessage = string.Empty;
         successMessage = string.Empty;
         isEditMode = false;
+    }
+
+    private string GetFieldClass()
+    {
+        return isEditMode ? "form-control" : "form-control settings-readonly-field";
     }
 
     private static DottoressaIorio.Models.ClinicSettings Clone(DottoressaIorio.Models.ClinicSettings settings)

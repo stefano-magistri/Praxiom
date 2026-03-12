@@ -4,7 +4,7 @@
 @inject NavigationManager navigationManager
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
-<PageHeader Title="Modifica Terapia Precompilata"/>
+<PageHeader Title="Modifica terapia precompilata"/>
 
 <EditForm Model="@model" OnValidSubmit="@SaveTask" class="needs-validation" novalidate>
     <DataAnnotationsValidator/>
@@ -23,8 +23,7 @@
                              Value="@EditorDescription"
                              ValueChanged="OnDescriptionChanged"
                              For="@(() => model.Description)"/>
-    <StandardFormActions CancelUrl="/therapy-templates"
-                         RemoveUrl="@($"/therapy-template/{Id}/delete/")"/>
+    <StandardFormActions CancelUrl="/therapy-templates"/>
 </EditForm>
 
 @code {
