@@ -572,6 +572,14 @@ main form.needs-validation {
     max-width: 500px;
 }
 
+.text-truncate.therapy-templates-title-cell {
+    max-width: 220px;
+}
+
+.text-truncate.therapy-templates-description-cell {
+    max-width: 560px;
+}
+
 .sidebar-footer {
     margin-top: auto;
     list-style: none;

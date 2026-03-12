@@ -7,7 +7,7 @@
 
 <PageHeader Title="Terapie Precompilate"/>
 
-<div class="card patients-card">
+<div class="card patients-card" data-testid="therapy-templates-page">
     <div class="card-body p-4">
         <div class="patients-toolbar mb-3">
             <div class="patients-toolbar-search">
@@ -25,7 +25,7 @@
                             title="Nuova Terapia Precompilata"
                             aria-label="Nuova Terapia Precompilata"
                             disabled>
-                        <span class="oi oi-plus" aria-hidden="true"></span>
+                        <span class="oi oi-plus px-1" aria-hidden="true"></span>Nuova Terapia
                     </button>
                 }
                 else
@@ -35,7 +35,7 @@
                        href="/create-therapy-template"
                        title="Nuova Terapia Precompilata"
                        aria-label="Nuova Terapia Precompilata">
-                        <span class="oi oi-plus" aria-hidden="true"></span>
+                        <span class="oi oi-plus px-1" aria-hidden="true"></span>Nuova Terapia
                     </a>
                 }
             </div>
@@ -74,12 +74,22 @@
                     @foreach (var template in DisplayedTemplates)
                     {
                         <tr>
-                            <td class="text-truncate truncate-small">@FormatTitleCase(template.Title)</td>
-                            <td class="text-truncate truncate-big">@GetDescriptionPreview(template.Description)</td>
+                            <td class="text-truncate therapy-templates-title-cell">@FormatTitleCase(template.Title)</td>
+                            <td class="text-truncate therapy-templates-description-cell">@GetDescriptionPreview(template.Description)</td>
                             <td class="text-end">
                                 <div class="table-row-actions">
-                                    <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEdit(template.Id)" IconClass="oi oi-pencil"></ActionButton>
-                                    <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDelete(template.Id)" IconClass="oi oi-trash"></ActionButton>
+                                    <ActionButton ButtonClass="outline-secondary patient-row-action-compact"
+                                                  ButtonText=""
+                                                  Title="Modifica"
+                                                  AriaLabel="Modifica"
+                                                  OnClick="() => NavigateToEdit(template.Id)"
+                                                  IconClass="oi oi-pencil"></ActionButton>
+                                    <ActionButton ButtonClass="outline-danger btn-delete-soft patient-row-action-compact"
+                                                  ButtonText=""
+                                                  Title="Elimina"
+                                                  AriaLabel="Elimina"
+                                                  OnClick="() => NavigateToDelete(template.Id)"
+                                                  IconClass="oi oi-trash"></ActionButton>
                                 </div>
                             </td>
                         </tr>
