@@ -4,54 +4,127 @@
 @inject PatientRepository patientRepository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
+@inject IJSRuntime jsRuntime
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
+@using Microsoft.AspNetCore.Components.Forms
 
-<ActionPageHeader Title="Modifica Terapia"/>
+<ActionPageHeader Title="Modifica terapia"/>
 
 <PatientContextCard Patient="patient" ShowHeaderName="true"/>
 
-<EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
+<EditForm EditContext="@editContext" OnSubmit="@HandleSubmitAsync" class="needs-validation therapy-editor-form" novalidate>
     <DataAnnotationsValidator/>
     <ValidationWarningAlert Message="@warningMessage"/>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="Description">Descrizione:</label>
-            <MinimalRichTextEditor InputId="Description"
-                                   AriaLabel="Descrizione terapia"
-                                   TestId="therapy-description-editor"
-                                   Value="@EditorDescription"
-                                   ValueChanged="OnDescriptionChanged"/>
-            <div class="therapy-description-help">Formato supportato nel PDF: paragrafi, grassetto, corsivo, elenco puntato e numerato.</div>
-            <ValidationMessage For="@(() => model.Description)"/>
+    <TherapyDescriptionField Label="Descrizione:"
+                             InputId="Description"
+                             AriaLabel="Descrizione terapia"
+                             TestId="therapy-description-editor"
+                             Value="@EditorDescription"
+                             ValueChanged="OnDescriptionChanged"
+                             For="@(() => model.Description)"/>
+    <FormActionSection>
+        <div class="therapy-editor-actions" data-testid="therapy-form-actions">
+            <CancelButton Url="@($"/patient/{model.PatientId}/")"/>
+            <button type="button"
+                    class="btn btn-outline-primary me-2"
+                    disabled="@isSubmitting"
+                    data-testid="therapy-print-button"
+                    title="Stampa"
+                    aria-label="Stampa"
+                    @onclick="HandlePrintAsync">
+                <span class="oi oi-print px-1" aria-hidden="true"></span>Stampa
+            </button>
+            <button type="submit"
+                    class="btn btn-primary"
+                    disabled="@isSubmitting"
+                    data-testid="therapy-save-button"
+                    @onclick="PrepareSaveAndClose">
+                <span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva
+            </button>
         </div>
-    </div>
-
-    <hr class="my-4">
-    <CancelButton Url="@($"/patient/{model.PatientId}/")"/>
-    <SubmitButton/>
+    </FormActionSection>
 </EditForm>
 
 @code {
     [Parameter] public int Id { get; set; }
 
     private Patient? patient;
-    private Therapy model;
+    private Therapy model = new();
+    private EditContext editContext = default!;
     private string warningMessage = "";
-    private string FormattedPatientName => patient == null
-        ? string.Empty
-        : FormatFullName(patient.FirstName, patient.LastName);
+    private bool isSubmitting;
+    private TherapySubmitAction pendingSubmitAction = TherapySubmitAction.SaveAndClose;
     private string EditorDescription => StringExtensions.ToEditorValue(model?.Description);
 
     protected override async Task OnParametersSetAsync()
     {
         model = await repository.GetByIdAsync(Id);
+        ResetEditContext();
         if (model != null)
         {
             patient = await patientRepository.GetByIdAsync(model.PatientId);
         }
     }
 
-    private async Task SaveAsync()
+    private void ResetEditContext()
+    {
+        editContext = new EditContext(model);
+    }
+
+    private void PrepareSaveAndClose()
+    {
+        pendingSubmitAction = TherapySubmitAction.SaveAndClose;
+    }
+
+    private async Task HandleSubmitAsync(EditContext _)
+    {
+        await SubmitAsync(pendingSubmitAction);
+    }
+
+    private async Task HandlePrintAsync()
+    {
+        pendingSubmitAction = TherapySubmitAction.SaveAndPrint;
+        await SubmitAsync(TherapySubmitAction.SaveAndPrint);
+    }
+
+    private async Task SubmitAsync(TherapySubmitAction action)
+    {
+        if (isSubmitting)
+        {
+            return;
+        }
+
+        warningMessage = string.Empty;
+
+        if (!editContext.Validate())
+        {
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            if (!await SaveAsync())
+            {
+                return;
+            }
+
+            if (action == TherapySubmitAction.SaveAndPrint)
+            {
+                await OpenPrintAsync();
+                return;
+            }
+
+            navigationManager.NavigateTo($"/patient/{model.PatientId}/");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task<bool> SaveAsync()
     {
         try
         {
@@ -66,25 +139,28 @@
             {
                 // Backup failures must not block the user save flow.
             }
-
-            navigationManager.NavigateTo($"/patient/{model.PatientId}/");
+            return true;
         }
         catch (Exception ex)
         {
             warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
+            return false;
         }
     }
 
     private static string FormatFullName(string? firstName, string? lastName)
     {
-        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
-        if (string.IsNullOrWhiteSpace(fullName))
-        {
-            return string.Empty;
-        }
+        return PatientNameFormatter.FormatFullName(firstName, lastName);
+    }
 
-        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
-            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
+    private async Task OpenPrintAsync()
+    {
+        var displayName = patient is null
+            ? $"therapy_{model.TherapyId}.pdf"
+            : $"{patient.FirstName}_{patient.LastName}.pdf";
+        var encodedDisplayName = Uri.EscapeDataString(displayName);
+
+        await jsRuntime.InvokeVoidAsync("open", $"/pdf/therapy/{model.TherapyId}/{encodedDisplayName}", "_blank");
     }
 
     private Task OnDescriptionChanged(string value)
@@ -93,5 +169,10 @@
         return Task.CompletedTask;
     }
 
+    private enum TherapySubmitAction
+    {
+        SaveAndClose,
+        SaveAndPrint
+    }
 }
 

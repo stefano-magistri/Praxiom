@@ -7,6 +7,8 @@ public class PdfHtmlBuilder
 {
     public string BuildHtml(Therapy therapy)
     {
+        var patientDisplayName = Encode(PatientNameFormatter.FormatDisplayName(therapy.Patient));
+
         return $@"
 <html>
 <head>
@@ -19,7 +21,7 @@ public class PdfHtmlBuilder
     </style>
 </head>
 <body>
-    <p class='h2'>{therapy.Patient.Title} {therapy.Patient.FirstName} {therapy.Patient.LastName},</p>
+    <p class='h2'>{patientDisplayName},</p>
     {therapy.GetHtmlDescription()}
 </body>
 </html>";
@@ -44,7 +46,7 @@ public class PdfHtmlBuilder
             .Replace("{{footerText}}", Encode(settings.FooterText))
             .Replace("{{trialLabel}}", isTrial ? BuildTrialLabel() : string.Empty)
             .Replace("{{therapyDate}}", therapy.CreatedDate.ToString("dd/MM/yyyy"))
-            .Replace("{{patient}}", $"{therapy.Patient.Title} {therapy.Patient.FirstName} {therapy.Patient.LastName}");
+            .Replace("{{patient}}", Encode(PatientNameFormatter.FormatDisplayName(therapy.Patient)));
     }
 
     private static string BuildLine(string? value)

@@ -8,7 +8,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
 {
     [Fact]
     [Trait("Category", "E2E")]
-    public async Task CreateTherapy_FromTemplate_ShouldPrefillAndSave()
+    public async Task CreateTherapy_FromTemplate_ShouldShowActionsAndPrint()
     {
         var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
@@ -21,24 +21,31 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await CreateTherapyTemplateAsync(page, templateTitle, templateDescription);
         var patientId = await CreatePatientAsync(page, $"ThNome{seed}", $"ThCognome{seed}", $"{seed}.th@example.test",
             "1981-01-01");
-
-        await page.GotoAsync($"/patient/{patientId}/create-therapy",
+        await page.GotoAsync($"/patient/{patientId}/",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
+        var writeTherapyButton = page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Scrivi terapia" });
+        await Expect(writeTherapyButton).ToBeVisibleAsync();
+        await writeTherapyButton.ClickAsync();
+        await page.Locator("#TemplateId").WaitForAsync();
+        Assert.Contains($"/patient/{patientId}/create-therapy", page.Url, StringComparison.Ordinal);
         await Expect(page.Locator("#TemplateId option").Filter(new LocatorFilterOptions { HasText = templateTitle }))
             .ToHaveCountAsync(1);
         await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = templateTitle });
         await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(templateDescription);
+        Assert.Equal(["Annulla", "Stampa", "Salva"], await GetTherapyFormActionLabelsAsync(page));
 
-        await SubmitCreateTherapyFormAsync(page);
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
-            .ToBeVisibleAsync();
-        await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
+        var popup = await ClickPrintExpectPopupAsync(page);
+        await popup.CloseAsync();
+
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica terapia");
+        Assert.Matches(@".*/patient/\d+/edit-therapy/?$", page.Url);
+        await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(templateDescription);
     }
 
     [Fact]
     [Trait("Category", "E2E")]
-    public async Task EditAndDeleteTherapy_ShouldUpdateAndRemoveRow()
+    public async Task EditTherapy_ShouldPrintLatestChangesAndSaveOnClose()
     {
         var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
@@ -55,24 +62,47 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         var row = page.Locator($"//tbody/tr[contains(., '{originalDescription}')]").First;
         await Expect(row).ToBeVisibleAsync();
         await row.Locator("button").Nth(1).ClickAsync();
-        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica Terapia");
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica terapia");
+        Assert.Equal(["Annulla", "Stampa", "Salva"], await GetTherapyFormActionLabelsAsync(page));
 
         await FillTherapyDescriptionAsync(page, editedDescription);
+        var popup = await ClickPrintExpectPopupAsync(page);
+        await popup.CloseAsync();
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica terapia");
+        Assert.Matches(@".*/patient/\d+/edit-therapy/?$", page.Url);
+        await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(editedDescription);
+
         await SubmitEditTherapyFormAsync(page);
         await Expect(page.GetByText(editedDescription)).ToBeVisibleAsync();
-
-        var editedRow = page.Locator($"//tbody/tr[contains(., '{editedDescription}')]").First;
-        await editedRow.Locator("button").Nth(2).ClickAsync();
-        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Terapia");
-        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
-        await Expect(page.GetByTestId("page-heading")).ToContainTextAsync("Editthnome",
-            new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
-        await Expect(page.Locator($"//tbody/tr[contains(., '{editedDescription}')]")).ToHaveCountAsync(0);
     }
 
     [Fact]
     [Trait("Category", "E2E")]
-    public async Task CreateTherapy_ClearingTemplateSelection_ShouldClearDescription()
+    public async Task EditAndDeleteTherapy_ShouldRemoveRow()
+    {
+        var setup = await NewAuthorizedPageAsync();
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var patientId = await CreatePatientAsync(page, $"EditDelNome{seed}", $"EditDelCog{seed}",
+            $"{seed}.eddel@example.test", "1980-05-05");
+        var description = $"THER-DEL-{seed}";
+
+        await CreateTherapyAsync(page, patientId, description);
+
+        var editedRow = page.Locator($"//tbody/tr[contains(., '{description}')]").First;
+        await editedRow.Locator("button").Nth(2).ClickAsync();
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Terapia");
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Scrivi terapia" }))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Expect(page.Locator($"//tbody/tr[contains(., '{description}')]")).ToHaveCountAsync(0);
+    }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task CreateTherapy_ClearingTemplateSelection_ShouldClearDescriptionAndSaveClose()
     {
         var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
@@ -101,9 +131,9 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
 
         await FillTherapyDescriptionAsync(page, manualDescription);
         await SubmitCreateTherapyFormAsync(page);
-        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Scarica ultima terapia" }))
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Scrivi terapia" }))
             .ToBeVisibleAsync();
-        await Expect(page.Locator("table tbody tr")).ToHaveCountAsync(1);
+        await Expect(page.GetByText(manualDescription)).ToBeVisibleAsync();
     }
 
     [Fact]

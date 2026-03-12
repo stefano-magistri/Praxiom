@@ -29,6 +29,27 @@ public class PdfHtmlBuilderTests
     }
 
     [Fact]
+    public void BuildHtml_ShouldUseSharedPatientDisplayFormatting()
+    {
+        var builder = new PdfHtmlBuilder();
+
+        var therapy = new Therapy
+        {
+            Patient = new Patient
+            {
+                Title = "Dott.ssa",
+                FirstName = "mARIO",
+                LastName = "rOSSI"
+            },
+            Description = "Therapy description"
+        };
+
+        var html = builder.BuildHtml(therapy);
+
+        Assert.Contains("Dott.ssa Mario Rossi", html);
+    }
+
+    [Fact]
     public void BuildHtml_ShouldRenderOnlySupportedDescriptionMarkup()
     {
         var builder = new PdfHtmlBuilder();
@@ -79,6 +100,24 @@ public class PdfHtmlBuilderTests
         var footer = builder.BuildFooterHtml(template, therapy, settings);
 
         Assert.Equal("Footer test Terapia 01/01/2023 - Dr. John Doe", footer);
+    }
+
+    [Fact]
+    public void BuildFooterHtml_ShouldUseSharedPatientDisplayFormatting()
+    {
+        var builder = new PdfHtmlBuilder();
+        var settings = new ClinicSettings { FooterText = "Footer test" };
+
+        var therapy = new Therapy
+        {
+            CreatedDate = new DateTime(2023, 1, 1),
+            Patient = new Patient { Title = "Dott.ssa", FirstName = "mARIO", LastName = "rOSSI" }
+        };
+
+        string template = "{{patient}}";
+        var footer = builder.BuildFooterHtml(template, therapy, settings);
+
+        Assert.Equal("Dott.ssa Mario Rossi", footer);
     }
 
     [Fact]

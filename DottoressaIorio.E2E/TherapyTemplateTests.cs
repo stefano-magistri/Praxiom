@@ -32,22 +32,28 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await Expect(addedRow).ToBeVisibleAsync();
 
         await addedRow.Locator("button").First.ClickAsync();
-        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica Terapia Precompilata");
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica terapia precompilata");
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Annulla" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" })).ToBeVisibleAsync();
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Rimuovi" })).ToHaveCountAsync(0);
 
         await FillBoundFieldAsync(page.Locator("#Title"), editedTitle);
         await FillTemplateDescriptionAsync(page, editedDescription);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
-        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie precompilate");
 
         await FilterTemplatesAsync(page, editedTitle);
         var editedRow = page.Locator($"//tbody/tr[contains(., '{editedTitleDisplayed}')]").First;
         await Expect(editedRow).ToBeVisibleAsync();
 
         await editedRow.Locator("button").Nth(1).ClickAsync();
-        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi Terapia Precompilata");
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Rimuovi terapia precompilata");
+        await Expect(page.GetByTestId("therapy-template-summary-card")).ToBeVisibleAsync();
+        await Expect(page.GetByTestId("therapy-template-summary-title")).ToHaveTextAsync(editedTitle);
+        await Expect(page.GetByTestId("therapy-template-summary-description")).ToContainTextAsync(editedDescription);
 
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Rimuovi" }).ClickAsync();
-        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie Precompilate");
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie precompilate");
 
         await FilterTemplatesAsync(page, editedTitle);
         await Expect(page.Locator($"//tbody/tr[contains(., '{editedTitleDisplayed}')]")).ToHaveCountAsync(0);
@@ -100,6 +106,6 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
         await FillTemplateDescriptionAsync(page, $"Another description {seed}");
         await SubmitTemplateFormExpectDuplicateAsync(page);
 
-        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Aggiungi Terapia Precompilata");
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Nuova terapia precompilata");
     }
 }

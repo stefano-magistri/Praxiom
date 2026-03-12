@@ -261,6 +261,34 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
         }
     }
 
+    protected static Task<string[]> GetTherapyFormActionLabelsAsync(IPage page)
+    {
+        return page.GetByTestId("therapy-form-actions").Locator("a.btn, button.btn").EvaluateAllAsync<string[]>(
+            "nodes => nodes.map(node => (node.textContent || '').trim()).filter(Boolean)");
+    }
+
+    protected static async Task<IPage> ClickPrintExpectPopupAsync(IPage page)
+    {
+        var popupTask = page.WaitForPopupAsync();
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).ClickAsync();
+        return await popupTask;
+    }
+
+    protected static async Task ClickPrintExpectNoPopupAsync(IPage page)
+    {
+        try
+        {
+            var popupTask = page.WaitForPopupAsync(new PageWaitForPopupOptions { Timeout = 1500 });
+            await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Stampa" }).ClickAsync();
+            var popup = await popupTask;
+            await popup.CloseAsync();
+            throw new InvalidOperationException("Unexpected print popup opened.");
+        }
+        catch (TimeoutException)
+        {
+        }
+    }
+
     protected static async Task SubmitEditPatientFormAsync(IPage page)
     {
         try

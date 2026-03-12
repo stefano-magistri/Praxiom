@@ -405,6 +405,7 @@ FodyWeavers.xsd
 *.sln.iml
 
 #Custom ignores
+*/.artifacts/*
 DottoressaIorio.App/app*.db*
 DottoressaIorio.App/_db_backup/*
 DottoressaIorio.App/_runtime/*

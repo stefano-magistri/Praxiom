@@ -3,11 +3,36 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
-<PageHeader Title="Rimuovi Terapia Precompilata"/>
+<PageHeader Title="Rimuovi terapia precompilata"/>
 
-<ConfirmDeleteSection ConfirmationText="Vuoi rimuovere questa terapia precompilata?"
-                      CancelUrl="/therapy-templates"
-                      OnConfirm="@SaveAsync"/>
+@if (model == null)
+{
+    <p>Terapia precompilata non trovata.</p>
+}
+else
+{
+    <div class="card patient-context-card mb-4" data-testid="therapy-template-summary-card">
+        <div class="card-body">
+            <h3 class="h5 mb-3">Riepilogo terapia precompilata</h3>
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="text-muted small">Titolo</div>
+                    <div data-testid="therapy-template-summary-title">@model.Title</div>
+                </div>
+                <div class="col-12">
+                    <div class="text-muted small">Descrizione</div>
+                    <div class="therapy-template-delete-description" data-testid="therapy-template-summary-description">
+                        @GetDescriptionPreview(model.Description)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ConfirmDeleteSection ConfirmationText="Vuoi rimuovere questa terapia precompilata?"
+                          CancelUrl="/therapy-templates"
+                          OnConfirm="@SaveAsync"/>
+}
 
 @code {
     [Parameter] public int Id { get; set; }
@@ -24,6 +49,11 @@
         await repository.DeleteAsync(model);
         await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo("/therapy-templates");
+    }
+
+    private static string GetDescriptionPreview(string? description)
+    {
+        return StringExtensions.ToPlainText(description);
     }
 
 }

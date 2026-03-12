@@ -96,6 +96,9 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
 
         await page.GotoAsync("/therapy-templates", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
+        await Expect(page.Locator("#templateSearch")).ToBeVisibleAsync();
+        await Expect(page.GetByTestId("create-therapy-template-page-link")).ToBeVisibleAsync();
+        await Expect(page.Locator("table tbody tr").First).ToBeVisibleAsync();
         await FillLiveFieldAsync(page.Locator("#templateSearch"), prefix);
 
         var pagination = page.Locator("nav[aria-label='Patients Pagination']").First;

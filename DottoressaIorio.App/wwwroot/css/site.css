@@ -64,6 +64,23 @@ textarea {
     height: auto;
 }
 
+.settings-license-status-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.settings-form .settings-readonly-field[readonly] {
+    background-color: var(--surface-soft);
+    color: var(--ink-muted);
+    cursor: default;
+}
+
+.settings-form .settings-readonly-field[readonly]:focus {
+    border-color: var(--border);
+    box-shadow: none;
+}
+
 .needs-validation label {
     margin: 10px 0;
     font-weight: 600;
@@ -386,7 +403,7 @@ main img.img-fluid {
 }
 
 .table thead th {
-    padding: .85rem .8rem;
+    padding: .74rem .76rem;
     border-bottom: 1px solid #cddbe6;
     background: #edf4f8;
     color: #21384a;
@@ -397,7 +414,7 @@ main img.img-fluid {
 }
 
 .table tbody td {
-    padding: .8rem;
+    padding: .68rem .76rem;
     vertical-align: middle;
 }
 
@@ -496,6 +513,8 @@ main form.needs-validation {
     border: 1px solid #d7c17a;
     background: linear-gradient(180deg, #fff8df 0%, #fff3c6 100%);
     color: #5b4304;
+    width: 100%;
+    max-width: none;
 }
 
 .trial-shell-banner-expired {
@@ -570,6 +589,23 @@ main form.needs-validation {
 
 .text-truncate.truncate-big {
     max-width: 500px;
+}
+
+.text-truncate.therapy-templates-title-cell {
+    max-width: 220px;
+}
+
+.text-truncate.therapy-templates-description-cell {
+    max-width: 560px;
+}
+
+.therapy-template-delete-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .sidebar-footer {
@@ -685,12 +721,30 @@ body {
 }
 
 .patients-export-hint {
-    margin-top: -.4rem;
-    margin-bottom: .9rem;
     color: var(--ink-muted);
     font-size: .84rem;
     font-weight: 500;
     opacity: .82;
+}
+
+.patients-utility-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .75rem 1rem;
+    margin-top: 1rem;
+}
+
+.patients-export-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .35rem;
+}
+
+.patients-export-button {
+    font-weight: 600;
 }
 
 .patients-card {
@@ -789,22 +843,115 @@ body {
 .patient-notes {
     white-space: pre-wrap;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     word-break: break-word;
     overflow-wrap: anywhere;
     overflow: hidden;
 }
 
+.patient-notes-expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+}
+
+.patient-notes-toggle {
+    padding: 0;
+    margin-top: .35rem;
+    color: #215e7b;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.patient-notes-toggle:hover,
+.patient-notes-toggle:focus {
+    color: #174a62;
+    text-decoration: underline;
+}
+
+.patient-form-grid {
+    --bs-gutter-x: 1rem;
+}
+
+.patient-more-fields-toggle {
+    padding: 0;
+    margin-top: .35rem;
+    margin-bottom: .2rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #215e7b;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.patient-more-fields-toggle:hover,
+.patient-more-fields-toggle:focus {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    color: #174a62;
+    text-decoration: underline;
+}
+
+.patient-gender-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem 1rem;
+}
+
+.patient-gender-group .form-check {
+    margin-right: 0;
+}
+
+.patient-notes-input {
+    min-height: 0;
+    height: auto !important;
+    max-height: none;
+    resize: vertical;
+}
+
 .patient-action-row {
     display: flex;
     flex-wrap: wrap;
-    gap: .6rem;
+    gap: .45rem;
 }
 
-.therapy-top-actions {
+.patient-detail-summary .patient-context-card .card-body {
+    padding: 1.05rem 1.2rem !important;
+}
+
+.patient-detail-summary .patient-context-heading {
+    margin-bottom: .55rem;
+}
+
+.patient-detail-summary .patient-notes-section {
+    margin-top: .65rem !important;
+    padding-top: .65rem;
+}
+
+.therapy-section-toolbar {
     display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.therapy-section-search {
+    flex: 1 1 20rem;
+}
+
+.therapy-section-actions {
+    display: inline-flex;
+    align-items: center;
     justify-content: flex-end;
+}
+
+.therapy-section-actions .btn {
+    margin-right: 0 !important;
 }
 
 main .patients-table-wrapper {
@@ -823,8 +970,8 @@ main .patients-table-wrapper {
 }
 
 .patients-table > tbody > tr > td {
-    padding-top: .95rem;
-    padding-bottom: .95rem;
+    padding-top: .78rem;
+    padding-bottom: .78rem;
     border-bottom: 1px solid #e8eef4;
 }
 
@@ -854,10 +1001,16 @@ main .patients-table-wrapper {
     text-decoration: underline;
 }
 
+.patient-last-visit-relative {
+    line-height: 1.1;
+    margin-top: .1rem;
+}
+
 .patient-row-actions {
     display: inline-flex;
     align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: .45rem;
 }
 
@@ -873,13 +1026,29 @@ main .patients-table-wrapper {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 2.35rem;
+    min-height: 2.1rem;
     line-height: 1;
+    margin-right: 0 !important;
+    white-space: nowrap;
+}
+
+.patient-row-actions .patient-row-action-compact {
+    min-width: 2.35rem;
+    width: 2.35rem;
+    padding-inline: 0;
+}
+
+.patient-action-row .btn {
+    margin-right: 0 !important;
 }
 
 .btn-create-therapy {
     font-weight: 700;
     min-width: 8.6rem;
+}
+
+.btn-create-therapy-prominent {
+    min-width: 11.5rem;
 }
 
 .btn-create-therapy-inline {
@@ -1011,13 +1180,13 @@ main .patients-table-wrapper {
 
     .table thead th,
     .patients-table thead th {
-        padding: .74rem .72rem;
-        font-size: .78rem;
+        padding: .66rem .68rem;
+        font-size: .76rem;
     }
 
     .table tbody td {
-        padding: .7rem .72rem;
-        font-size: .95rem;
+        padding: .6rem .68rem;
+        font-size: .93rem;
     }
 
     .patient-context-card .row {
@@ -1030,8 +1199,8 @@ main .patients-table-wrapper {
     }
 
     .patients-table > tbody > tr > td {
-        padding-top: .8rem;
-        padding-bottom: .8rem;
+        padding-top: .68rem;
+        padding-bottom: .68rem;
     }
 }
 

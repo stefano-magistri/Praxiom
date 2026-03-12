@@ -14,44 +14,44 @@
 }
 else
 {
-    <div class="mb-4">
+    <div class="patient-detail-summary mb-4">
         <PatientContextCard Patient="patient"/>
+    </div>
 
-        <div class="patient-action-row mt-4">
-            <AnchorButton ButtonClass="primary" Url="@($"/patient/{PatientId}/edit/")" IconClass="oi oi-pencil" ButtonText="Modifica"></AnchorButton>
-            <AnchorButton ButtonClass="outline-danger btn-delete-soft" Url="@($"/patient/{PatientId}/delete/")" IconClass="oi oi-trash" ButtonText="Rimuovi"></AnchorButton>
-        </div>
+    <div class="patient-action-row patient-detail-secondary-actions mb-4">
+        <AnchorButton ButtonClass="outline-secondary" Url="@($"/patient/{PatientId}/edit/")" IconClass="oi oi-pencil" ButtonText="Modifica"></AnchorButton>
+        <AnchorButton ButtonClass="outline-danger btn-delete-soft" Url="@($"/patient/{PatientId}/delete/")" IconClass="oi oi-trash" ButtonText="Rimuovi"></AnchorButton>
     </div>
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h3 class="mb-0">Terapie</h3>
-        @if (licenseService.IsTrialExpired)
-        {
-            <button type="button" class="btn btn-primary btn-create-therapy" disabled>
-                <span class="oi oi-plus px-1" aria-hidden="true"></span>Nuova Terapia
-            </button>
-        }
-        else
-        {
-            <AnchorButton ButtonClass="primary btn-create-therapy" Url="@($"/patient/{PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Nuova Terapia"></AnchorButton>
-        }
     </div>
 
     <div class="card therapies-card">
         <div class="card-body p-4">
-            @if (LatestTherapy != null)
-            {
-                <div class="therapy-top-actions mb-3">
-                    <button type="button" class="btn btn-outline-primary" @onclick="() => PrintAsync(LatestTherapy.TherapyId)">
-                        <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Scarica ultima terapia
-                    </button>
+            <div class="therapy-section-toolbar mb-3">
+                <div class="therapy-section-search">
+                    <SearchBox Id="therapySearch"
+                               Value="@TherapySearchTerm"
+                               OnInput="SearchTherapies"
+                               Placeholder="Cerca terapia nella descrizione o per data (gg/MM/aaaa)"/>
                 </div>
-            }
-
-            <SearchBox Id="therapySearch"
-                       Value="@TherapySearchTerm"
-                       OnInput="SearchTherapies"
-                       Placeholder="Cerca terapia nella descrizione o per data (gg/MM/aaaa)"/>
+                <div class="therapy-section-actions">
+                    @if (licenseService.IsTrialExpired)
+                    {
+                        <button type="button" class="btn btn-primary btn-create-therapy btn-create-therapy-prominent" disabled>
+                            <span class="oi oi-plus px-1" aria-hidden="true"></span>Scrivi terapia
+                        </button>
+                    }
+                    else
+                    {
+                        <AnchorButton ButtonClass="primary btn-create-therapy btn-create-therapy-prominent"
+                                      Url="@($"/patient/{PatientId}/create-therapy/")"
+                                      IconClass="oi oi-plus"
+                                      ButtonText="Scrivi terapia"></AnchorButton>
+                    }
+                </div>
+            </div>
 
             @if (DisplayedTherapies.Any())
             {
@@ -81,21 +81,31 @@ else
                                 <td class="text-truncate truncate-small">@GetDescriptionPreview(t.Description)</td>
                                 <td class="text-end">
                                     <div class="table-row-actions">
-                                        <a class="btn btn-outline-primary"
+                                        <button type="button"
+                                                class="btn btn-primary"
+                                                title="Stampa"
+                                                aria-label="Stampa"
+                                                @onclick="() => PrintAsync(t.TherapyId)">
+                                            <span class="oi oi-print px-1" aria-hidden="true"></span>Stampa
+                                        </button>
+                                        <a class="btn btn-outline-primary patient-row-action-compact"
                                            href="@($"/patient/{PatientId}/create-therapy?duplicateFrom={t.TherapyId}")"
                                            title="Duplica terapia"
                                            aria-label="Duplica terapia">
                                             <span class="oi oi-layers" aria-hidden="true"></span>
                                         </a>
-                                        <button type="button"
-                                                class="btn btn-primary"
-                                                title="Scarica PDF"
-                                                aria-label="Scarica PDF"
-                                                @onclick="() => PrintAsync(t.TherapyId)">
-                                            <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
-                                        </button>
-                                        <ActionButton ButtonClass="outline-secondary" OnClick="() => NavigateToEditTherapy(t.TherapyId)" IconClass="oi oi-pencil"></ActionButton>
-                                        <ActionButton ButtonClass="outline-danger btn-delete-soft" OnClick="() => NavigateToDeleteTherapy(t.TherapyId)" IconClass="oi oi-trash"></ActionButton>
+                                        <ActionButton ButtonClass="outline-secondary patient-row-action-compact"
+                                                      ButtonText=""
+                                                      Title="Modifica"
+                                                      AriaLabel="Modifica"
+                                                      OnClick="() => NavigateToEditTherapy(t.TherapyId)"
+                                                      IconClass="oi oi-pencil"></ActionButton>
+                                        <ActionButton ButtonClass="outline-danger btn-delete-soft patient-row-action-compact"
+                                                      ButtonText=""
+                                                      Title="Elimina"
+                                                      AriaLabel="Elimina"
+                                                      OnClick="() => NavigateToDeleteTherapy(t.TherapyId)"
+                                                      IconClass="oi oi-trash"></ActionButton>
                                     </div>
                                 </td>
                             </tr>
@@ -136,11 +146,6 @@ else
     private string PatientPageTitle => patient == null
         ? "Paziente"
         : FormatDisplayName(patient.Title, patient.FirstName, patient.LastName);
-
-    private Therapy? LatestTherapy => allTherapies
-        .OrderByDescending(t => t.CreatedDate)
-        .ThenByDescending(t => t.TherapyId)
-        .FirstOrDefault();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -233,25 +238,12 @@ else
 
     private static string FormatFullName(string? firstName, string? lastName)
     {
-        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
-        if (string.IsNullOrWhiteSpace(fullName))
-        {
-            return string.Empty;
-        }
-
-        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
-            fullName.ToLower(System.Globalization.CultureInfo.CurrentCulture));
+        return PatientNameFormatter.FormatFullName(firstName, lastName);
     }
 
     private static string FormatDisplayName(string? title, string? firstName, string? lastName)
     {
-        var fullName = FormatFullName(firstName, lastName);
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            return fullName;
-        }
-
-        return string.IsNullOrWhiteSpace(fullName) ? title : $"{title} {fullName}";
+        return PatientNameFormatter.FormatDisplayName(title, firstName, lastName);
     }
 
     private static string GetDescriptionPreview(string? description)

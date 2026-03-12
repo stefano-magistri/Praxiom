@@ -190,8 +190,7 @@ public class PatientsBase : ComponentBase
 
     protected static string FormatPatientDisplayName(string? firstName, string? lastName)
     {
-        var fullName = $"{firstName ?? string.Empty} {lastName ?? string.Empty}".Trim();
-        return FormatTitleCase(fullName);
+        return PatientNameFormatter.FormatFullName(firstName, lastName);
     }
 
     protected static DateTime? GetLastVisitDate(Patient patient)
@@ -199,6 +198,23 @@ public class PatientsBase : ComponentBase
         return patient.Therapies?.Count > 0
             ? patient.Therapies.Max(therapy => therapy.CreatedDate)
             : null;
+    }
+
+    protected static int? GetPatientAge(DateTime? dateOfBirth)
+    {
+        if (!dateOfBirth.HasValue)
+        {
+            return null;
+        }
+
+        var today = DateTime.Today;
+        var age = today.Year - dateOfBirth.Value.Year;
+        if (dateOfBirth.Value.Date > today.AddYears(-age))
+        {
+            age--;
+        }
+
+        return age;
     }
 
     protected static string FormatTitleCase(string? value)
