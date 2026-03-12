@@ -513,6 +513,8 @@ main form.needs-validation {
     border: 1px solid #d7c17a;
     background: linear-gradient(180deg, #fff8df 0%, #fff3c6 100%);
     color: #5b4304;
+    width: 100%;
+    max-width: none;
 }
 
 .trial-shell-banner-expired {

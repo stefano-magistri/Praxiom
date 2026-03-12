@@ -24,7 +24,7 @@ else
         <div class="card patients-card mb-4">
             <div class="card-body p-4">
                 <h3 class="mt-0">Stato licenza</h3>
-                <p class="mb-3 settings-license-status-value" data-testid="license-status-value">@licenseService.StatusLabel</p>
+                <p class="mb-3 settings-license-status-value" data-testid="license-status-value">@GetLicenseStatusValue()</p>
                 <dl class="row patient-summary-list mb-0">
                     @if (licenseService.TrialExpiresUtc.HasValue)
                     {
@@ -38,7 +38,7 @@ else
                     }
                     @if (licenseService.IsTrial)
                     {
-                        <dt class="col-sm-4">Limiti trial</dt>
+                        <dt class="col-sm-4">Limiti</dt>
                         <dd class="col-sm-8">@licenseService.TrialLimitsSummary</dd>
                     }
                 </dl>
@@ -179,6 +179,13 @@ else
     private string GetFieldClass()
     {
         return isEditMode ? "form-control" : "form-control settings-readonly-field";
+    }
+
+    private string GetLicenseStatusValue()
+    {
+        return licenseService.IsTrial
+            ? "Versione di prova attiva"
+            : licenseService.StatusLabel;
     }
 
     private static DottoressaIorio.Models.ClinicSettings Clone(DottoressaIorio.Models.ClinicSettings settings)

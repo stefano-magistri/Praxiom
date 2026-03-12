@@ -36,7 +36,9 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
         var originalDoctorName = await doctorNameInput.InputValueAsync();
 
         await Expect(page.GetByTestId("license-status-value")).ToBeVisibleAsync();
+        await Expect(page.GetByTestId("license-status-value")).ToHaveTextAsync("Versione di prova attiva");
         await Expect(page.GetByText("Stato licenza", new PageGetByTextOptions { Exact = true })).ToHaveCountAsync(1);
+        await Expect(page.GetByText("Limiti", new PageGetByTextOptions { Exact = true })).ToBeVisibleAsync();
         await Expect(page.GetByText("Piè di pagina PDF", new PageGetByTextOptions { Exact = true })).ToBeVisibleAsync();
         await Expect(doctorNameInput).ToHaveAttributeAsync("readonly", string.Empty);
         await Expect(phoneInput).ToHaveAttributeAsync("readonly", string.Empty);
