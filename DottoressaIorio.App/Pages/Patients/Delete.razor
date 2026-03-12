@@ -4,7 +4,7 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
-<ActionPageHeader Title="Rimuovi Paziente" Subtitle="@FormattedPatientName"/>
+<ActionPageHeader Title="Rimuovi paziente"/>
 
 @if (model == null)
 {
@@ -23,9 +23,6 @@ else
     [Parameter] public int Id { get; set; }
 
     private Patient model;
-    private string FormattedPatientName => model == null
-        ? string.Empty
-        : FormatFullName(model.FirstName, model.LastName);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -45,11 +42,6 @@ else
             await repository.DeleteAsync(model);
         });
         navigationManager.NavigateTo("/");
-    }
-
-    private static string FormatFullName(string? firstName, string? lastName)
-    {
-        return PatientNameFormatter.FormatFullName(firstName, lastName);
     }
 
 }

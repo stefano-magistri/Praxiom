@@ -5,50 +5,103 @@
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 @inject ILicenseService licenseService
 
-<PageHeader Title="Nuovo Paziente"/>
+<PageHeader Title="Nuovo paziente"/>
 
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
     <DataAnnotationsValidator/>
     <ValidationWarningAlert Message="@warningMessage"/>
     <TrialExpiredAlert/>
-    <div class="row g-3">
-        <div class="col-12">
+    <div class="row g-3 patient-form-grid">
+        <div class="col-12 col-lg-6">
             <label for="FirstName">Nome:*</label>
             <input id="FirstName" type="text" class="form-control" @bind="model.FirstName" autocomplete="off"/>
             <ValidationMessage For="@(() => model.FirstName)"/>
         </div>
-    </div>
-    <div class="row g-3">
-        <div class="col-12">
+        <div class="col-12 col-lg-6">
             <label for="LastName">Cognome:*</label>
             <input id="LastName" type="text" class="form-control" @bind="model.LastName" autocomplete="off">
             <ValidationMessage For="@(() => model.LastName)"/>
         </div>
-    </div>
-    <div class="row g-3">
-        <div class="col-12">
+        <div class="col-12 col-lg-6">
             <label for="DateOfBirth">Data di Nascita (es: 31/12/1979):*</label>
             <input id="DateOfBirth" type="date" class="form-control" @bind="model.DateOfBirth" autocomplete="off"/>
             <ValidationMessage For="@(() => model.DateOfBirth)"/>
         </div>
-    </div>
-    <div class="row g-3">
-        <div class="col-12">
+        <div class="col-12 col-lg-6">
             <label for="Email">Indirizzo email:</label>
             <input id="Email" type="email" class="form-control" @bind="model.Email" placeholder="name@example.com" autocomplete="off"/>
             <ValidationMessage For="@(() => model.Email)"/>
         </div>
+        @if (showAdditionalFields)
+        {
+            <div class="col-12 col-lg-6">
+                <label for="Title">Titolo</label>
+                <select id="Title" @bind="model.Title" class="form-select">
+                    <option value="" selected>Seleziona...</option>
+                    <option value="Sig.re">Signore</option>
+                    <option value="Sig.ra">Signora</option>
+                    <option value="Dott.">Dottore</option>
+                    <option value="Dott.ssa">Dottoressa</option>
+                    <option value="Proff.">Professore</option>
+                    <option value="Proff.essa">Professoressa</option>
+                </select>
+            </div>
+            <div class="col-12 col-lg-6">
+                <label for="PlaceOfBirth">Luogo di Nascita:</label>
+                <InputText id="PlaceOfBirth" @bind-Value="model.PlaceOfBirth" class="form-control" autocomplete="off"/>
+            </div>
+            <div class="col-12 col-lg-6">
+                <label>Sesso:</label>
+                <div class="patient-gender-group">
+                    <div class="form-check form-check-inline">
+                        <input id="GenderMale" type="radio" checked="@(model.Gender == "Maschio")"
+                               name="Gender" @onchange="@(() => model.Gender = "Maschio")"/>
+                        <label class="form-check-label" for="GenderMale">Maschio</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input id="GenderFemale" type="radio" checked="@(model.Gender == "Femmina")"
+                               name="Gender" @onchange="@(() => model.Gender = "Femmina")"/>
+                        <label class="form-check-label" for="GenderFemale">Femmina</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input id="GenderOther" type="radio" checked="@(model.Gender == "Altro")"
+                               name="Gender" @onchange="@(() => model.Gender = "Altro")"/>
+                        <label class="form-check-label" for="GenderOther">Altro</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <label for="PhoneNumber">Numero di telefono:</label>
+                <input id="PhoneNumber" type="tel" class="form-control" @bind="model.PhoneNumber">
+                <ValidationMessage For="@(() => model.PhoneNumber)"/>
+            </div>
+            <div class="col-12">
+                <label for="Notes">Note:</label>
+                <InputTextArea id="Notes" @bind-Value="model.Notes" class="form-control patient-notes-input" rows="4"/>
+            </div>
+        }
     </div>
+    <button type="button"
+            class="btn btn-link patient-more-fields-toggle"
+            @onclick="ToggleAdditionalFields">
+        @(showAdditionalFields ? "Nascondi altri dati" : "Aggiungi altri dati")
+    </button>
     <StandardFormActions CancelUrl="/" SubmitDisabled="@licenseService.IsTrialExpired"/>
 </EditForm>
 
 @code {
     private readonly Patient model = new();
     private string warningMessage = "";
+    private bool showAdditionalFields;
 
     protected override async Task OnInitializedAsync()
     {
         await licenseService.InitializeAsync();
+    }
+
+    private void ToggleAdditionalFields()
+    {
+        showAdditionalFields = !showAdditionalFields;
     }
 
     private async Task SaveAsync()

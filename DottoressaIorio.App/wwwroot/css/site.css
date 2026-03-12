@@ -842,6 +842,42 @@ body {
     text-decoration: underline;
 }
 
+.patient-form-grid {
+    --bs-gutter-x: 1rem;
+}
+
+.patient-more-fields-toggle {
+    padding: 0;
+    margin-top: .35rem;
+    margin-bottom: .2rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #215e7b;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.patient-more-fields-toggle:hover,
+.patient-more-fields-toggle:focus {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    color: #174a62;
+    text-decoration: underline;
+}
+
+.patient-gender-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem 1rem;
+}
+
+.patient-gender-group .form-check {
+    margin-right: 0;
+}
+
 .patient-notes-input {
     min-height: 0;
     height: auto !important;

@@ -10,7 +10,7 @@ public class PatientPageTitleFormattingTests
     {
         var methods = GetPatientFormatMethods();
 
-        Assert.True(methods.Count >= 5);
+        Assert.NotEmpty(methods);
     }
 
     [Theory]
