@@ -183,7 +183,9 @@ else
 
     private string GetLicenseStatusValue()
     {
-        return licenseService.IsTrial
+        return licenseService.IsTrialExpired
+            ? licenseService.StatusLabel
+            : licenseService.IsTrial
             ? "Versione di prova attiva"
             : licenseService.StatusLabel;
     }
