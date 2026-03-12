@@ -37,7 +37,7 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
 
     [Fact]
     [Trait("Category", "E2E")]
-    public async Task CreateTherapy_EmptyDescription_ShouldShowValidation()
+    public async Task CreateTherapy_PrintWithEmptyDescription_ShouldShowValidationWithoutOpeningPdf()
     {
         var setup = await NewAuthorizedPageAsync();
         await using var context = setup.Context;
@@ -50,9 +50,10 @@ public sealed class ValidationTests(PlaywrightFixture fixture) : E2eTestBase(fix
         await page.GotoAsync($"/patient/{patientId}/create-therapy",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
-        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Salva" }).ClickAsync();
+        await ClickPrintExpectNoPopupAsync(page);
 
         var validationTexts = await page.Locator(".validation-message").AllInnerTextsAsync();
         Assert.Contains(validationTexts, text => text.Contains("descrizione", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains($"/patient/{patientId}/create-therapy", page.Url, StringComparison.Ordinal);
     }
 }
