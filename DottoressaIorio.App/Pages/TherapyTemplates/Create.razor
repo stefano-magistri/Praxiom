@@ -35,14 +35,7 @@
     </div>
     <hr class="my-4">
     <CancelButton Url="/therapy-templates"/>
-    @if (licenseService.IsTrialExpired)
-    {
-        <button type="button" class="btn btn-primary" disabled><span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva</button>
-    }
-    else
-    {
-        <SubmitButton/>
-    }
+    <SubmitButton Disabled="@licenseService.IsTrialExpired"/>
 </EditForm>
 
 @code {

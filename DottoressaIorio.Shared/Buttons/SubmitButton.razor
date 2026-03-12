@@ -1,1 +1,7 @@
-﻿<button type="submit" class="btn btn-primary"><span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva</button>
+<button type="submit" class="btn btn-primary" disabled="@Disabled">
+    <span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva
+</button>
+
+@code {
+    [Parameter] public bool Disabled { get; set; }
+}
