@@ -8,6 +8,7 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
 {
     [Fact]
     [Trait("Category", "E2E")]
+    [Trait("Category", "E2ESmoke")]
     public async Task CrudTerapiaPrecompilata_ShouldCreateEditAndDelete()
     {
         var setup = await NewAuthorizedPageAsync("/therapy-templates");

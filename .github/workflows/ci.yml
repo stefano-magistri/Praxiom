@@ -10,6 +10,10 @@ on:
       - main
       - 'release/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -67,7 +71,11 @@ jobs:
         env:
           E2E__BaseUrl: https://localhost:7013
           E2E__Headless: true
-        run: dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj --configuration Release --no-build --verbosity normal
+        shell: pwsh
+        run: |
+          $filter = if ("${{ github.event_name }}" -eq "pull_request") { 'Category=E2ESmoke' } else { 'Category=E2E' }
+          Write-Host "Running E2E filter: $filter"
+          dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj --configuration Release --no-build --verbosity normal --filter $filter
 
   build-installer:
     runs-on: windows-latest
