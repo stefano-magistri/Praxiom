@@ -78,6 +78,7 @@ function GetAllowedUsername(Value: string): string; forward;
 
 function TryGetExistingUninstaller(var UninstallCommand: string): Boolean; forward;
 function SplitCommandLine(const CommandLine: string; var FileName: string; var Parameters: string): Boolean; forward;
+function WaitForExistingInstallRemoval(): Boolean; forward;
 function PromptForExistingInstallAction(const UninstallCommand: string): Boolean; forward;
 function IsValidServiceUrl(const Url: string): Boolean; forward;
 function ExtractPortFromUrl(const Url: string): Integer; forward;
@@ -349,6 +350,24 @@ begin
   Result := True;
 end;
 
+function WaitForExistingInstallRemoval(): Boolean;
+var
+  RetryIndex: Integer;
+  RemainingUninstallCommand: string;
+begin
+  Result := False;
+  for RetryIndex := 1 to 10 do
+  begin
+    if not TryGetExistingUninstaller(RemainingUninstallCommand) then
+    begin
+      Result := True;
+      Exit;
+    end;
+
+    Sleep(1000);
+  end;
+end;
+
 function PromptForExistingInstallAction(const UninstallCommand: string): Boolean;
 var
   ButtonResult: Integer;
@@ -356,13 +375,16 @@ var
   UninstallParameters: string;
   ExecResult: Integer;
 begin
-  ButtonResult := MsgBox(
-    'Praxiom risulta giá installato su questo computer.' + #13#10 + #13#10 +
-    'Per reinstallare il software devi prima disinstallare la versione esistente.' + #13#10 + #13#10 +
-    'Scegli "Si" per aprire il programma di disinstallazione esistente oppure "No" per annullare l''installazione.',
-    mbConfirmation,
-    MB_YESNO or MB_DEFBUTTON2
-  );
+  if WizardSilent then
+    ButtonResult := IDYES
+  else
+    ButtonResult := MsgBox(
+      'Praxiom risulta giá installato su questo computer.' + #13#10 + #13#10 +
+      'La versione corrente verra rimossa e l''installazione continuera automaticamente al termine della disinstallazione.' + #13#10 + #13#10 +
+      'Scegli "Si" per continuare oppure "No" per annullare l''installazione.',
+      mbConfirmation,
+      MB_YESNO or MB_DEFBUTTON2
+    );
 
   if ButtonResult = IDYES then
   begin
@@ -372,12 +394,24 @@ begin
         mbError,
         MB_OK
       )
-    else if not Exec(UninstallFileName, UninstallParameters, '', SW_SHOWNORMAL, ewNoWait, ExecResult) then
+    else if not Exec(UninstallFileName, UninstallParameters, '', SW_SHOWNORMAL, ewWaitUntilTerminated, ExecResult) then
       MsgBox(
         'Installazione interrotta. Impossibile avviare il programma di disinstallazione esistente. Disinstalla manualmente il software da "Programmi e funzionalita" e riprova.',
         mbError,
         MB_OK
-      );
+      )
+    else if not WaitForExistingInstallRemoval() then
+      MsgBox(
+        'Installazione interrotta. La disinstallazione della versione esistente non e stata completata correttamente.' + #13#10 +
+        'Verifica che Praxiom non risulti piu installato in "Programmi e funzionalita" e riprova.',
+        mbError,
+        MB_OK
+      )
+    else
+    begin
+      Result := True;
+      Exit;
+    end;
   end;
 
   Result := False;
