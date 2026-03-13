@@ -8,6 +8,7 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 {
     [Fact]
     [Trait("Category", "E2E")]
+    [Trait("Category", "E2ESmoke")]
     public async Task AggiungiPaziente_ShouldCreateAndEditPatient()
     {
         var setup = await NewAuthorizedPageAsync();

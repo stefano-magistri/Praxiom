@@ -8,6 +8,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
 {
     [Fact]
     [Trait("Category", "E2E")]
+    [Trait("Category", "E2ESmoke")]
     public async Task CreateTherapy_FromTemplate_ShouldShowActionsAndPrint()
     {
         var setup = await NewAuthorizedPageAsync();

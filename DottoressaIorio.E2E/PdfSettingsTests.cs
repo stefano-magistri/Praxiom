@@ -13,6 +13,7 @@ public sealed class PdfSettingsTests(PlaywrightFixture fixture) : E2eTestBase(fi
 {
     [Fact]
     [Trait("Category", "E2E")]
+    [Trait("Category", "E2ESmoke")]
     public async Task UpdatingSettings_ShouldBeReflectedInGeneratedPdfHeader()
     {
         var setup = await NewAuthorizedPageAsync();
