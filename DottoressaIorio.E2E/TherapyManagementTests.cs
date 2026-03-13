@@ -155,4 +155,54 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await FillLiveFieldAsync(page.Locator("#therapySearch"), firstRowDate);
         await Expect(page.Locator($"//tbody/tr[contains(., '{description}')]").First).ToBeVisibleAsync();
     }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task CreateTherapy_WhenTemplateConflicts_ShouldCancelThenAppendAndPersistCombinedContent()
+    {
+        var setup = await NewAuthorizedPageAsync();
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var firstTemplateTitle = $"TPL-BASE-{seed}";
+        var secondTemplateTitle = $"TPL-APPEND-{seed}";
+        var firstTemplateDescription = $"Prima parte {seed}";
+        var secondTemplateDescription = $"Seconda parte {seed}";
+
+        await CreateTherapyTemplateAsync(page, firstTemplateTitle, firstTemplateDescription);
+        await CreateTherapyTemplateAsync(page, secondTemplateTitle, secondTemplateDescription);
+
+        var patientId = await CreatePatientAsync(page, $"ConfNome{seed}", $"ConfCognome{seed}",
+            $"{seed}.conf@example.test", "1984-04-04");
+
+        await page.GotoAsync($"/patient/{patientId}/create-therapy",
+            new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await WaitForInteractiveReadyAsync(page);
+
+        await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = firstTemplateTitle });
+        await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(firstTemplateDescription);
+
+        await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = secondTemplateTitle });
+        await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync(
+            "Sostituire il testo esistente oppure aggiungerlo?");
+
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Annulla" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Dialog)).ToHaveCountAsync(0);
+        await Expect(page.Locator("#TemplateId option:checked")).ToHaveTextAsync(firstTemplateTitle);
+        await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(firstTemplateDescription);
+
+        await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = secondTemplateTitle });
+        await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Aggiungi" }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Dialog)).ToHaveCountAsync(0);
+        await Expect(page.Locator("#TemplateId option:checked")).ToHaveTextAsync(secondTemplateTitle);
+        await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(firstTemplateDescription);
+        await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(secondTemplateDescription);
+
+        await SubmitCreateTherapyFormAsync(page);
+
+        var combinedDescriptionPreview = page.Locator("table tbody tr").First.Locator("td").Nth(1);
+        await Expect(combinedDescriptionPreview).ToContainTextAsync(firstTemplateDescription);
+        await Expect(combinedDescriptionPreview).ToContainTextAsync(secondTemplateDescription);
+    }
 }

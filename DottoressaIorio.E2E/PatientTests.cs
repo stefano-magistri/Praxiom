@@ -218,6 +218,34 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await Expect(page.GetByText("Nessun paziente trovato.")).ToBeVisibleAsync();
     }
 
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task EditPatient_WithoutChanges_ShouldReturnToPatientDetail()
+    {
+        var setup = await NewAuthorizedPageAsync();
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var firstName = $"IdemNome{seed}";
+        var lastName = $"IdemCognome{seed}";
+        var email = $"{seed}.idem@example.test";
+
+        var patientId = await CreatePatientAsync(page, firstName, lastName, email, "1989-09-09");
+
+        await page.GotoAsync($"/patient/{patientId}/edit/",
+            new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await WaitForInteractiveReadyAsync(page);
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica paziente");
+
+        await SubmitEditPatientFormAsync(page);
+
+        await Expect(page.GetByTestId("page-heading"))
+            .ToHaveTextAsync($"{FormatTitleCase(firstName)} {FormatTitleCase(lastName)}");
+        await Expect(page.Locator(".patient-context-card").First).ToContainTextAsync(email);
+        await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Modifica" })).ToBeVisibleAsync();
+    }
+
     private static int CalculateAge(DateTime dateOfBirth)
     {
         var today = DateTime.Today;
