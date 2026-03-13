@@ -14,6 +14,8 @@ AppPublisher=Praxiom
 DefaultDirName={commonappdata}\Praxiom
 DefaultGroupName={#MyAppName}
 DisableDirPage=yes
+DisableProgramGroupPage=yes
+DisableReadyPage=yes
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=commandline
 ArchitecturesAllowed=x64compatible
@@ -28,9 +30,6 @@ UninstallDisplayIcon={app}\DottoressaIorio.App.exe
 
 [Languages]
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
-
-[Tasks]
-Name: "desktopicon"; Description: "Crea un collegamento sul desktop"; GroupDescription: "Seleziona le icone da creare:"
 
 [Files]
 Source: "..\DottoressaIorio.App\wwwroot\favicon.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -54,19 +53,22 @@ Filename: "{app}\_setup\uninstall.bat"; Parameters: "{code:GetUninstallParams}";
 [Icons]
 Name: "{group}\Praxiom App"; Filename: "{app}\DottoressaIorio.App.exe"
 Name: "{group}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"
-Name: "{autodesktop}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"; Tasks: desktopicon
+Name: "{autodesktop}\Praxiom Web"; Filename: "{code:GetConfiguredUrl}"; IconFilename: "{app}\favicon.ico"
 
 [Code]
 const
   ExistingInstallUninstallRegKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{A53D1775-E8B2-4E8D-9FB3-52312AA1E7A4}_is1';
+  DefaultServiceUrl = 'http://localhost:5000';
 
 var
-  LicenseRequestPage: TInputQueryWizardPage;
-  ConfigPage: TInputQueryWizardPage;
-  LicenseFilePage: TInputFileWizardPage;
+  LicensePage: TInputFileWizardPage;
   RestoreOptionPage: TInputOptionWizardPage;
   RestoreFilePage: TInputFileWizardPage;
   LicenseRequestNoteLabel: TNewStaticText;
+  LicenseMachineIdLabel: TNewStaticText;
+  LicenseAllowedUserLabel: TNewStaticText;
+  LicenseMachineIdEdit: TNewEdit;
+  LicenseAllowedUserEdit: TNewEdit;
   InstallFailed: Boolean;
   InstallFailedMessage: string;
 
@@ -75,7 +77,9 @@ function GetMachineId(Value: string): string; forward;
 function GetAllowedUsername(Value: string): string; forward;
 
 function TryGetExistingUninstaller(var UninstallCommand: string): Boolean; forward;
+function TryGetExistingQuietUninstaller(var UninstallCommand: string): Boolean; forward;
 function SplitCommandLine(const CommandLine: string; var FileName: string; var Parameters: string): Boolean; forward;
+function WaitForExistingInstallRemoval(): Boolean; forward;
 function PromptForExistingInstallAction(const UninstallCommand: string): Boolean; forward;
 function IsValidServiceUrl(const Url: string): Boolean; forward;
 function ExtractPortFromUrl(const Url: string): Integer; forward;
@@ -104,9 +108,11 @@ var
   DomainName: string;
   MachineId: string;
   AllowedUsername: string;
+  RowTop: Integer;
+  RowSpacing: Integer;
+  SectionSpacing: Integer;
+  ShiftAmount: Integer;
 begin
-  WizardForm.SelectTasksLabel.Caption := 'Seleziona le icone aggiuntive da creare.';
-
   DomainName := GetEnv('USERDOMAIN');
   if Trim(DomainName) = '' then
     DomainName := GetEnv('COMPUTERNAME');
@@ -118,50 +124,66 @@ begin
   if not RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Cryptography', 'MachineGuid', MachineId) then
     MachineId := '';
 
-  LicenseRequestPage := CreateInputQueryPage(
-    wpSelectTasks,
-    'Richiesta licenza',
-    'Per ricevere il file di licenza, invia al fornitore i dati seguenti.',
-    'La licenza verra generata per questo computer e per questo utente Windows.'
+  LicensePage := CreateInputFilePage(
+    wpWelcome,
+    'Licenza',
+    'Verifica i dati di licenza e seleziona il file ricevuto, se disponibile.',
+    'Se non selezioni alcun file, l''applicazione verra installata in modalita di prova.'
   );
-  LicenseRequestPage.Add('Machine ID:', False);
-  LicenseRequestPage.Add('Utente Windows autorizzato:', False);
-  LicenseRequestPage.Values[0] := MachineId;
-  LicenseRequestPage.Values[1] := AllowedUsername;
-  LicenseRequestPage.Edits[0].ReadOnly := True;
-  LicenseRequestPage.Edits[1].ReadOnly := True;
+  LicensePage.Add('File licenza:', 'File licenza (*.dat)|*.dat|Tutti i file (*.*)|*.*', '.dat');
 
-  LicenseRequestNoteLabel := TNewStaticText.Create(LicenseRequestPage);
-  LicenseRequestNoteLabel.Parent := LicenseRequestPage.Surface;
-  LicenseRequestNoteLabel.Left := LicenseRequestPage.Edits[1].Left;
-  LicenseRequestNoteLabel.Top := LicenseRequestPage.Edits[1].Top + LicenseRequestPage.Edits[1].Height + ScaleY(8);
-  LicenseRequestNoteLabel.Width := LicenseRequestPage.SurfaceWidth - LicenseRequestNoteLabel.Left;
+  RowTop := ScaleY(16);
+  RowSpacing := ScaleY(10);
+  SectionSpacing := ScaleY(18);
+
+  LicenseMachineIdLabel := TNewStaticText.Create(LicensePage);
+  LicenseMachineIdLabel.Parent := LicensePage.Surface;
+  LicenseMachineIdLabel.Left := LicensePage.PromptLabels[0].Left;
+  LicenseMachineIdLabel.Top := RowTop;
+  LicenseMachineIdLabel.Caption := 'Machine ID:';
+
+  LicenseMachineIdEdit := TNewEdit.Create(LicensePage);
+  LicenseMachineIdEdit.Parent := LicensePage.Surface;
+  LicenseMachineIdEdit.Left := LicensePage.Edits[0].Left;
+  LicenseMachineIdEdit.Top := LicenseMachineIdLabel.Top + LicenseMachineIdLabel.Height + ScaleY(4);
+  LicenseMachineIdEdit.Width := LicensePage.Edits[0].Width;
+  LicenseMachineIdEdit.Text := MachineId;
+  LicenseMachineIdEdit.ReadOnly := True;
+
+  LicenseAllowedUserLabel := TNewStaticText.Create(LicensePage);
+  LicenseAllowedUserLabel.Parent := LicensePage.Surface;
+  LicenseAllowedUserLabel.Left := LicensePage.PromptLabels[0].Left;
+  LicenseAllowedUserLabel.Top := LicenseMachineIdEdit.Top + LicenseMachineIdEdit.Height + RowSpacing;
+  LicenseAllowedUserLabel.Caption := 'Utente Windows autorizzato:';
+
+  LicenseAllowedUserEdit := TNewEdit.Create(LicensePage);
+  LicenseAllowedUserEdit.Parent := LicensePage.Surface;
+  LicenseAllowedUserEdit.Left := LicensePage.Edits[0].Left;
+  LicenseAllowedUserEdit.Top := LicenseAllowedUserLabel.Top + LicenseAllowedUserLabel.Height + ScaleY(4);
+  LicenseAllowedUserEdit.Width := LicensePage.Edits[0].Width;
+  LicenseAllowedUserEdit.Text := AllowedUsername;
+  LicenseAllowedUserEdit.ReadOnly := True;
+
+  LicenseRequestNoteLabel := TNewStaticText.Create(LicensePage);
+  LicenseRequestNoteLabel.Parent := LicensePage.Surface;
+  LicenseRequestNoteLabel.Left := LicensePage.PromptLabels[0].Left;
+  LicenseRequestNoteLabel.Top := LicenseAllowedUserEdit.Top + LicenseAllowedUserEdit.Height + RowSpacing;
+  LicenseRequestNoteLabel.Width := LicensePage.SurfaceWidth - LicenseRequestNoteLabel.Left;
   LicenseRequestNoteLabel.Height := ScaleY(42);
   LicenseRequestNoteLabel.Caption :=
     'Invia questi dati al fornitore per ricevere il file di licenza.' + #13#10 +
-    'Puoi copiarli dai campi sopra oppure inviare uno screenshot di questa schermata.';
+    'Se non hai ancora il file, puoi continuare in modalita di prova.';
   LicenseRequestNoteLabel.WordWrap := True;
 
-  LicenseFilePage := CreateInputFilePage(
-    LicenseRequestPage.ID,
-    'File licenza',
-    'Seleziona il file di licenza ricevuto dal fornitore, se disponibile.',
-    'Se non selezioni alcun file, l''applicazione verra installata in modalita di prova.'
-  );
-  LicenseFilePage.Add('Percorso file licenza:', 'File licenza (*.dat)|*.dat|Tutti i file (*.*)|*.*', '.dat');
-
-  ConfigPage := CreateInputQueryPage(
-    LicenseFilePage.ID,
-    'Configurazione applicazione',
-    'Scegli l''URL del servizio.',
-    'Questo valore viene applicato durante l''installazione e puo essere modificato reinstallando.'
-  );
-
-  ConfigPage.Add('URL del servizio:', False);
-  ConfigPage.Values[0] := 'http://localhost:5000';
+  ShiftAmount :=
+    (LicenseRequestNoteLabel.Top + LicenseRequestNoteLabel.Height + SectionSpacing) -
+    LicensePage.PromptLabels[0].Top;
+  LicensePage.PromptLabels[0].Top := LicensePage.PromptLabels[0].Top + ShiftAmount;
+  LicensePage.Edits[0].Top := LicensePage.Edits[0].Top + ShiftAmount;
+  LicensePage.Buttons[0].Top := LicensePage.Buttons[0].Top + ShiftAmount;
 
   RestoreOptionPage := CreateInputOptionPage(
-    ConfigPage.ID,
+    LicensePage.ID,
     'Ripristino database',
     'Scegli se ripristinare il database da un file di backup esistente.',
     'Seleziona "Si" solo se vuoi sostituire il database corrente.',
@@ -182,12 +204,10 @@ begin
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
-var
-  UrlToCheck: string;
 begin
   Result := True;
 
-  if CurPageID = LicenseRequestPage.ID then
+  if CurPageID = LicensePage.ID then
   begin
     if Trim(GetMachineId('')) = '' then
     begin
@@ -202,45 +222,15 @@ begin
       Result := False;
       Exit;
     end;
-  end;
 
-  if CurPageID = ConfigPage.ID then
-  begin
-    if Trim(ConfigPage.Values[0]) = '' then
-    begin
-      MsgBox('L''URL del servizio e obbligatorio.', mbError, MB_OK);
-      Result := False;
-      Exit;
-    end;
-
-    UrlToCheck := Trim(ConfigPage.Values[0]);
-    if not IsValidServiceUrl(UrlToCheck) then
-    begin
-      MsgBox('L''URL del servizio deve essere nel formato http://hostname:porta oppure https://hostname:porta.', mbError, MB_OK);
-      Result := False;
-      Exit;
-    end;
-
-    if IsPortInUse(ExtractPortFromUrl(UrlToCheck)) then
-    begin
-      if MsgBox('La porta selezionata sembra gia essere in uso. Vuoi continuare comunque?', mbConfirmation, MB_YESNO) = IDNO then
-      begin
-        Result := False;
-        Exit;
-      end;
-    end;
-  end;
-
-  if CurPageID = LicenseFilePage.ID then
-  begin
-    if (Trim(LicenseFilePage.Values[0]) <> '') and (not FileExists(Trim(LicenseFilePage.Values[0]))) then
+    if (Trim(LicensePage.Values[0]) <> '') and (not FileExists(Trim(LicensePage.Values[0]))) then
     begin
       MsgBox('Il file di licenza selezionato non esiste.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    if (Trim(LicenseFilePage.Values[0]) <> '') and (not ValidateSelectedLicense()) then
+    if (Trim(LicensePage.Values[0]) <> '') and (not ValidateSelectedLicense()) then
     begin
       Result := False;
       Exit;
@@ -276,9 +266,9 @@ function GetInstallParams(Value: string): string;
 begin
   Result :=
     '--silent --allowed-username ' + AddQuotes(GetAllowedUsername('')) +
-    ' --app-url ' + AddQuotes(ConfigPage.Values[0]);
-  if Trim(LicenseFilePage.Values[0]) <> '' then
-    Result := Result + ' --license-file ' + AddQuotes(LicenseFilePage.Values[0]);
+    ' --app-url ' + AddQuotes(DefaultServiceUrl);
+  if Trim(LicensePage.Values[0]) <> '' then
+    Result := Result + ' --license-file ' + AddQuotes(LicensePage.Values[0]);
   Result := Result + ' --encryption-key ' + AddQuotes('{#EncryptionKey}');
   if ShouldRestoreDatabase() then
     Result := Result + ' --skip-auto-db-restore';
@@ -286,7 +276,7 @@ end;
 
 function GetConfiguredUrl(Value: string): string;
 begin
-  Result := ConfigPage.Values[0];
+  Result := DefaultServiceUrl;
 end;
 
 function ShouldOpenInstalledApplication(): Boolean;
@@ -296,12 +286,12 @@ end;
 
 function GetMachineId(Value: string): string;
 begin
-  Result := Trim(LicenseRequestPage.Values[0]);
+  Result := Trim(LicenseMachineIdEdit.Text);
 end;
 
 function GetAllowedUsername(Value: string): string;
 begin
-  Result := Trim(LicenseRequestPage.Values[1]);
+  Result := Trim(LicenseAllowedUserEdit.Text);
 end;
 
 function ShouldRestoreDatabase(): Boolean;
@@ -319,6 +309,14 @@ begin
   Result :=
     RegQueryStringValue(HKLM64, ExistingInstallUninstallRegKey, 'UninstallString', UninstallCommand) or
     RegQueryStringValue(HKLM, ExistingInstallUninstallRegKey, 'UninstallString', UninstallCommand);
+  Result := Result and (Trim(UninstallCommand) <> '');
+end;
+
+function TryGetExistingQuietUninstaller(var UninstallCommand: string): Boolean;
+begin
+  Result :=
+    RegQueryStringValue(HKLM64, ExistingInstallUninstallRegKey, 'QuietUninstallString', UninstallCommand) or
+    RegQueryStringValue(HKLM, ExistingInstallUninstallRegKey, 'QuietUninstallString', UninstallCommand);
   Result := Result and (Trim(UninstallCommand) <> '');
 end;
 
@@ -361,35 +359,76 @@ begin
   Result := True;
 end;
 
+function WaitForExistingInstallRemoval(): Boolean;
+var
+  RetryIndex: Integer;
+  RemainingUninstallCommand: string;
+begin
+  Result := False;
+  for RetryIndex := 1 to 10 do
+  begin
+    if not TryGetExistingUninstaller(RemainingUninstallCommand) then
+    begin
+      Result := True;
+      Exit;
+    end;
+
+    Sleep(1000);
+  end;
+end;
+
 function PromptForExistingInstallAction(const UninstallCommand: string): Boolean;
 var
   ButtonResult: Integer;
+  EffectiveUninstallCommand: string;
   UninstallFileName: string;
   UninstallParameters: string;
   ExecResult: Integer;
 begin
-  ButtonResult := MsgBox(
-    'Praxiom risulta giá installato su questo computer.' + #13#10 + #13#10 +
-    'Per reinstallare il software devi prima disinstallare la versione esistente.' + #13#10 + #13#10 +
-    'Scegli "Si" per aprire il programma di disinstallazione esistente oppure "No" per annullare l''installazione.',
-    mbConfirmation,
-    MB_YESNO or MB_DEFBUTTON2
-  );
+  if WizardSilent then
+    ButtonResult := IDYES
+  else
+    ButtonResult := MsgBox(
+      'Praxiom risulta giá installato su questo computer.' + #13#10 + #13#10 +
+      'La versione corrente verra rimossa e l''installazione continuera automaticamente al termine della disinstallazione.' + #13#10 + #13#10 +
+      'Scegli "Si" per continuare oppure "No" per annullare l''installazione.',
+      mbConfirmation,
+      MB_YESNO or MB_DEFBUTTON2
+    );
 
   if ButtonResult = IDYES then
   begin
-    if not SplitCommandLine(UninstallCommand, UninstallFileName, UninstallParameters) then
+    EffectiveUninstallCommand := UninstallCommand;
+    if WizardSilent then
+    begin
+      if not TryGetExistingQuietUninstaller(EffectiveUninstallCommand) then
+        EffectiveUninstallCommand := EffectiveUninstallCommand + ' /VERYSILENT /SUPPRESSMSGBOXES /NORESTART';
+    end;
+
+    if not SplitCommandLine(EffectiveUninstallCommand, UninstallFileName, UninstallParameters) then
       MsgBox(
         'Installazione interrotta. Impossibile individuare il programma di disinstallazione esistente. Disinstalla manualmente il software da "Programmi e funzionalita" e riprova.',
         mbError,
         MB_OK
       )
-    else if not Exec(UninstallFileName, UninstallParameters, '', SW_SHOWNORMAL, ewNoWait, ExecResult) then
+    else if not Exec(UninstallFileName, UninstallParameters, '', SW_SHOWNORMAL, ewWaitUntilTerminated, ExecResult) then
       MsgBox(
         'Installazione interrotta. Impossibile avviare il programma di disinstallazione esistente. Disinstalla manualmente il software da "Programmi e funzionalita" e riprova.',
         mbError,
         MB_OK
-      );
+      )
+    else if not WaitForExistingInstallRemoval() then
+      MsgBox(
+        'Installazione interrotta. La disinstallazione della versione esistente non e stata completata correttamente.' + #13#10 +
+        'Verifica che Praxiom non risulti piu installato in "Programmi e funzionalita" e riprova.',
+        mbError,
+        MB_OK
+      )
+    else
+    begin
+      Result := True;
+      Exit;
+    end;
   end;
 
   Result := False;
@@ -406,7 +445,7 @@ begin
   ExtractTemporaryFile('DottoressaIorio.LicenseGenerator.exe');
   ValidatorExe := ExpandConstant('{tmp}\DottoressaIorio.LicenseGenerator.exe');
   Parameters :=
-    'validate --license-file ' + AddQuotes(Trim(LicenseFilePage.Values[0])) +
+    'validate --license-file ' + AddQuotes(Trim(LicensePage.Values[0])) +
     ' --allowed-username ' + AddQuotes(GetAllowedUsername(''));
 
   if not Exec(ValidatorExe, Parameters, '', SW_HIDE, ewWaitUntilTerminated, CmdResult) then
