@@ -77,6 +77,7 @@ function GetMachineId(Value: string): string; forward;
 function GetAllowedUsername(Value: string): string; forward;
 
 function TryGetExistingUninstaller(var UninstallCommand: string): Boolean; forward;
+function TryGetExistingQuietUninstaller(var UninstallCommand: string): Boolean; forward;
 function SplitCommandLine(const CommandLine: string; var FileName: string; var Parameters: string): Boolean; forward;
 function WaitForExistingInstallRemoval(): Boolean; forward;
 function PromptForExistingInstallAction(const UninstallCommand: string): Boolean; forward;
@@ -311,6 +312,14 @@ begin
   Result := Result and (Trim(UninstallCommand) <> '');
 end;
 
+function TryGetExistingQuietUninstaller(var UninstallCommand: string): Boolean;
+begin
+  Result :=
+    RegQueryStringValue(HKLM64, ExistingInstallUninstallRegKey, 'QuietUninstallString', UninstallCommand) or
+    RegQueryStringValue(HKLM, ExistingInstallUninstallRegKey, 'QuietUninstallString', UninstallCommand);
+  Result := Result and (Trim(UninstallCommand) <> '');
+end;
+
 function SplitCommandLine(const CommandLine: string; var FileName: string; var Parameters: string): Boolean;
 var
   TrimmedCommand: string;
@@ -371,6 +380,7 @@ end;
 function PromptForExistingInstallAction(const UninstallCommand: string): Boolean;
 var
   ButtonResult: Integer;
+  EffectiveUninstallCommand: string;
   UninstallFileName: string;
   UninstallParameters: string;
   ExecResult: Integer;
@@ -388,7 +398,14 @@ begin
 
   if ButtonResult = IDYES then
   begin
-    if not SplitCommandLine(UninstallCommand, UninstallFileName, UninstallParameters) then
+    EffectiveUninstallCommand := UninstallCommand;
+    if WizardSilent then
+    begin
+      if not TryGetExistingQuietUninstaller(EffectiveUninstallCommand) then
+        EffectiveUninstallCommand := EffectiveUninstallCommand + ' /VERYSILENT /SUPPRESSMSGBOXES /NORESTART';
+    end;
+
+    if not SplitCommandLine(EffectiveUninstallCommand, UninstallFileName, UninstallParameters) then
       MsgBox(
         'Installazione interrotta. Impossibile individuare il programma di disinstallazione esistente. Disinstalla manualmente il software da "Programmi e funzionalita" e riprova.',
         mbError,
