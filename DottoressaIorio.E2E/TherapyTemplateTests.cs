@@ -108,4 +108,48 @@ public sealed class TherapyTemplateTests(PlaywrightFixture fixture) : E2eTestBas
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Nuova terapia precompilata");
     }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task EditTemplate_WithFormattedDescription_ShouldKeepFormattingAfterSaveAndReopen()
+    {
+        var setup = await NewAuthorizedPageAsync("/therapy-templates");
+        await using var context = setup.Context;
+        var page = setup.Page;
+
+        var seed = Guid.NewGuid().ToString("N")[..8];
+        var title = $"Rich Template {seed}";
+
+        await Fixture.SeedTherapyTemplatesAsync([
+            (title, "<p><strong>Mattina</strong></p><ul><li>Acqua</li></ul>")
+        ]);
+
+        await page.GotoAsync("/therapy-templates", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await WaitForInteractiveReadyAsync(page);
+        await FilterTemplatesAsync(page, title);
+
+        var row = page.Locator("table tbody tr").First;
+        await Expect(row).ToBeVisibleAsync();
+        await Expect(row).ToContainTextAsync("Rich Template");
+        await row.Locator("button").First.ClickAsync();
+
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica terapia precompilata");
+        await Expect(page.GetByTestId("template-description-editor").Locator(".ql-editor strong"))
+            .ToContainTextAsync("Mattina");
+        await Expect(page.GetByTestId("template-description-editor").Locator(".ql-editor li"))
+            .ToContainTextAsync("Acqua");
+
+        await SubmitTemplateFormAsync(page);
+
+        await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Terapie precompilate");
+        await FilterTemplatesAsync(page, title);
+        row = page.Locator("table tbody tr").First;
+        await Expect(row).ToContainTextAsync("Rich Template");
+        await row.Locator("button").First.ClickAsync();
+
+        await Expect(page.GetByTestId("template-description-editor").Locator(".ql-editor strong"))
+            .ToContainTextAsync("Mattina");
+        await Expect(page.GetByTestId("template-description-editor").Locator(".ql-editor li"))
+            .ToContainTextAsync("Acqua");
+    }
 }
