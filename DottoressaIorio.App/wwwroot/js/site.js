@@ -66,6 +66,50 @@ window.jsCloseNavbar = () => {
     }
 }
 
+window.jsDownloadFile = async (url) => {
+    const response = await fetch(url, {
+        credentials: 'same-origin'
+    });
+
+    if (!response.ok) {
+        throw new Error(`Download failed with status ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const objectUrl = window.URL.createObjectURL(blob);
+    const contentDisposition = response.headers.get('Content-Disposition') || '';
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const quotedMatch = contentDisposition.match(/filename=\"([^\"]+)\"/i);
+    const fallbackMatch = contentDisposition.match(/filename=([^;]+)/i);
+    const rawFilename = utf8Match?.[1]
+        || quotedMatch?.[1]
+        || fallbackMatch?.[1]
+        || 'export.csv';
+    const filename = decodeURIComponent(rawFilename.trim().replace(/^\"|\"$/g, ''));
+
+    try {
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } finally {
+        window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
+    }
+};
+
+window.dottoressaNotes = window.dottoressaNotes || {
+    isTruncated: (element) => {
+        if (!element) {
+            return false;
+        }
+
+        return element.scrollHeight > element.clientHeight + 1;
+    }
+};
+
 window.dottoressaRichText = (() => {
     const editors = {};
 

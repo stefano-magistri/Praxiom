@@ -3,6 +3,7 @@ using DottoressaIorio.Repositories;
 using DottoressaIorio.Services.Licensing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using System.Globalization;
 
 namespace DottoressaIorio.App.Pages.Patients;
@@ -37,6 +38,9 @@ public class PatientsBase : ComponentBase
 
     [Inject]
     public ILicenseService LicenseService { get; set; }
+
+    [Inject]
+    public IJSRuntime JsRuntime { get; set; }
 
     protected string CreationInlineMessage { get; set; } = string.Empty;
 
@@ -232,6 +236,11 @@ public class PatientsBase : ComponentBase
     {
         var encodedSearch = Uri.EscapeDataString(SearchTerm ?? string.Empty);
         return $"/patients/export-csv?search={encodedSearch}";
+    }
+
+    protected Task ExportCsvAsync()
+    {
+        return JsRuntime.InvokeVoidAsync("jsDownloadFile", GetCsvExportUrl()).AsTask();
     }
 }
 

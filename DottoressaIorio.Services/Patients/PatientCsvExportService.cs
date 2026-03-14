@@ -37,7 +37,6 @@ public sealed class PatientCsvExportService
                     .ThenByDescending(t => t.TherapyId)
                     .ToList()
             })
-            .Where(group => group.Therapies.Count > 0)
             .OrderBy(group => group.Patient.LastName)
             .ThenBy(group => group.Patient.FirstName)
             .ToList();
@@ -47,17 +46,32 @@ public sealed class PatientCsvExportService
             var patient = patientGroups[patientIndex].Patient;
             var age = PatientAgeCalculator.CalculateAge(patient.DateOfBirth);
 
-            foreach (var therapy in patientGroups[patientIndex].Therapies)
+            if (patientGroups[patientIndex].Therapies.Count == 0)
             {
                 builder.AppendJoin(Separator,
                     Escape(patient.FirstName),
                     Escape(patient.LastName),
                     FormatDate(patient.DateOfBirth),
                     age?.ToString() ?? string.Empty,
-                    FormatDate(therapy.CreatedDate),
-                    Escape(FormatDescription(therapy.Description)),
+                    string.Empty,
+                    string.Empty,
                     FormatDate(patient.CreatedDate));
                 builder.AppendLine();
+            }
+            else
+            {
+                foreach (var therapy in patientGroups[patientIndex].Therapies)
+                {
+                    builder.AppendJoin(Separator,
+                        Escape(patient.FirstName),
+                        Escape(patient.LastName),
+                        FormatDate(patient.DateOfBirth),
+                        age?.ToString() ?? string.Empty,
+                        FormatDate(therapy.CreatedDate),
+                        Escape(FormatDescription(therapy.Description)),
+                        FormatDate(patient.CreatedDate));
+                    builder.AppendLine();
+                }
             }
 
             if (patientIndex < patientGroups.Count - 1)

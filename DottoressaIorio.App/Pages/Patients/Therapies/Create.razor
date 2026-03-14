@@ -14,7 +14,7 @@
 
 <ActionPageHeader Title="Scrivi terapia"/>
 
-<PatientContextCard Patient="patient" ShowHeaderName="true"/>
+<PatientContextCard Patient="patient" ShowHeaderName="true" UseCompactSummary="true"/>
 
 <EditForm EditContext="@editContext" OnSubmit="@HandleSubmitAsync" class="needs-validation therapy-editor-form" novalidate>
     <DataAnnotationsValidator/>
@@ -175,7 +175,7 @@
             if (action == TherapySubmitAction.SaveAndPrint)
             {
                 await OpenPrintAsync();
-                navigationManager.NavigateTo($"/patient/{model.TherapyId}/edit-therapy/");
+                navigationManager.NavigateTo($"/patient/{model.TherapyId}/edit-therapy/?printStatus=created");
                 return;
             }
 

@@ -1,83 +1,126 @@
 @using DottoressaIorio.Models
+@inject IJSRuntime JS
 
 @if (Patient != null)
 {
     <div class="card patient-context-card mb-4">
         <div class="card-body p-4">
-            @if (ShowHeaderName)
+            @if (UseCompactSummary && !isDetailsExpanded)
             {
-                <div class="patient-context-heading">@FormatDisplayName(Patient)</div>
+                <div class="patient-context-compact" data-testid="patient-context-compact">
+                    <div class="patient-context-compact-main">
+                        <div class="patient-context-heading patient-context-heading-compact">@FormatDisplayName(Patient)</div>
+                        <div class="patient-context-compact-meta" data-testid="patient-context-summary">
+                            @BuildCompactSummary(Patient)
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="btn btn-link patient-context-toggle"
+                            data-testid="patient-context-toggle"
+                            aria-expanded="@(isDetailsExpanded ? "true" : "false")"
+                            aria-controls="patient-context-details"
+                            @onclick="ToggleDetails">
+                        Mostra dettagli
+                    </button>
+                </div>
             }
+            else
+            {
+                @if (ShowHeaderName || UseCompactSummary)
+                {
+                    <div class="patient-context-heading">@FormatDisplayName(Patient)</div>
+                }
 
-            <div class="row g-4">
-                <div class="col-12 col-lg-6">
-                    <dl class="row mb-0 patient-summary-list">
-                        <dt class="col-sm-5">Data di nascita</dt>
-                        <dd class="col-sm-7">@Patient.DateOfBirth?.ToString("dd/MM/yyyy")</dd>
+                @if (UseCompactSummary)
+                {
+                    <div class="patient-context-toolbar">
+                        <button type="button"
+                                class="btn btn-link patient-context-toggle"
+                                data-testid="patient-context-toggle"
+                                aria-expanded="@(isDetailsExpanded ? "true" : "false")"
+                                aria-controls="patient-context-details"
+                                @onclick="ToggleDetails">
+                            Nascondi dettagli
+                        </button>
+                    </div>
+                }
 
-                        <dt class="col-sm-5">Eta</dt>
-                        <dd class="col-sm-7" data-testid="patient-age">@FormatPatientAge(Patient.DateOfBirth)</dd>
+                <div id="patient-context-details" data-testid="patient-context-details">
+                    <div class="row g-4">
+                        <div class="col-12 col-lg-6">
+                            <dl class="row mb-0 patient-summary-list">
+                                <dt class="col-sm-5">Data di nascita</dt>
+                                <dd class="col-sm-7">@Patient.DateOfBirth?.ToString("dd/MM/yyyy")</dd>
 
-                        <dt class="col-sm-5">Numero di telefono</dt>
-                        <dd class="col-sm-7">
-                            @if (!string.IsNullOrWhiteSpace(Patient.PhoneNumber))
-                            {
-                                <a href="tel:@Patient.PhoneNumber">@Patient.PhoneNumber</a>                               
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </dd>
-                    </dl>
+                                <dt class="col-sm-5">Eta</dt>
+                                <dd class="col-sm-7" data-testid="patient-age">@FormatPatientAge(Patient.DateOfBirth)</dd>
+
+                                <dt class="col-sm-5">Numero di telefono</dt>
+                                <dd class="col-sm-7">
+                                    @if (!string.IsNullOrWhiteSpace(Patient.PhoneNumber))
+                                    {
+                                        <a href="tel:@Patient.PhoneNumber">@Patient.PhoneNumber</a>                               
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <dl class="row mb-0 patient-summary-list">
+                                <dt class="col-sm-5">Luogo di nascita</dt>
+                                <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(Patient.PlaceOfBirth) ? "-" : Patient.PlaceOfBirth)</dd>
+
+                                <dt class="col-sm-5">Sesso</dt>
+                                <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(Patient.Gender) ? "-" : Patient.Gender)</dd>
+                                
+
+                                <dt class="col-sm-5">Email</dt>
+                                <dd class="col-sm-7">
+                                    @if (!string.IsNullOrWhiteSpace(Patient.Email))
+                                    {
+                                        <a href="mailto:@Patient.Email">@Patient.Email</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="patient-notes-section mt-4">
+                        <dl class="row mb-0 patient-summary-list">
+                            <dt class="col-12 col-lg-2">Note</dt>
+                            <dd class="col-12 col-lg-10">
+                                @if (string.IsNullOrWhiteSpace(Patient.Notes))
+                                {
+                                    <div class="patient-notes">Nessuna nota</div>
+                                }
+                                else
+                                {
+                                    <div @ref="notesElement"
+                                         class="patient-notes @(isNotesExpanded ? "patient-notes-expanded" : string.Empty)">
+                                        @Patient.Notes
+                                    </div>
+                                    @if (showNotesToggle)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-link patient-notes-toggle"
+                                                @onclick="ToggleNotes">
+                                            @(isNotesExpanded ? "Mostra meno" : "Mostra tutto")
+                                        </button>
+                                    }
+                                }
+                            </dd>
+                        </dl>
+                    </div>
                 </div>
-
-                <div class="col-12 col-lg-6">
-                    <dl class="row mb-0 patient-summary-list">
-                        <dt class="col-sm-5">Luogo di nascita</dt>
-                        <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(Patient.PlaceOfBirth) ? "-" : Patient.PlaceOfBirth)</dd>
-
-                        <dt class="col-sm-5">Sesso</dt>
-                        <dd class="col-sm-7">@(string.IsNullOrWhiteSpace(Patient.Gender) ? "-" : Patient.Gender)</dd>
-                        
-
-                        <dt class="col-sm-5">Email</dt>
-                        <dd class="col-sm-7">
-                            @if (!string.IsNullOrWhiteSpace(Patient.Email))
-                            {
-                                <a href="mailto:@Patient.Email">@Patient.Email</a>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </dd>
-                    </dl>
-                </div>
-            </div>
-
-            <div class="patient-notes-section mt-4">
-                <dl class="row mb-0 patient-summary-list">
-                    <dt class="col-12 col-lg-2">Note</dt>
-                    <dd class="col-12 col-lg-10">
-                        @if (string.IsNullOrWhiteSpace(Patient.Notes))
-                        {
-                            <div class="patient-notes">Nessuna nota</div>
-                        }
-                        else
-                        {
-                            <div class="patient-notes @(isNotesExpanded ? "patient-notes-expanded" : string.Empty)">
-                                @Patient.Notes
-                            </div>
-                            <button type="button"
-                                    class="btn btn-link patient-notes-toggle"
-                                    @onclick="ToggleNotes">
-                                @(isNotesExpanded ? "Mostra meno" : "Mostra tutto")
-                            </button>
-                        }
-                    </dd>
-                </dl>
-            </div>
+            }
         </div>
     </div>
 }
@@ -85,11 +128,55 @@
 @code {
     [Parameter] public Patient? Patient { get; set; }
     [Parameter] public bool ShowHeaderName { get; set; }
+    [Parameter] public bool UseCompactSummary { get; set; }
     private bool isNotesExpanded;
+    private bool isDetailsExpanded = true;
+    private bool showNotesToggle;
+    private bool needsNotesMeasurement;
+    private string? previousPatientSignature;
+    private string? previousNotes;
+    private ElementReference notesElement;
 
     protected override void OnParametersSet()
     {
-        isNotesExpanded = false;
+        var currentPatientSignature = Patient is null
+            ? null
+            : $"{Patient.PatientId}|{Patient.FirstName}|{Patient.LastName}|{Patient.DateOfBirth:O}|{Patient.Gender}|{Patient.PlaceOfBirth}";
+
+        if (!string.Equals(previousPatientSignature, currentPatientSignature, StringComparison.Ordinal))
+        {
+            previousPatientSignature = currentPatientSignature;
+            isDetailsExpanded = !UseCompactSummary;
+            isNotesExpanded = false;
+        }
+
+        var currentNotes = Patient?.Notes;
+        if (!string.Equals(previousNotes, currentNotes, StringComparison.Ordinal))
+        {
+            previousNotes = currentNotes;
+            showNotesToggle = false;
+            needsNotesMeasurement = isDetailsExpanded && !string.IsNullOrWhiteSpace(currentNotes);
+        }
+        else if (UseCompactSummary && !isDetailsExpanded)
+        {
+            needsNotesMeasurement = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!needsNotesMeasurement)
+        {
+            return;
+        }
+
+        needsNotesMeasurement = false;
+        var isTruncated = await JS.InvokeAsync<bool>("dottoressaNotes.isTruncated", notesElement);
+        if (showNotesToggle != isTruncated)
+        {
+            showNotesToggle = isTruncated;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private static string FormatDisplayName(Patient patient)
@@ -112,6 +199,46 @@
         }
 
         return $"{age} anni";
+    }
+
+    private static string BuildCompactSummary(Patient patient)
+    {
+        var parts = new List<string>();
+        var age = FormatPatientAge(patient.DateOfBirth);
+        if (age != "-")
+        {
+            parts.Add(age);
+        }
+        else if (patient.DateOfBirth.HasValue)
+        {
+            parts.Add(patient.DateOfBirth.Value.ToString("dd/MM/yyyy"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(patient.Gender))
+        {
+            parts.Add(patient.Gender);
+        }
+
+        if (!string.IsNullOrWhiteSpace(patient.PlaceOfBirth))
+        {
+            parts.Add(patient.PlaceOfBirth);
+        }
+
+        return parts.Count == 0 ? "Dettagli paziente disponibili" : string.Join(" • ", parts);
+    }
+
+    private void ToggleDetails()
+    {
+        isDetailsExpanded = !isDetailsExpanded;
+        if (!isDetailsExpanded)
+        {
+            isNotesExpanded = false;
+            needsNotesMeasurement = false;
+            return;
+        }
+
+        showNotesToggle = false;
+        needsNotesMeasurement = !string.IsNullOrWhiteSpace(Patient?.Notes);
     }
 
     private void ToggleNotes()

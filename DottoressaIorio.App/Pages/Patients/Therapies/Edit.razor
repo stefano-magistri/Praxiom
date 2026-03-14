@@ -6,15 +6,20 @@
 @inject NavigationManager navigationManager
 @inject IJSRuntime jsRuntime
 @inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
+@using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
 
 <ActionPageHeader Title="Modifica terapia"/>
 
-<PatientContextCard Patient="patient" ShowHeaderName="true"/>
+<PatientContextCard Patient="patient" ShowHeaderName="true" UseCompactSummary="true"/>
 
 <EditForm EditContext="@editContext" OnSubmit="@HandleSubmitAsync" class="needs-validation therapy-editor-form" novalidate>
     <DataAnnotationsValidator/>
     <ValidationWarningAlert Message="@warningMessage"/>
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success" role="status">@successMessage</div>
+    }
     <TherapyDescriptionField Label="Descrizione:"
                              InputId="Description"
                              AriaLabel="Descrizione terapia"
@@ -47,11 +52,13 @@
 
 @code {
     [Parameter] public int Id { get; set; }
+    [SupplyParameterFromQuery(Name = "printStatus")] public string? PrintStatus { get; set; }
 
     private Patient? patient;
     private Therapy model = new();
     private EditContext editContext = default!;
     private string warningMessage = "";
+    private string successMessage = "";
     private bool isSubmitting;
     private TherapySubmitAction pendingSubmitAction = TherapySubmitAction.SaveAndClose;
     private string EditorDescription => StringExtensions.ToEditorValue(model?.Description);
@@ -64,6 +71,12 @@
         {
             patient = await patientRepository.GetByIdAsync(model.PatientId);
         }
+
+        successMessage = PrintStatus switch
+        {
+            "created" => "Terapia salvata e PDF aperto in una nuova scheda. Ora puoi continuare da questa schermata di modifica.",
+            _ => string.Empty
+        };
     }
 
     private void ResetEditContext()
@@ -95,6 +108,7 @@
         }
 
         warningMessage = string.Empty;
+        successMessage = string.Empty;
 
         if (!editContext.Validate())
         {
@@ -113,6 +127,7 @@
             if (action == TherapySubmitAction.SaveAndPrint)
             {
                 await OpenPrintAsync();
+                successMessage = "PDF aperto in una nuova scheda. La terapia resta modificabile in questa pagina.";
                 return;
             }
 

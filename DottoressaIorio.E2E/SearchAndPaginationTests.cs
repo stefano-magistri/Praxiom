@@ -152,21 +152,25 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
         var page = setup.Page;
 
         var seed = Guid.NewGuid().ToString("N")[..6];
-        var matchingPrefix = $"CSVOK{seed}";
+        var filterToken = $"CSVMATCH{seed}";
+        var matchingPrefix = $"{filterToken}A";
+        var matchingNoTherapyPrefix = $"{filterToken}B";
         var otherPrefix = $"CSVNO{seed}";
 
         var patientIds = await Fixture.SeedPatientsAsync([
             ($"{matchingPrefix}", "Rossi", $"{matchingPrefix.ToLowerInvariant()}@example.test", new DateTime(1980, 1, 1)),
+            ($"{matchingNoTherapyPrefix}", "Verdi", $"{matchingNoTherapyPrefix.ToLowerInvariant()}@example.test", new DateTime(1982, 2, 2)),
             ($"{otherPrefix}", "Bianchi", $"{otherPrefix.ToLowerInvariant()}@example.test", new DateTime(1981, 1, 1))
         ]);
 
         await Fixture.SeedTherapiesAsync(patientIds[0], ["Terapia filtro, \"confermata\""]);
-        await Fixture.SeedTherapiesAsync(patientIds[1], ["Terapia esclusa"]);
+        await Fixture.SeedTherapiesAsync(patientIds[2], ["Terapia esclusa"]);
 
         await page.GotoAsync("/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
-        await FillLiveFieldAsync(page.Locator("#search"), matchingPrefix);
+        await FillLiveFieldAsync(page.Locator("#search"), filterToken);
         await Expect(page.GetByText(matchingPrefix)).ToBeVisibleAsync();
+        await Expect(page.GetByText(matchingNoTherapyPrefix)).ToBeVisibleAsync();
 
         var download = await page.RunAndWaitForDownloadAsync(async () =>
             await page.GetByTestId("export-csv-link").ClickAsync());
@@ -180,6 +184,7 @@ public sealed class SearchAndPaginationTests(PlaywrightFixture fixture) : E2eTes
 
         Assert.Contains($"Export pazienti e terapie - {DateTime.Today:dd/MM/yyyy}", content);
         Assert.Contains(matchingPrefix, content);
+        Assert.Contains(matchingNoTherapyPrefix, content);
         Assert.DoesNotContain(otherPrefix, content);
         Assert.Contains("\"Terapia filtro, \"\"confermata\"\"\"", content);
     }

@@ -145,18 +145,14 @@
 
             <div class="patients-utility-row">
                 <div class="patients-export-panel">
-                    <form method="get"
-                          action="/patients/export-csv"
-                          onsubmit="const searchInput = document.getElementById('search'); this.querySelector('input[name=search]').value = searchInput ? searchInput.value : ''; ">
-                        <input type="hidden" name="search" value="@SearchTerm" />
-                        <button class="btn btn-outline-primary patients-export-button"
-                                data-testid="export-csv-link"
-                                type="submit"
-                                title="Esporta CSV"
-                                aria-label="Esporta CSV">
-                            <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Esporta CSV
-                        </button>
-                    </form>
+                    <button class="btn btn-outline-primary patients-export-button"
+                            data-testid="export-csv-link"
+                            type="button"
+                            title="Esporta CSV"
+                            aria-label="Esporta CSV"
+                            @onclick="ExportCsvAsync">
+                        <span class="oi oi-data-transfer-download px-1" aria-hidden="true"></span>Esporta CSV
+                    </button>
                     <p class="patients-export-hint mb-0">Esporta CSV con i filtri attivi.</p>
                 </div>
             </div>
