@@ -33,6 +33,7 @@ rem Define installation and service variables.
 set "destinationFolder=C:\ProgramData\Praxiom"
 set "service=Praxiom.App"
 set "dbBackupFolder=_db_backup"
+set "licenseFile=license.dat"
 set "backupTaskName=Praxiom Online Backup"
 set "legacyBackupTaskName=DottoressaIorio Online Backup"
 set "oneDriveRoot=%OneDrive%"
@@ -77,9 +78,11 @@ if exist "%destinationFolder%" (
     call :backupDbFile "app_unencrypted.db-shm"
     call :backupDbFile "app_unencrypted.db-wal"
 
-    rem Remove all top-level files (database backups and logs are directories).
+    rem Remove top-level files but keep persisted license data for reinstalls.
     for /F "delims=" %%i in ('dir /B /A:-D "%destinationFolder%"') do (
-        del /F /Q "%destinationFolder%\%%i" >nul 2>nul
+        if /I not "%%i"=="%licenseFile%" (
+            del /F /Q "%destinationFolder%\%%i" >nul 2>nul
+        )
     )
 
     rem Keep database backups and logs; remove all other directories.
