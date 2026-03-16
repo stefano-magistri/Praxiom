@@ -7,8 +7,14 @@ using Microsoft.Playwright;
 
 namespace DottoressaIorio.Services.Pdf;
 
+/// <summary>
+/// Generates therapy PDFs by rendering HTML through Playwright Chromium.
+/// </summary>
 public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinicSettingsRepository, ILicenseService licenseService)
 {
+    /// <summary>
+    /// Generates the printable therapy PDF for the supplied therapy.
+    /// </summary>
     public async Task<byte[]> GenerateTherapyPdfAsync(Therapy therapy)
     {
         using var playwright = await Playwright.CreateAsync();
@@ -42,6 +48,9 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
         });
     }
 
+    /// <summary>
+    /// Builds the HTML snippet used for the PDF header template.
+    /// </summary>
     public async Task<string> BuildHeaderHtmlAsync(Therapy therapy, string? templateRoot = null)
     {
         var effectiveTemplateRoot = templateRoot ?? Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
@@ -55,6 +64,7 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
         var effectiveTemplateRoot = templateRoot ?? Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
         var footerPath = Path.Combine(effectiveTemplateRoot, "footer.html");
         var settings = await clinicSettingsRepository.GetAsync();
+        // The footer shows the trial marker, so PDF generation must observe the same cached license state as the app shell.
         await licenseService.InitializeAsync();
         return builder.BuildFooterHtml(await File.ReadAllTextAsync(footerPath), therapy, settings, licenseService.IsTrial);
     }
@@ -86,6 +96,7 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
         if (!IsProductionEnvironment())
             return;
 
+        // Production runs as an installed app or service, so browsers live in ProgramData rather than a user profile cache.
         const string playwrightPath = @"C:\ProgramData\Praxiom\ms-playwright";
         Directory.CreateDirectory(playwrightPath);
         Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", playwrightPath);

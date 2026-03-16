@@ -4,12 +4,18 @@ using Microsoft.Extensions.Configuration;
 
 namespace DottoressaIorio.Services.SqlLiteEncryption;
 
+/// <summary>
+/// Resolves the SQLite encryption key from either Development configuration or the installed local secret store.
+/// </summary>
 public sealed class EncryptionKeyResolver(IConfiguration configuration, string environmentName, string? localKeyFilePath = null)
 {
     private const string DevelopmentEnvironmentName = "Development";
     private const string ConfigKeyName = "EncryptionKey";
     private const string DpapiProtectionName = "DPAPI-LocalMachine";
 
+    /// <summary>
+    /// Gets the default installed key-store path used outside local development.
+    /// </summary>
     public static string DefaultLocalKeyFilePath =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
@@ -17,6 +23,9 @@ public sealed class EncryptionKeyResolver(IConfiguration configuration, string e
             "secrets",
             "encryption-key.json");
 
+    /// <summary>
+    /// Resolves the encryption key using the same environment rules as application startup.
+    /// </summary>
     public string Resolve()
     {
         var configuredKey = configuration[ConfigKeyName];
@@ -27,6 +36,7 @@ public sealed class EncryptionKeyResolver(IConfiguration configuration, string e
         if (TryReadLocalKey(localKeyFilePath, out var encryptionKey, out var localStoreFailure))
             return encryptionKey;
 
+        // Development can still use appsettings for local work. All other environments require the installed secret file.
         if (IsDevelopmentEnvironment())
             throw new InvalidOperationException(
                 $"Encryption key was not found. Checked Development configuration key '{ConfigKeyName}' and local store '{localKeyFilePath}'. {localStoreFailure}");
@@ -35,6 +45,9 @@ public sealed class EncryptionKeyResolver(IConfiguration configuration, string e
             $"Encryption key local store is required outside Development. Expected '{localKeyFilePath}'. {localStoreFailure}");
     }
 
+    /// <summary>
+    /// Gets the effective path of the installed encryption-key file.
+    /// </summary>
     public string GetLocalKeyFilePath()
     {
         return string.IsNullOrWhiteSpace(localKeyFilePath) ? DefaultLocalKeyFilePath : localKeyFilePath;
@@ -82,6 +95,7 @@ public sealed class EncryptionKeyResolver(IConfiguration configuration, string e
     {
         encryptionKey = string.Empty;
 
+        // Installed secrets may be stored as a DPAPI LocalMachine payload rather than plain JSON.
         if (!rootElement.TryGetProperty("Protection", out var protectionElement) ||
             !rootElement.TryGetProperty("Payload", out var payloadElement))
         {

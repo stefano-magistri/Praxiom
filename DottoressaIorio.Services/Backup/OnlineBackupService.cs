@@ -2,6 +2,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DottoressaIorio.Services.Backup;
 
+/// <summary>
+/// Creates debounced online SQLite backups and mirrors them when possible.
+/// </summary>
 public sealed class OnlineBackupService(
     ISqliteBackupConnectionFactory connectionFactory,
     IOnlineBackupStateStore stateStore,
@@ -11,6 +14,9 @@ public sealed class OnlineBackupService(
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
+    /// <summary>
+    /// Attempts to create an online backup for the supplied reason.
+    /// </summary>
     public async Task<OnlineBackupResult> TriggerBackupAsync(
         string reason,
         TimeSpan? minimumSuccessAge = null,
@@ -48,6 +54,7 @@ public sealed class OnlineBackupService(
                 Directory.CreateDirectory(options.BackupDirectoryPath);
                 Directory.CreateDirectory(options.RuntimeDirectoryPath);
 
+                // Online backup keeps the service running by copying through SQLite connections instead of a cold file copy.
                 using var sourceConnection = connectionFactory.CreateSourceConnection();
                 using var destinationConnection = connectionFactory.CreateDestinationConnection(backupPath);
                 sourceConnection.BackupDatabase(destinationConnection);
@@ -79,6 +86,7 @@ public sealed class OnlineBackupService(
 
                 var stateAfterFailure =
                     new OnlineBackupState(state.LastSuccessfulBackupUtc, consecutiveFailures);
+                // Once failures accumulate or the success window is too old, logs should point operators to the cold-copy fallback.
                 var fallbackRecommended = OnlineBackupPolicy.ShouldRecommendColdCopyFallback(
                     nowUtc,
                     stateAfterFailure,

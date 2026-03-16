@@ -5,10 +5,16 @@ using static Microsoft.Playwright.Assertions;
 
 namespace DottoressaIorio.E2E;
 
+/// <summary>
+/// Provides common Playwright helpers for authenticated end-to-end scenarios.
+/// </summary>
 public abstract class E2eTestBase(PlaywrightFixture fixture)
 {
     protected PlaywrightFixture Fixture { get; } = fixture;
 
+    /// <summary>
+    /// Creates a browser page and waits for the authenticated shell to become interactive.
+    /// </summary>
     protected async Task<(IBrowserContext Context, IPage Page)> NewAuthorizedPageAsync(string path = "/")
     {
         var context = await Fixture.NewContextAsync();
@@ -19,6 +25,9 @@ public abstract class E2eTestBase(PlaywrightFixture fixture)
         return (context, page);
     }
 
+    /// <summary>
+    /// Verifies that the current page is not showing the authorization failure shell.
+    /// </summary>
     protected static async Task EnsureAuthorizedShellAsync(IPage page)
     {
         var notAuthorized = page.GetByText("Non sei autorizzato a visualizzare questo contenuto.");

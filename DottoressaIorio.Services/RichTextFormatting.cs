@@ -5,6 +5,9 @@ using HtmlAgilityPack;
 
 namespace DottoressaIorio.Services;
 
+/// <summary>
+/// Normalizes stored therapy and notes content between plain text, editor HTML, PDF output, and CSV export.
+/// </summary>
 public static class RichTextFormatting
 {
     private static readonly Regex HtmlTagRegex = new("<[a-z!/][^>]*>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -14,6 +17,9 @@ public static class RichTextFormatting
     private static readonly Regex ClosingListRegex = new(@"</(ul|ol)\s*>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private const int MaxDecodePasses = 3;
 
+    /// <summary>
+    /// Converts plain text or supported editor HTML into the restricted HTML subset used by storage and PDF rendering.
+    /// </summary>
     public static string ToSupportedHtml(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -26,6 +32,9 @@ public static class RichTextFormatting
             : ConvertPlainTextToHtml(value);
     }
 
+    /// <summary>
+    /// Normalizes the value that should be persisted without forcing plain-text records into HTML.
+    /// </summary>
     public static string NormalizeStoredValue(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -38,6 +47,9 @@ public static class RichTextFormatting
             : value.Trim();
     }
 
+    /// <summary>
+    /// Converts the stored value into the format expected by the rich-text editor.
+    /// </summary>
     public static string ToEditorValue(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -50,6 +62,9 @@ public static class RichTextFormatting
             : DecodeTextContent(value);
     }
 
+    /// <summary>
+    /// Converts the stored value to readable plain text for exports and legacy paths.
+    /// </summary>
     public static string ToPlainText(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -107,6 +122,7 @@ public static class RichTextFormatting
         }
 
         var builder = new StringBuilder();
+        // Only a small subset of block and inline tags is preserved so stored content stays printable and predictable.
         AppendBlockNodes(root.ChildNodes, builder);
         return builder.ToString();
     }

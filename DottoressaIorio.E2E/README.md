@@ -1,77 +1,61 @@
 # DottoressaIorio.E2E
 
-Playwright + xUnit end-to-end smoke tests for the Dottoressa Iorio app.
+Playwright + xUnit end-to-end coverage for the running application.
 
-## Prerequisites
+## What the fixture does
 
-- .NET SDK 10.x
+- loads settings from `appsettings.json` plus environment variables
+- finds the built `DottoressaIorio.App.dll`
+- creates a temporary database root
+- seeds `Demo/app_unencrypted.db` when available
+- generates a temporary signed local license tied to the current Windows machine/user
+- starts the app with:
+  - `ASPNETCORE_ENVIRONMENT=Development`
+  - `Authentication__UseNegotiate=false`
+  - `Authentication__AllowedUsername=<current Windows user>`
+  - `DatabaseRootPath=<temp folder>`
+  - `LocalLicense__LicensePath=<temp license path>`
+  - `LocalLicense__PublicKeyPemBase64=<temp public key>`
+- launches Playwright Chromium, installing it on demand if missing
+
+## Requirements
+
 - Windows
-- App build output available locally
+- .NET SDK 10.x
+- built app output available locally
 
-These tests provision a temporary local license automatically. They do not require a manually installed `license.dat`.
-
-## Install Playwright browsers
-
-From repository root:
-
-```powershell
-dotnet restore DottoressaIorio.E2E/DottoressaIorio.E2E.csproj
-dotnet build DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release
-pwsh DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
-```
-
-Note: tests auto-install Chromium on first run if binaries are missing.
+Windows is required because the temporary license uses the real Windows identity and registry `MachineGuid`.
 
 ## Configuration
 
-`DottoressaIorio.E2E/appsettings.json` contains defaults.
+Defaults live in `DottoressaIorio.E2E/appsettings.json`.
 
-Environment variables override appsettings:
+Environment variables can override them:
 
-- `E2E__BaseUrl` (default: `https://localhost:7013`)
-- `E2E__Headless` (default: `true`)
-- `E2E__Login__Username` (optional; used only if a login form exists)
-- `E2E__Login__Password` (optional; used only if a login form exists)
+- `E2E__BaseUrl`
+- `E2E__Headless`
+- `E2E__Login__Username`
+- `E2E__Login__Password`
 
-Fixture behavior:
-
-- generates an ephemeral RSA keypair and a matching signed local license
-- reads the current Windows identity and `MachineGuid`
-- starts `DottoressaIorio.App` from the built DLL
-- sets:
-  - `Authentication__UseNegotiate=false`
-  - `Authentication__AllowedUsername=<current Windows user>`
-  - `LocalLicense__LicensePath=<temp license path>`
-  - `LocalLicense__PublicKeyPemBase64=<temp public key>`
-  - `DatabaseRootPath=<temp folder>`
-
-Because license provisioning reads the real Windows identity and registry machine GUID, these tests currently require Windows.
+If `E2E__BaseUrl` uses port `0`, the fixture replaces it with a free loopback port.
 
 ## Run locally
 
-1. Build the app and tests:
-
 ```powershell
+dotnet restore DottoressaIorio.slnx
 dotnet build DottoressaIorio.slnx -c Release
+dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release
 ```
 
-2. Run E2E tests:
+Install Chromium explicitly if needed:
 
 ```powershell
-dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release --logger "trx;LogFileName=e2e.trx"
+pwsh DottoressaIorio.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 ```
 
-To run headed:
+Run headed:
 
 ```powershell
 $env:E2E__Headless = "false"
 dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj -c Release
 ```
-
-## CI run
-
-Typical CI sequence:
-
-1. Build app + tests.
-2. Install Playwright browsers with `playwright.ps1 install --with-deps chromium`.
-3. Run `dotnet test DottoressaIorio.E2E/DottoressaIorio.E2E.csproj`.
