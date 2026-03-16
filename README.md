@@ -1,166 +1,57 @@
 # Praxiom Medical Management System
 
-[![CI](https://github.com/stefano-magistri/DottoressaIorio/actions/workflows/ci.yml/badge.svg)](https://github.com/stefano-magistri/DottoressaIorio/actions/workflows/ci.yml)
+Praxiom is a private Windows-first medical management application for a single-doctor workflow. The solution manages patients, therapies, reusable therapy templates, printable therapy PDFs, local licensing, and installer-driven deployment.
 
-A private medical management application built for a single doctor workflow on Windows.
+## Solution structure
 
-It helps doctors manage patients, therapies, and reusable therapy templates, then generate printable therapy PDFs directly from the same interface. The project exists to keep day-to-day clinical administration fast, local-first, and maintainable without introducing unnecessary platform complexity.
+- `DottoressaIorio.App`: Blazor Server UI, startup wiring, auth/authz, HTTP endpoints, and app host.
+- `DottoressaIorio.Models`: shared domain entities and validation attributes.
+- `DottoressaIorio.Data`: EF Core `ApplicationDbContext`, entity rules, and migrations.
+- `DottoressaIorio.Repositories`: persistence access and unit-of-work boundary.
+- `DottoressaIorio.Services`: encryption, licensing, PDF generation, backup, CSV export, and rich-text handling.
+- `DottoressaIorio.E2E`: Playwright end-to-end tests.
+- `DottoressaIorio.Repositories.Tests`, `DottoressaIorio.Services.Tests`, `DottoressaIorio.App.Tests`: unit and integration coverage.
+- `Setup`: publish, installer, uninstall, backup, and restore flow.
 
-## Quick Commands
+## Prerequisites
 
-```bash
+- Windows for normal local development, installer work, and E2E runs
+- .NET SDK 10.x
+- Playwright Chromium for PDF generation and E2E tests
+- Inno Setup 6 to build the installer
+
+## Local development
+
+Restore, build, and test the full solution:
+
+```powershell
 dotnet restore DottoressaIorio.slnx
-dotnet build DottoressaIorio.slnx --configuration Release
-dotnet test DottoressaIorio.slnx --configuration Release
-
-# Run app locally
-dotnet run --project DottoressaIorio.App
-
-# Run app locally with demo backup DB
-dotnet run --project DottoressaIorio.App --demo
-
-# Build installer (Windows)
-Setup\build-installer.bat
+dotnet build DottoressaIorio.slnx
+dotnet test DottoressaIorio.slnx
 ```
 
-## Highlights
+Run the app locally:
 
-- Single-user workflow optimized for one doctor on one Windows machine.
-- Fast CRUD and search flows for patients, therapies, and therapy templates.
-- Therapy PDF generation through Playwright Chromium for consistent printing output.
-- Optional encrypted SQLite storage with installed local key store and Development config fallback.
-- Windows service + installer scripts for repeatable deployment and upgrades.
-- Local signed license file bound to one Windows machine and one Windows user.
-- Soft-delete model to preserve records while keeping UI lists clean.
+```powershell
+dotnet run --project DottoressaIorio.App
+```
 
-## Architecture Overview
+Useful startup flags:
 
-The application follows a layered structure:
+- `--demo`: copies `Demo/app_old.db` into the active database root before startup
+- `--online-backup`: runs one online backup and exits
+- `--trial-active`: forces active trial mode
+- `--trial-expired`: forces expired trial mode
 
-`Blazor UI -> Services -> Repositories -> EF Core DbContext -> SQLite`
+## Configuration and auth behavior
 
-- **UI (`DottoressaIorio.App`)**: Blazor Server pages/components, routing, middleware, and startup wiring.
-- **Services (`DottoressaIorio.Services`)**: cross-cutting application logic (PDF generation, SQLite encryption wiring).
-- **Repositories (`DottoressaIorio.Repositories`)**: persistence access and transaction workflows.
-- **Data (`DottoressaIorio.Data`)**: EF Core model configuration, migrations, and `ApplicationDbContext`.
-- **Models (`DottoressaIorio.Models`)**: domain entities shared across layers.
-
-Supporting projects:
-
-- `DottoressaIorio.Repositories.Tests`, `DottoressaIorio.Services.Tests`: unit/integration coverage.
-- `DottoressaIorio.E2E`: Playwright + xUnit end-to-end test coverage.
-- `Setup`: publish/install/uninstall/backup automation.
-
-## Engineering Decisions
-
-### Why Blazor Server
-
-- Fits a private LAN/local-hosted internal tool.
-- Keeps deployment simple (single .NET app) and reduces frontend stack overhead.
-- Enables rapid form-heavy admin UI development in C#.
-
-### Why SQLite
-
-- Operationally lightweight for a single-user desktop/server deployment.
-- Easy backup/restore and simple installer integration.
-- Works well with EF Core migrations and local file-based storage.
-
-### Why Playwright for PDF
-
-- Uses Chromium rendering for predictable layout of print-ready medical therapy documents.
-- Reuses HTML/CSS templates instead of maintaining separate document rendering technology.
-- Also supports E2E tests in the same ecosystem.
-
-## Usage Flow
-
-1. Open patient list (`/`) and use search/pagination.
-2. Create or edit patient records.
-3. Manage therapies for each patient.
-4. Optionally apply a therapy template to speed authoring.
-5. Export therapy to PDF and open in a browser tab for print/save.
-
-### Screenshots
-
-#### Patients List
-
-The main patient list is the operational starting point for the day: it keeps search, browsing, and record access in one place.
-
-![Patients list](docs/screenshots/Lista%20Pazienti.png)
-
-#### New Patient
-
-Creating a new patient record is kept intentionally direct so new admissions can be entered quickly during routine work.
-
-![New patient](docs/screenshots/Nuovo%20Paziente.png)
-
-#### Edit Patient
-
-Existing demographic and clinical reference data can be updated without leaving the patient management flow.
-
-![Edit patient](docs/screenshots/Modifica%20Paziente.png)
-
-#### Patient Detail
-
-The patient detail page acts as the central workspace for reviewing information and continuing the therapy workflow.
-
-![Patient detail](docs/screenshots/Scheda%20Paziente.png)
-
-#### New Therapy
-
-Therapies can be authored from scratch when a fully custom treatment plan is needed.
-
-![New therapy](docs/screenshots/Nuova%20Terapia.png)
-
-#### Add Precompiled Therapy
-
-Reusable therapy templates help reduce repetitive typing and keep recurring prescriptions consistent.
-
-![Add precompiled therapy](docs/screenshots/Aggiungi%20Terapia%20Precompilata.png)
-
-#### Edit Precompiled Therapy
-
-Template maintenance stays inside the application so recurring therapy definitions can evolve with the practice.
-
-![Edit precompiled therapy](docs/screenshots/Modifica%20Terapia%20Precompilata.png)
-
-#### Therapy Print View
-
-Once a therapy is ready, the printable output is generated in a browser-friendly layout designed for PDF export and paper printing.
-
-![Therapy print view](docs/screenshots/Stampa%20Terapia.png)
-
-#### Additional Workflow Screen
-
-This extra screen captures another point in the application workflow and is included here for general UI coverage.
-
-![Additional workflow screen](docs/screenshots/Screenshot%202026-03-08%20134859.png)
-
-## Scope and Security Context
-
-This repository intentionally targets a constrained scenario:
-
-- Single doctor, single Windows PC (Windows 10/11).
-- Access model based on Windows login only.
-- Existing auth/authz behavior is intentionally limited to:
-  - `Authentication:UseNegotiate`
-  - `Authentication:AllowedUsername`
-  - `SpecificUserOnly` policy
-
-Out of scope for this project baseline:
-
-- New app login screens.
-- Multi-user role management.
-- External identity providers or cloud authentication flows.
-
-## Configuration
-
-Main files:
+Primary config files:
 
 - `DottoressaIorio.App/appsettings.json`
 - `DottoressaIorio.App/appsettings.Development.json`
 - `DottoressaIorio.App/appsettings.Production.json`
 
-Relevant keys:
+Relevant auth keys:
 
 ```json
 {
@@ -171,131 +62,152 @@ Relevant keys:
 }
 ```
 
-Behavior summary:
+Current behavior is exactly:
 
-- `Authentication:UseNegotiate=false`: Negotiate auth middleware is disabled.
-- `Authentication:UseNegotiate=true`: Windows-authenticated identity is required.
-- `Authentication:AllowedUsername`: enforced by `SpecificUserOnly` policy.
+- `Authentication:UseNegotiate=true`: Negotiate authentication is registered and `SpecificUserOnly` allows only the configured `Authentication:AllowedUsername`.
+- `Authentication:UseNegotiate=false`: authentication middleware is not registered, `SpecificUserOnly` returns `true`, and the fallback policy also allows access.
+- `Authentication:AllowedUsername`: used both by authorization and by local license validation.
 
-## Local Licensing
+This repository intentionally preserves the current limited auth/authz model. There is no separate application login screen, no roles, and no external identity provider flow.
 
-The app now requires a local signed license at startup.
+## Database behavior
 
-License characteristics:
-
-- Product-scoped: licenses are generated for `DottoressaIorio`.
-- Machine-bound: validated against `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid`.
-- User-bound: validated against the full Windows identity in `MACHINE\username` or `DOMAIN\username` format.
-- Offline: no activation server or network dependency is used.
-
-Runtime behavior:
-
-- License validation runs on every startup.
-- Missing, malformed, tampered, wrong-machine, wrong-user, or wrong-product licenses fail closed.
-- Default installed license path: `C:\ProgramData\DottoressaIorio\license.dat`
-
-Internal generation tool:
-
-- `DottoressaIorio.LicenseGenerator` is an internal-only helper for the software provider.
-- It can create a signed `license.dat` from `MachineId` and `AllowedUsername`.
-- It can also validate a license file locally when used by the installer flow.
-
-Prototype limitations:
-
-- A determined developer could still patch binaries or checks.
-- `MachineGuid` can change after some OS reinstall or restore scenarios.
-
-## Data and Storage
-
-- Database files are created under app base directory (`AppContext.BaseDirectory`).
-- Installed encryption key path: `C:\ProgramData\Praxiom\secrets\encryption-key.json`.
-- Installer writes the key there during setup using Windows DPAPI LocalMachine protection via the bundled setup helper.
-- Production/non-Development reads the key from that local file and fails at startup if the file is missing, unreadable, or empty.
-- Development still falls back to `EncryptionKey` in local config (for example `appsettings.Development.json`) if the local file is absent.
-- With an encryption key: app uses `app.db` and applies `PRAGMA key`.
-- Without an encryption key: app uses `app_unencrypted.db`.
-- Soft-delete is used for entities (`Deleted=true`) with global EF filters.
+- The app uses SQLite through EF Core.
+- Database files live under `DatabaseRootPath` when configured; otherwise the root is `AppContext.BaseDirectory` for Windows service runs and the app content root for normal runs.
+- `dbContext.Database.Migrate()` runs automatically during startup before license initialization.
+- `ApplicationDbContext` applies global soft-delete filters for `Patient`, `Therapy`, and `TherapyTemplate`.
 - `TherapyTemplate.Title` is unique among non-deleted rows.
+- `ClinicSettings` is treated as a singleton row and seeded with defaults.
+- Entity normalization and validation run inside `SaveChanges` and `SaveChangesAsync`.
 
-## Build, Test, and CI
+## Encryption key behavior
 
-Run all tests:
+- Encryption is handled by `SqlLiteDbEncryptionService` plus `EncryptionKeyResolver`.
+- In `Development`, the app accepts `EncryptionKey` from local configuration if present.
+- Outside `Development`, the app requires an installed local key file.
+- Default installed key path:
 
-```bash
-dotnet test DottoressaIorio.slnx
+```text
+C:\ProgramData\Praxiom\secrets\encryption-key.json
 ```
 
-Run test projects directly:
+- The installed secret can be plain JSON with `EncryptionKey`, or a DPAPI LocalMachine-wrapped payload written by the setup helper.
+- With a non-empty key the app uses `app.db` and applies `PRAGMA key`.
+- Without a key the app uses `app_unencrypted.db`.
 
-```bash
+## Licensing and trial behavior
+
+- Runtime license validation uses `Authentication:AllowedUsername` plus the local machine identifier.
+- Default installed license path:
+
+```text
+C:\ProgramData\Praxiom\license.dat
+```
+
+- In plain `Development`, with no launch override, the app behaves as licensed.
+- Outside that case, startup validates the local license file.
+- If validation fails, the app falls back to trial mode and stores `TrialStartUtc` in `ClinicSettings`.
+- Trial rules currently implemented:
+  - 7-day trial
+  - max 10 patients
+  - max 10 therapy templates
+  - therapy creation blocked only when the trial has expired
+
+## PDF generation
+
+- Therapy PDFs are generated with Playwright Chromium.
+- Header and footer templates are loaded from `DottoressaIorio.App/_pdf_therapy`.
+- In Production on Windows, if `PLAYWRIGHT_BROWSERS_PATH` is not already set, the app uses:
+
+```text
+C:\ProgramData\Praxiom\ms-playwright
+```
+
+- Non-Production runs attempt Playwright browser installation on demand if Chromium is missing.
+
+## Backup and restore
+
+- Online backup runs through `OnlineBackupService`, which uses SQLite online backup rather than a stop-service cold copy.
+- Backup triggers exist for:
+  - scheduled task mode (`--online-backup`)
+  - application startup
+  - application shutdown
+  - selected app actions such as PDF generation and data updates
+- Local backup folder:
+
+```text
+C:\ProgramData\Praxiom\_db_backup
+```
+
+- Backup retention, debounce windows, and fallback recommendation logic are controlled by `OnlineBackupOptions`.
+- When available, backups are also mirrored to OneDrive under `Praxiom\_db_backup`.
+- `Setup/backup_script.ps1` remains the manual cold-copy fallback path.
+- `Setup/restore_script.ps1` stops the service, restores the selected backup into the active DB path, removes WAL/SHM files, and creates a pre-restore snapshot.
+
+## Tests
+
+Main test commands:
+
+```powershell
+dotnet test DottoressaIorio.slnx
+dotnet test DottoressaIorio.slnx --configuration Release --no-build --filter "Category!=Integration"
+```
+
+Project-specific examples:
+
+```powershell
 dotnet test DottoressaIorio.Repositories.Tests
 dotnet test DottoressaIorio.Services.Tests
+dotnet test DottoressaIorio.App.Tests
 dotnet test DottoressaIorio.E2E
 ```
 
-CI workflow:
+E2E tests:
 
-- [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+- start the built app from its DLL output
+- generate a temporary signed local license
+- force `Authentication__UseNegotiate=false`
+- use a temporary database root
+- require Windows because machine identity and registry `MachineGuid` are part of the license flow
 
-## Installer Workflow
+## Publish and installer overview
 
-Key scripts:
-
-- `DottoressaIorio.App/publish.bat`
-- `Setup/build-installer.bat`
-- `Setup/install.bat`
-- `Setup/uninstall.bat`
-- `Setup/backup_script.ps1`
-- `Setup/restore_script.ps1`
-
-Scripted installer behavior includes:
-
-- self-contained `win-x64` publish,
-- installer executable creation,
-- deployment to `C:\ProgramData\DottoressaIorio`,
-- dedicated `Richiesta licenza` page that shows the current `Machine ID` and `Utente Windows autorizzato`,
-- immediate installer-side validation of the selected `license.dat`,
-- Windows service setup/start,
-- Playwright Chromium installation attempt,
-- scheduled online backup task setup (`DottoressaIorio.App.exe --online-backup`).
-
-Installer flow summary:
-
-1. Installer shows `Richiesta licenza` with the exact machine/user data needed by the software provider.
-2. Customer sends those values to the provider and receives `license.dat`.
-3. Customer selects the returned license file on the `File licenza` page.
-4. Installer validates the license before continuing.
-5. Installation proceeds with service URL and optional DB restore settings.
-
-The request page keeps the values readable and selectable so the user can copy them manually or send a screenshot.
-
-Backup modes:
-
-- Routine mode: online SQLite backup through the scheduled task and app-triggered actions (service stays running).
-- Fallback mode: `Setup/backup_script.ps1` performs stop-service cold copy and is retained for manual/emergency use only.
-
-Restore mode:
-
-- `Setup/restore_script.ps1` restores `app.db` from a selected backup file path (local or OneDrive) by stopping the service, replacing the DB, and starting the service again.
-- It also creates a safety snapshot of current `app.db` into `_db_backup` as `app_pre_restore_yyyyMMddHHmmss.db`.
-
-Example:
+Build the published app package:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\Praxiom\restore_script.ps1" -BackupPath "C:\Users\<user>\OneDrive\Praxiom\_db_backup\app_backup_20260303153000.db"
+.\DottoressaIorio.App\publish.bat
 ```
 
-Uninstall backup behavior:
+Build the installer:
 
-- Uninstall preserves the local `_db_backup` folder exactly as before.
-- If `%OneDrive%` exists, uninstall also writes a timestamped extra copy of the database backup under:
-  - `%OneDrive%\Praxiom\_db_backup`
-- OneDrive copy failures are ignored so uninstall still completes.
+```powershell
+.\Setup\build-installer.bat
+```
 
-## Contributing and Maintenance
+Current installer flow:
 
-Contribution and maintenance workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+1. Publish the app as self-contained `win-x64`.
+2. Publish the license helper.
+3. Build the Inno Setup installer.
+4. Installer collects the current Windows user and machine id.
+5. Installer optionally validates a provided `license.dat`.
+6. Installer writes the encryption key secret into `C:\ProgramData\Praxiom\secrets`.
+7. Installer deploys files, recreates the Windows service, installs Playwright Chromium, and creates the scheduled online-backup task.
+8. If database restore is requested, the restore script runs after install setup completes.
 
-## License
+## Troubleshooting
 
-See [LICENSE](LICENSE).
+- Missing encryption key outside `Development`: verify `C:\ProgramData\Praxiom\secrets\encryption-key.json`.
+- Trial mode unexpectedly active: verify `Authentication:AllowedUsername`, the installed `license.dat`, and the current Windows machine/user match.
+- PDF generation fails on installed environments: verify Chromium exists under `C:\ProgramData\Praxiom\ms-playwright` or rerun Playwright install.
+- Service start failures during install: inspect `Setup\install.log` and Windows event logs collected by the installer diagnostics step.
+- E2E startup failures: build `DottoressaIorio.App` first and ensure Windows identity/registry access is available.
+
+## Additional project notes
+
+- [DottoressaIorio.App/README.md](c:\repos\DottoressaIorio\DottoressaIorio.App\README.md)
+- [DottoressaIorio.Data/README.md](c:\repos\DottoressaIorio\DottoressaIorio.Data\README.md)
+- [DottoressaIorio.Repositories/README.md](c:\repos\DottoressaIorio\DottoressaIorio.Repositories\README.md)
+- [DottoressaIorio.Services/README.md](c:\repos\DottoressaIorio\DottoressaIorio.Services\README.md)
+- [DottoressaIorio.E2E/README.md](c:\repos\DottoressaIorio\DottoressaIorio.E2E\README.md)
+- [Setup/README.md](c:\repos\DottoressaIorio\Setup\README.md)

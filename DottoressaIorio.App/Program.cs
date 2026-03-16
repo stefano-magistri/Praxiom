@@ -34,10 +34,8 @@ try
     var encryptionKey = encryptionKeyResolver.Resolve();
     var allowedUsername = configuration["Authentication:AllowedUsername"]!;
 
-    // Read the "UseNegotiate" setting from the configuration file
     var useNegotiate = configuration.GetValue<bool>("Authentication:UseNegotiate");
 
-    // Configure Serilog for logging
     builder.AddDottoressaLogging();
 
     if (useNegotiate && string.IsNullOrWhiteSpace(allowedUsername))
@@ -48,12 +46,9 @@ try
         Log.Warning(
             "Authentication:UseNegotiate is disabled in Production. SpecificUserOnly allows access when Negotiate is disabled.");
 
-    // Configure authorization policies
     builder.Services.AddDottoressaIorioAuthorization(configuration, useNegotiate, allowedUsername);
     builder.Services.AddDottoressaIorioAuthentication(configuration, useNegotiate);
 
-
-    // Add services to the container.
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
     builder.Services.AddScoped<ClinicSettingsState>();
@@ -98,6 +93,7 @@ try
 
     if (runOnlineBackup)
     {
+        // Scheduled-task mode exits after one backup attempt instead of starting the web host.
         var result = await onlineBackupService.TriggerBackupAsync("scheduled-task");
         Environment.ExitCode = result.Outcome == OnlineBackupOutcome.Failed ? 1 : 0;
         return;
@@ -106,6 +102,7 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        // The database schema must be current before license initialization because trial state is stored in ClinicSettings.
         dbContext.Database.Migrate();
         var licenseService = scope.ServiceProvider.GetRequiredService<ILicenseService>();
         await licenseService.InitializeAsync();
@@ -127,6 +124,7 @@ try
         {
             try
             {
+                // Startup backups are opportunistic and respect the configured minimum age to avoid noisy repeats.
                 await onlineBackupService.TriggerBackupAsync("application-startup", onlineBackupOptions.StartupMinimumAge);
             }
             catch (Exception ex)
@@ -142,6 +140,7 @@ try
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            // Shutdown backup is best-effort only so service stop does not hang indefinitely.
             _ = onlineBackupService.TriggerBackupAsync(
                     "application-stopping",
                     onlineBackupOptions.ShutdownMinimumAge,
@@ -160,7 +159,6 @@ try
     });
     app.Lifetime.ApplicationStopped.Register(Log.CloseAndFlush);
 
-    // Configure the HTTP request pipeline.
     if (!app.Environment.IsDevelopment())
     {
         app.UseExceptionHandler("/Error");
@@ -171,6 +169,7 @@ try
     app.UseStaticFiles();
     app.UseRouting();
 
+    // When Negotiate is disabled, the current authorization rules intentionally run without authentication middleware.
     if (useNegotiate) app.UseAuthentication();
     app.UseAuthorization();
 

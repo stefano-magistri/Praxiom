@@ -3,8 +3,14 @@ using DottoressaIorio.Models;
 
 namespace DottoressaIorio.Services.Pdf;
 
+/// <summary>
+/// Builds the HTML fragments used by therapy PDF rendering.
+/// </summary>
 public class PdfHtmlBuilder
 {
+    /// <summary>
+    /// Builds the main therapy document HTML.
+    /// </summary>
     public string BuildHtml(Therapy therapy)
     {
         var patientDisplayName = Encode(PatientNameFormatter.FormatDisplayName(therapy.Patient));
@@ -27,6 +33,9 @@ public class PdfHtmlBuilder
 </html>";
     }
 
+    /// <summary>
+    /// Applies clinic and therapy placeholders to the header template.
+    /// </summary>
     public string BuildHeaderHtml(string template, Therapy therapy, ClinicSettings settings)
     {
         return template
@@ -40,6 +49,9 @@ public class PdfHtmlBuilder
             .Replace("{{therapyDate}}", therapy.CreatedDate.ToString("dd/MM/yyyy"));
     }
 
+    /// <summary>
+    /// Applies clinic, patient, and trial placeholders to the footer template.
+    /// </summary>
     public string BuildFooterHtml(string template, Therapy therapy, ClinicSettings settings, bool isTrial = false)
     {
         return template

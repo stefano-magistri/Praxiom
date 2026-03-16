@@ -20,6 +20,9 @@ public sealed class PlaywrightCollection : ICollectionFixture<PlaywrightFixture>
     public const string Name = "playwright";
 }
 
+/// <summary>
+/// Starts the application under test, provisions a temporary license, and exposes Playwright browser contexts.
+/// </summary>
 public sealed class PlaywrightFixture : IAsyncLifetime
 {
     private IBrowser? _browser;
@@ -32,6 +35,9 @@ public sealed class PlaywrightFixture : IAsyncLifetime
 
     public E2eSettings Settings { get; private set; } = null!;
 
+    /// <summary>
+    /// Initializes the test browser and application host.
+    /// </summary>
     public async Task InitializeAsync()
     {
         raw.SetProvider(new SQLite3Provider_e_sqlcipher());
@@ -42,6 +48,9 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         _browser = await LaunchBrowserWithInstallFallbackAsync();
     }
 
+    /// <summary>
+    /// Disposes the browser and stops the application host.
+    /// </summary>
     public async Task DisposeAsync()
     {
         if (_browser is not null) await _browser.DisposeAsync();
@@ -50,6 +59,9 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         Playwright.Dispose();
     }
 
+    /// <summary>
+    /// Creates a new Playwright browser context configured for the running test host.
+    /// </summary>
     public async Task<IBrowserContext> NewContextAsync()
     {
         if (_browser is null) throw new InvalidOperationException("Browser is not initialized.");
@@ -62,6 +74,9 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         });
     }
 
+    /// <summary>
+    /// Seeds test patients directly into the temporary SQLite database.
+    /// </summary>
     public async Task<IReadOnlyList<int>> SeedPatientsAsync(
         IEnumerable<(string FirstName, string LastName, string Email, DateTime DateOfBirth)> patients)
     {
@@ -96,6 +111,9 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         return patientIds;
     }
 
+    /// <summary>
+    /// Seeds therapy templates directly into the temporary SQLite database.
+    /// </summary>
     public async Task SeedTherapyTemplatesAsync(IEnumerable<(string Title, string Description)> templates)
     {
         using var connection = CreateTestDatabaseConnection();
@@ -120,6 +138,9 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         await transaction.CommitAsync();
     }
 
+    /// <summary>
+    /// Seeds therapies directly into the temporary SQLite database.
+    /// </summary>
     public async Task SeedTherapiesAsync(int patientId, IEnumerable<string> descriptions)
     {
         using var connection = CreateTestDatabaseConnection();
@@ -221,6 +242,7 @@ public sealed class PlaywrightFixture : IAsyncLifetime
 
         using var rsa = RSA.Create(2048);
         var licensePath = Path.Combine(_tempDirectory, LocalLicenseDefaults.LicenseFileName);
+        // E2E runs create a real signed license tied to the current machine/user so production validation code stays in play.
         var token = LocalLicenseToken.CreateSignedLicense(
             new LicensePayload(LocalLicenseDefaults.ProductName, machineId, currentUsername),
             rsa.ExportPkcs8PrivateKeyPem());
@@ -426,6 +448,7 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         };
 
         startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+        // E2E intentionally disables Negotiate so the browser can drive the app without Windows-integrated auth.
         startInfo.Environment["Authentication__UseNegotiate"] = "false";
         startInfo.Environment["Authentication__AllowedUsername"] = currentUsername;
         startInfo.Environment["DatabaseRootPath"] = _tempDirectory;

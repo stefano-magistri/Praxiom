@@ -108,6 +108,7 @@ echo %appUrl% | findstr /I "://">nul
 if errorlevel 1 set "appUrl=http://%appUrl%"
 >> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore% licenseFile=%licenseFile%
 if not "%licenseFile%"=="" (
+    rem Installer-side validation prevents a mismatched license from being copied into ProgramData.
     call :validateLicense "%licenseFile%" "%allowedUsername%"
     if errorlevel 1 (
         if "%interactive%"=="1" pause
@@ -243,6 +244,7 @@ rem Restore database files if backup is present.
 if "%skipAutoDbRestore%"=="1" (
     >> "%logFile%" echo [%date% %time%] Automatic database restore from local backup skipped by installer option.
 ) else (
+    rem Reuse the local backup folder when replacing binaries so upgrades preserve the existing database by default.
     call :restoreDbFile "app.db"
     call :restoreDbFile "app.db-shm"
     call :restoreDbFile "app.db-wal"
@@ -394,6 +396,7 @@ if "!validatorExitCode!"=="0" (
     endlocal & exit /b 0
 )
 
+rem Exit codes come from the bundled license helper and are mapped to the same messages used by the wizard.
 if "!validatorExitCode!"=="2" (
     >> "%logFile%" echo [%date% %time%] ERROR: License file not found during validation.
     echo File di licenza non trovato.
@@ -462,6 +465,7 @@ if not exist "%secretHelperExe%" (
     endlocal
     exit /b 1
 )
+rem The helper writes the installed secret using the same DPAPI-backed format expected by runtime key resolution.
 "%secretHelperExe%" write-secret --secret-file "%keyFile%" --value "%keyValue%" >nul 2>> "%logFile%"
 if errorlevel 1 (
     endlocal

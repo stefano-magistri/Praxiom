@@ -3,8 +3,14 @@ using Serilog;
 
 namespace DottoressaIorio.App.Middleware;
 
+/// <summary>
+/// Registers and evaluates the authorization rules used by the application.
+/// </summary>
 public static class AuthorizationExtensions
 {
+    /// <summary>
+    /// Evaluates the <c>SpecificUserOnly</c> rule for the current identity.
+    /// </summary>
     public static bool IsSpecificUserAllowed(
         bool useNegotiate,
         string? allowedUsername,
@@ -21,25 +27,30 @@ public static class AuthorizationExtensions
                identityName.Equals(allowedUsername, StringComparison.InvariantCultureIgnoreCase);
     }
 
+    /// <summary>
+    /// Evaluates the fallback authorization rule applied to routes without an explicit policy.
+    /// </summary>
     public static bool IsFallbackAuthorized(bool useNegotiate, bool isAuthenticated)
     {
         return !useNegotiate || isAuthenticated;
     }
 
+    /// <summary>
+    /// Registers the application's authorization policies without changing the existing auth semantics.
+    /// </summary>
     public static IServiceCollection AddDottoressaIorioAuthorization(this IServiceCollection services,
         IConfiguration config,
         bool useNegotiate, string allowedUsername)
     {
-        // Configure authorization policies
         services.AddAuthorization(options =>
         {
-            // Always add the SpecificUserOnly policy
             options.AddPolicy("SpecificUserOnly", policy =>
                 policy.RequireAssertion(context =>
                 {
+                    // When Negotiate is disabled, the current implementation intentionally leaves the app open.
                     if (!useNegotiate)
                     {
-                        return true; // Allow all access when Negotiate is disabled
+                        return true;
                     }
 
                     var identityName = context.User.Identity?.Name;
@@ -57,7 +68,6 @@ public static class AuthorizationExtensions
                     return isAllowedUser;
                 }));
 
-            // Set the fallback policy based on authentication configuration
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAssertion(context =>
                     IsFallbackAuthorized(useNegotiate, context.User.Identity?.IsAuthenticated == true))

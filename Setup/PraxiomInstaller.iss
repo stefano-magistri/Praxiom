@@ -113,6 +113,7 @@ var
   SectionSpacing: Integer;
   ShiftAmount: Integer;
 begin
+  // The wizard captures the exact machine/user pair that must match the generated local license.
   DomainName := GetEnv('USERDOMAIN');
   if Trim(DomainName) = '' then
     DomainName := GetEnv('COMPUTERNAME');
@@ -634,6 +635,7 @@ begin
   if not ShouldRestoreDatabase() then
     Exit;
 
+  // Restores run after install.bat finishes so the service and helper scripts already exist in ProgramData.
   if not Exec(
     ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
     '-NoProfile -ExecutionPolicy Bypass -File ' +

@@ -4,6 +4,9 @@ using DottoressaIorio.Models;
 
 namespace DottoressaIorio.Services.Patients;
 
+/// <summary>
+/// Exports patients and their therapies as a UTF-8 CSV file.
+/// </summary>
 public sealed class PatientCsvExportService
 {
     private const string Separator = ";";
@@ -21,6 +24,9 @@ public sealed class PatientCsvExportService
         "DataCreazione"
     ];
 
+    /// <summary>
+    /// Generates the CSV payload for the supplied patient list.
+    /// </summary>
     public byte[] GenerateCsv(IList<Patient> patients)
     {
         var builder = new StringBuilder();
@@ -91,6 +97,7 @@ public sealed class PatientCsvExportService
             return string.Empty;
         }
 
+        // Rich-text descriptions are flattened only when they contain the supported stored markup set.
         if (!value.Contains('<', StringComparison.Ordinal))
         {
             return RichTextFormatting.ToPlainText(value);
