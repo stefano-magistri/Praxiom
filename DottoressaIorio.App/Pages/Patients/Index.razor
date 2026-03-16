@@ -45,6 +45,11 @@
             <p class="trial-inline-message">@CreationInlineMessage</p>
         }
 
+        @if (!string.IsNullOrWhiteSpace(ExportErrorMessage))
+        {
+            <div class="alert alert-warning" role="alert">@ExportErrorMessage</div>
+        }
+
         @if (DisplayedPatients == null || DisplayedPatients.Count == 0)
         {
             <p class="mb-0">Nessun paziente trovato.</p>
