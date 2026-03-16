@@ -18,10 +18,10 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         var seed = Guid.NewGuid().ToString("N")[..8];
         var templateTitle = $"TPL-PREFILL-{seed}";
         var templateDescription = $"Template Desc {seed}";
+        var patientDetails = BuildPatientDetails(seed, "Th");
 
         await CreateTherapyTemplateAsync(page, templateTitle, templateDescription);
-        var patientId = await CreatePatientAsync(page, $"ThNome{seed}", $"ThCognome{seed}", $"{seed}.th@example.test",
-            "1981-01-01");
+        var patientId = await CreatePatientWithDetailsAsync(page, patientDetails);
         await page.GotoAsync($"/patient/{patientId}/",
             new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await WaitForInteractiveReadyAsync(page);
@@ -30,6 +30,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await writeTherapyButton.ClickAsync();
         await page.Locator("#TemplateId").WaitForAsync();
         Assert.Contains($"/patient/{patientId}/create-therapy", page.Url, StringComparison.Ordinal);
+        await AssertPatientContextCollapsedAsync(page, patientDetails);
         await Expect(page.Locator("#TemplateId option").Filter(new LocatorFilterOptions { HasText = templateTitle }))
             .ToHaveCountAsync(1);
         await page.Locator("#TemplateId").SelectOptionAsync(new SelectOptionValue { Label = templateTitle });
@@ -40,7 +41,10 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await popup.CloseAsync();
 
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica terapia");
-        Assert.Matches(@".*/patient/\d+/edit-therapy/?$", page.Url);
+        Assert.Matches(@".*/patient/\d+/edit-therapy/(\?.*)?$", page.Url);
+        await AssertPatientContextCollapsedAsync(page, patientDetails);
+        await Expect(page.GetByRole(AriaRole.Status)).ToContainTextAsync(
+            "Terapia salvata e PDF aperto in una nuova scheda. Ora puoi continuare da questa schermata di modifica.");
         await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(templateDescription);
     }
 
@@ -53,8 +57,8 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         var page = setup.Page;
 
         var seed = Guid.NewGuid().ToString("N")[..8];
-        var patientId = await CreatePatientAsync(page, $"EditThNome{seed}", $"EditThCog{seed}",
-            $"{seed}.edth@example.test", "1980-05-05");
+        var patientDetails = BuildPatientDetails(seed, "EditTh");
+        var patientId = await CreatePatientWithDetailsAsync(page, patientDetails);
         var originalDescription = $"THER-ORIG-{seed}";
         var editedDescription = $"THER-EDIT-{seed}";
 
@@ -64,6 +68,7 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await Expect(row).ToBeVisibleAsync();
         await row.Locator("button").Nth(1).ClickAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica terapia");
+        await AssertPatientContextCollapsedAsync(page, patientDetails);
         Assert.Equal(["Annulla", "Stampa", "Salva"], await GetTherapyFormActionLabelsAsync(page));
 
         await FillTherapyDescriptionAsync(page, editedDescription);
@@ -71,6 +76,9 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await popup.CloseAsync();
         await Expect(page.GetByTestId("page-heading")).ToHaveTextAsync("Modifica terapia");
         Assert.Matches(@".*/patient/\d+/edit-therapy/?$", page.Url);
+        await AssertPatientContextCollapsedAsync(page, patientDetails);
+        await Expect(page.GetByRole(AriaRole.Status)).ToContainTextAsync(
+            "PDF aperto in una nuova scheda. La terapia resta modificabile in questa pagina.");
         await Expect(page.GetByTestId("therapy-description-editor")).ToContainTextAsync(editedDescription);
 
         await SubmitEditTherapyFormAsync(page);
@@ -206,4 +214,99 @@ public sealed class TherapyManagementTests(PlaywrightFixture fixture) : E2eTestB
         await Expect(combinedDescriptionPreview).ToContainTextAsync(firstTemplateDescription);
         await Expect(combinedDescriptionPreview).ToContainTextAsync(secondTemplateDescription);
     }
+
+    private static async Task<int> CreatePatientWithDetailsAsync(IPage page, PatientDetails details)
+    {
+        var patientId = await CreatePatientAsync(page, details.FirstName, details.LastName, details.Email, details.DateOfBirth);
+
+        await page.GotoAsync($"/patient/{patientId}/edit/",
+            new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await WaitForInteractiveReadyAsync(page);
+        await FillBoundFieldAsync(page.Locator("#PlaceOfBirth"), details.PlaceOfBirth);
+        await page.Locator(details.Gender == "Femmina" ? "#GenderFemale" : "#GenderMale").CheckAsync();
+        await FillBoundFieldAsync(page.Locator("#PhoneNumber"), details.PhoneNumber);
+        await FillBoundFieldAsync(page.Locator("#Notes"), details.Notes);
+        await SubmitEditPatientFormAsync(page);
+
+        return patientId;
+    }
+
+    private static async Task AssertPatientContextCollapsedAsync(IPage page, PatientDetails details)
+    {
+        var compact = page.GetByTestId("patient-context-compact");
+        var summary = page.GetByTestId("patient-context-summary");
+        var toggle = page.GetByTestId("patient-context-toggle");
+        var expectedDisplayName = $"{FormatTitleCase(details.FirstName)} {FormatTitleCase(details.LastName)}";
+
+        await Expect(compact).ToBeVisibleAsync();
+        await Expect(compact).ToContainTextAsync(expectedDisplayName);
+        await Expect(summary).ToContainTextAsync(details.ExpectedAgeLabel);
+        await Expect(summary).ToContainTextAsync(details.Gender);
+        await Expect(toggle).ToHaveTextAsync("Mostra dettagli");
+        await Expect(toggle).ToHaveAttributeAsync("aria-expanded", "false");
+        await Expect(page.GetByTestId("patient-context-details")).ToHaveCountAsync(0);
+        await Expect(page.GetByText("Numero di telefono")).ToHaveCountAsync(0);
+        await Expect(page.GetByText(details.PhoneNumber)).ToHaveCountAsync(0);
+        await Expect(page.GetByText("Note")).ToHaveCountAsync(0);
+        await Expect(page.GetByText(details.Notes)).ToHaveCountAsync(0);
+
+        await toggle.ClickAsync();
+        await Expect(toggle).ToHaveTextAsync("Nascondi dettagli");
+        await Expect(toggle).ToHaveAttributeAsync("aria-expanded", "true");
+        await Expect(page.GetByTestId("patient-context-details")).ToBeVisibleAsync();
+        await Expect(page.GetByText("Numero di telefono")).ToBeVisibleAsync();
+        await Expect(page.GetByText(details.PhoneNumber)).ToBeVisibleAsync();
+        await Expect(page.GetByText(details.Email)).ToBeVisibleAsync();
+        await Expect(page.GetByText(details.Notes)).ToBeVisibleAsync();
+
+        await toggle.ClickAsync();
+        await Expect(page.GetByTestId("patient-context-details")).ToHaveCountAsync(0);
+        await Expect(toggle).ToHaveTextAsync("Mostra dettagli");
+        await Expect(toggle).ToHaveAttributeAsync("aria-expanded", "false");
+    }
+
+    private static PatientDetails BuildPatientDetails(string seed, string prefix)
+    {
+        var firstName = $"{prefix}Nome{seed}";
+        var lastName = $"{prefix}Cog{seed}";
+        var email = $"{seed}.{prefix.ToLowerInvariant()}@example.test";
+        var phone = $"333{Random.Shared.Next(100000, 999999)}";
+        var notes = $"Note terapia {seed}";
+        const string dateOfBirth = "1980-05-05";
+        var age = CalculateAge(new DateTime(1980, 5, 5));
+
+        return new PatientDetails(
+            firstName,
+            lastName,
+            email,
+            dateOfBirth,
+            "Perugia",
+            "Femmina",
+            phone,
+            notes,
+            $"{age} anni");
+    }
+
+    private static int CalculateAge(DateTime dateOfBirth)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - dateOfBirth.Year;
+        if (dateOfBirth.Date > today.AddYears(-age))
+        {
+            age--;
+        }
+
+        return age;
+    }
+
+    private sealed record PatientDetails(
+        string FirstName,
+        string LastName,
+        string Email,
+        string DateOfBirth,
+        string PlaceOfBirth,
+        string Gender,
+        string PhoneNumber,
+        string Notes,
+        string ExpectedAgeLabel);
 }

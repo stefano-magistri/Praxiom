@@ -72,6 +72,12 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
         await FillBoundFieldAsync(page.Locator("#Notes"), notes);
         await SubmitEditPatientFormAsync(page);
 
+        await Expect(page.GetByTestId("patient-context-compact")).ToBeVisibleAsync();
+        await Expect(page.GetByTestId("patient-context-summary")).ToContainTextAsync($"{CalculateAge(new DateTime(1985, 5, 12))} anni");
+        await Expect(page.GetByTestId("patient-context-summary")).ToContainTextAsync(placeOfBirth);
+        await Expect(page.GetByText(notes)).ToHaveCountAsync(0);
+
+        await page.GetByTestId("patient-context-toggle").ClickAsync();
         await Expect(page.GetByText(placeOfBirth)).ToBeVisibleAsync();
         await Expect(page.GetByText(notes)).ToBeVisibleAsync();
         await Expect(page.GetByTestId("patient-age")).ToHaveTextAsync($"{CalculateAge(new DateTime(1985, 5, 12))} anni");
@@ -243,6 +249,9 @@ public sealed class PatientTests(PlaywrightFixture fixture) : E2eTestBase(fixtur
 
         await Expect(page.GetByTestId("page-heading"))
             .ToHaveTextAsync($"{FormatTitleCase(firstName)} {FormatTitleCase(lastName)}");
+        await Expect(page.GetByTestId("patient-context-compact")).ToBeVisibleAsync();
+        await Expect(page.Locator(".patient-context-card").First).Not.ToContainTextAsync(email);
+        await page.GetByTestId("patient-context-toggle").ClickAsync();
         await Expect(page.Locator(".patient-context-card").First).ToContainTextAsync(email);
         await Expect(page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "Modifica" })).ToBeVisibleAsync();
     }

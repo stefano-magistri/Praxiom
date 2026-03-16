@@ -3,6 +3,7 @@ using DottoressaIorio.Repositories;
 using DottoressaIorio.Services.Licensing;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using System.Globalization;
 
 namespace DottoressaIorio.App.Pages.Patients;
@@ -38,7 +39,11 @@ public class PatientsBase : ComponentBase
     [Inject]
     public ILicenseService LicenseService { get; set; }
 
+    [Inject]
+    public IJSRuntime JsRuntime { get; set; }
+
     protected string CreationInlineMessage { get; set; } = string.Empty;
+    protected string ExportErrorMessage { get; set; } = string.Empty;
 
     /// <summary>
     ///     The subset of patients displayed on the current page after filtering and pagination.
@@ -107,6 +112,7 @@ public class PatientsBase : ComponentBase
     {
         CurrentPage = 1;
         SearchTerm = e.Value?.ToString() ?? string.Empty;
+        ExportErrorMessage = string.Empty;
         StateHasChanged();
         await UpdateDisplayedPatients();
     }
@@ -232,6 +238,27 @@ public class PatientsBase : ComponentBase
     {
         var encodedSearch = Uri.EscapeDataString(SearchTerm ?? string.Empty);
         return $"/patients/export-csv?search={encodedSearch}";
+    }
+
+    protected Task ExportCsvAsync()
+    {
+        return ExportCsvCoreAsync();
+    }
+
+    private async Task ExportCsvCoreAsync()
+    {
+        ExportErrorMessage = string.Empty;
+
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("jsDownloadFile", GetCsvExportUrl());
+        }
+        catch (JSException)
+        {
+            ExportErrorMessage =
+                "Impossibile esportare il CSV in questo momento. Riprova tra qualche istante.";
+            await InvokeAsync(StateHasChanged);
+        }
     }
 }
 
