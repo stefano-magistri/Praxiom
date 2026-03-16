@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 
 set "interactive=1"
 
@@ -59,15 +59,15 @@ if %errorlevel% equ 0 (
     sc stop "%service%" >nul 2>nul
     timeout /t 3 /nobreak >nul
 
-    set "servicePid=0"
+    set "servicePid="
     for /f "tokens=3" %%P in ('sc queryex "%service%" ^| findstr /R /C:"PID[ ]*:[ ]*[0-9][0-9]*"') do set "servicePid=%%P"
-    if not "%servicePid%"=="0" taskkill /F /PID %servicePid% >nul 2>nul
+    if defined servicePid if not "!servicePid!"=="0" taskkill /F /PID !servicePid! >nul 2>nul
 
     sc delete "%service%" >nul 2>nul
 )
 
 if exist "%destinationFolder%" (
-    cd /d "%destinationFolder%"
+    pushd "%destinationFolder%"
 
     rem Keep SQLite database files for future reinstalls.
     if not exist "%dbBackupFolder%" mkdir "%dbBackupFolder%"
@@ -79,16 +79,24 @@ if exist "%destinationFolder%" (
     call :backupDbFile "app_unencrypted.db-wal"
 
     rem Remove top-level files but keep persisted license data for reinstalls.
-    for /F "delims=" %%i in ('dir /B /A:-D "%destinationFolder%"') do (
-        if /I not "%%i"=="%licenseFile%" (
-            del /F /Q "%destinationFolder%\%%i" >nul 2>nul
+    for %%i in ("%destinationFolder%\*") do (
+        if not exist "%%~fi\" (
+            if /I not "%%~nxi"=="!licenseFile!" (
+                del /F /Q "%%~fi" >nul 2>nul
+            )
         )
     )
 
     rem Keep database backups and logs; remove all other directories.
-    for /F "delims=" %%i in ('dir /B /A:D "%destinationFolder%" ^| findstr /V /I /X /C:"%dbBackupFolder%" ^| findstr /V /I /X /C:"logs"') do (
-        rmdir /S /Q "%destinationFolder%\%%i" >nul 2>nul
+    for /D %%i in ("%destinationFolder%\*") do (
+        if /I not "%%~nxi"=="!dbBackupFolder!" (
+            if /I not "%%~nxi"=="logs" (
+                rmdir /S /Q "%%~fi" >nul 2>nul
+            )
+        )
     )
+
+    popd
 )
 
 echo Uninstall completed.
