@@ -4,17 +4,21 @@ namespace DottoressaIorio.App.Tests;
 
 public class DemoDatabaseExtensionsTests
 {
-    [Fact]
-    public void ResolveDemoDatabasePath_WhenPublishedDemoDatabaseExists_UsesContentRootDemoFolder()
+    [Theory]
+    [InlineData(true, "app_old.db")]
+    [InlineData(false, "app_unencrypted.db")]
+    public void ResolveDemoDatabasePath_WhenPublishedDemoDatabaseExists_UsesContentRootDemoFolder(
+        bool useEncryption,
+        string expectedFileName)
     {
         var tempDir = CreateTempDirectory();
         try
         {
-            var publishedDemoPath = Path.Combine(tempDir, "Demo", "app_old.db");
+            var publishedDemoPath = Path.Combine(tempDir, "Demo", expectedFileName);
             Directory.CreateDirectory(Path.GetDirectoryName(publishedDemoPath)!);
             File.WriteAllText(publishedDemoPath, "demo");
 
-            var result = DemoDatabaseExtensions.ResolveDemoDatabasePath(tempDir);
+            var result = DemoDatabaseExtensions.ResolveDemoDatabasePath(tempDir, useEncryption);
 
             Assert.Equal(publishedDemoPath, result);
         }
@@ -24,16 +28,20 @@ public class DemoDatabaseExtensionsTests
         }
     }
 
-    [Fact]
-    public void ResolveDemoDatabasePath_WhenPublishedDemoDatabaseMissing_FallsBackToLegacyRelativePath()
+    [Theory]
+    [InlineData(true, "app_old.db")]
+    [InlineData(false, "app_unencrypted.db")]
+    public void ResolveDemoDatabasePath_WhenPublishedDemoDatabaseMissing_FallsBackToLegacyRelativePath(
+        bool useEncryption,
+        string expectedFileName)
     {
         var tempDir = CreateTempDirectory();
         try
         {
-            var result = DemoDatabaseExtensions.ResolveDemoDatabasePath(tempDir);
+            var result = DemoDatabaseExtensions.ResolveDemoDatabasePath(tempDir, useEncryption);
 
             Assert.Equal(
-                Path.GetFullPath(Path.Combine(tempDir, "..", "Demo", "app_old.db")),
+                Path.GetFullPath(Path.Combine(tempDir, "..", "Demo", expectedFileName)),
                 result);
         }
         finally

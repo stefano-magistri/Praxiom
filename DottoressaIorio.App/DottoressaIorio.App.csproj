@@ -48,6 +48,11 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 	  </Content>
+	  <Content Include="..\Demo\app_unencrypted.db">
+	    <Link>Demo\app_unencrypted.db</Link>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </Content>
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="wwwroot\js\bootstrap\bootstrap.bundle.min.js" />
