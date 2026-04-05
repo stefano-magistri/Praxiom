@@ -1,0 +1,203 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Restore: Solution",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "restore",
+        "DottoressaIorio.slnx"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build: Solution",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "DottoressaIorio.slnx"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile",
+      "dependsOn": "Restore: Solution"
+    },
+    {
+      "label": "Test: Solution",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "DottoressaIorio.slnx"
+      ],
+      "group": "test",
+      "problemMatcher": "$msCompile",
+      "dependsOn": "Build: Solution"
+    },
+    {
+      "label": "Test: Release No Integration",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "DottoressaIorio.slnx",
+        "--configuration",
+        "Release",
+        "--no-build",
+        "--filter",
+        "Category!=Integration"
+      ],
+      "group": "test",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Verify: Requested Pipeline",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Restore: Solution",
+        "Build: Solution",
+        "Test: Solution",
+        "Test: Release No Integration"
+      ]
+    },
+    {
+      "label": "Run: App Development",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "DottoressaIorio.App"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development"
+        }
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run: App Staging",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "DottoressaIorio.App"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Staging"
+        }
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run: App Production",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "DottoressaIorio.App"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Production"
+        }
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run: App Azure Demo",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "DottoressaIorio.App"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Azure",
+          "HOME": "${workspaceFolder}\\.tmp\\azure-home"
+        }
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run: Trial Active",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "DottoressaIorio.App",
+        "--",
+        "--trial-active"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Production"
+        }
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run: Trial Expired",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "DottoressaIorio.App",
+        "--",
+        "--trial-expired"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Production"
+        }
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run: Demo Reset",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "DottoressaIorio.App",
+        "--",
+        "--demo"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development"
+        }
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run: Online Backup",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "DottoressaIorio.App",
+        "--",
+        "--online-backup"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Production"
+        }
+      },
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

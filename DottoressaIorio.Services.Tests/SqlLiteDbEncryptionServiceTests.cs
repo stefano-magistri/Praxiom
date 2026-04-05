@@ -157,7 +157,7 @@ public class SqlLiteDbEncryptionServiceTests
     }
 
     [Fact]
-    public void ResolveKey_NonDevelopmentWithoutLocalStorage_ThrowsClearError()
+    public void ResolveKey_NonDevelopmentWithoutConfiguredOrLocalKey_ThrowsClearError()
     {
         var tempDir = CreateTempDirectory();
         try
@@ -168,7 +168,7 @@ public class SqlLiteDbEncryptionServiceTests
             var ex = Assert.Throws<InvalidOperationException>(() => resolver.Resolve());
 
             Assert.Contains(keyFilePath, ex.Message);
-            Assert.Contains("required outside Development", ex.Message);
+            Assert.Contains("Checked configuration key 'EncryptionKey'", ex.Message);
         }
         finally
         {
@@ -192,6 +192,32 @@ public class SqlLiteDbEncryptionServiceTests
             var encryptionKey = resolver.Resolve();
 
             Assert.Equal("dev-config-key", encryptionKey);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDir);
+        }
+    }
+
+    [Fact]
+    public void ResolveKey_ProductionExplicitEmptyConfiguration_DisablesEncryption()
+    {
+        var tempDir = CreateTempDirectory();
+        try
+        {
+            var keyFilePath = Path.Combine(tempDir, "secrets", "encryption-key.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(keyFilePath)!);
+            File.WriteAllText(keyFilePath, """{"EncryptionKey":"stored-key"}""");
+
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["EncryptionKey"] = string.Empty })
+                .Build();
+
+            var resolver = new EncryptionKeyResolver(configuration, "Production", keyFilePath);
+
+            var encryptionKey = resolver.Resolve();
+
+            Assert.Equal(string.Empty, encryptionKey);
         }
         finally
         {

@@ -11,13 +11,30 @@ public static class DemoDatabaseExtensions
         return isWindowsService ? AppContext.BaseDirectory : builder.Environment.ContentRootPath;
     }
 
-    public static void ConfigureDemoDatabase(this WebApplicationBuilder builder)
+    public static string GetDemoDatabaseTargetFileName(bool useEncryption)
+    {
+        return useEncryption ? "app.db" : "app_unencrypted.db";
+    }
+
+    public static void ConfigureDemoDatabase(
+        this WebApplicationBuilder builder,
+        string databaseRootPath,
+        bool useEncryption,
+        bool overwriteExisting)
     {
         var demoDbPath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Demo", "app_old.db"));
         if (!File.Exists(demoDbPath))
             throw new FileNotFoundException($"Demo database not found: {demoDbPath}");
 
-        var targetDbPath = Path.Combine(builder.GetDatabaseRootPath(), "app.db");
+        Directory.CreateDirectory(databaseRootPath);
+
+        var targetDbPath = Path.Combine(databaseRootPath, GetDemoDatabaseTargetFileName(useEncryption));
+        if (!overwriteExisting && File.Exists(targetDbPath))
+        {
+            Log.Information("Demo database already present at {TargetDbPath}; keeping existing file.", targetDbPath);
+            return;
+        }
+
         var targetWalPath = $"{targetDbPath}-wal";
         var targetShmPath = $"{targetDbPath}-shm";
 
@@ -27,6 +44,10 @@ public static class DemoDatabaseExtensions
             File.Delete(targetShmPath);
 
         File.Copy(demoDbPath, targetDbPath, true);
-        Log.Information("Demo database loaded from {DemoDbPath} to {TargetDbPath}", demoDbPath, targetDbPath);
+        Log.Information(
+            "Demo database loaded from {DemoDbPath} to {TargetDbPath}. OverwriteExisting={OverwriteExisting}",
+            demoDbPath,
+            targetDbPath,
+            overwriteExisting);
     }
 }
