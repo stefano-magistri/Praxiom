@@ -8,6 +8,7 @@ using DottoressaIorio.Services.Pdf;
 using DottoressaIorio.Services.SqlLiteEncryption;
 using DottoressaIorio.Shared.Branding;
 using DottoressaIorio.Shared.State;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using SQLitePCL;
@@ -22,11 +23,14 @@ try
     var configuration = builder.Configuration;
     var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
     var runOnlineBackup = args.Any(argument => argument.Equals("--online-backup", StringComparison.OrdinalIgnoreCase));
-    var useDemoDatabase = args.Any(argument => argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
+    var useDemoDatabaseFromCommandLine = args.Any(argument => argument.Equals("--demo", StringComparison.OrdinalIgnoreCase));
     var useTrialActive = args.Any(argument => argument.Equals("--trial-active", StringComparison.OrdinalIgnoreCase));
     var useTrialExpired = args.Any(argument => argument.Equals("--trial-expired", StringComparison.OrdinalIgnoreCase));
-    var databaseRootPath = configuration["DatabaseRootPath"]
-                           ?? (isWindowsService ? AppContext.BaseDirectory : builder.Environment.ContentRootPath);
+    var useDemoDatabase = useDemoDatabaseFromCommandLine || configuration.GetValue<bool>("UseDemoDatabase");
+    var databaseRootPath = AppHostingEnvironmentExtensions.ResolveDatabaseRootPath(
+        configuration,
+        builder.Environment,
+        isWindowsService);
 
     if (isWindowsService) builder.Host.UseWindowsService();
 
@@ -37,6 +41,21 @@ try
     var useNegotiate = configuration.GetValue<bool>("Authentication:UseNegotiate");
 
     builder.AddDottoressaLogging();
+
+    try
+    {
+        Directory.CreateDirectory(databaseRootPath);
+    }
+    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+    {
+        throw new InvalidOperationException(
+            $"Unable to create database root directory '{databaseRootPath}'. Configure DatabaseRootPath to a writable location.",
+            ex);
+    }
+
+    if (builder.Environment.IsAzureEnvironment() && useNegotiate)
+        throw new InvalidOperationException(
+            "Authentication:UseNegotiate must be disabled for the Azure demo environment. Set Authentication__UseNegotiate=false.");
 
     if (useNegotiate && string.IsNullOrWhiteSpace(allowedUsername))
         Log.Warning(
@@ -85,7 +104,10 @@ try
         throw new InvalidOperationException("Cannot use --trial-active and --trial-expired together.");
 
     if (useDemoDatabase)
-        builder.ConfigureDemoDatabase();
+        builder.ConfigureDemoDatabase(
+            databaseRootPath,
+            useEncryption: !string.IsNullOrWhiteSpace(encryptionKey),
+            overwriteExisting: useDemoDatabaseFromCommandLine);
 
     var app = builder.Build();
     var onlineBackupService = app.Services.GetRequiredService<IOnlineBackupService>();
@@ -163,6 +185,17 @@ try
     {
         app.UseExceptionHandler("/Error");
         app.UseHsts();
+    }
+
+    if (app.Environment.IsAzureEnvironment())
+    {
+        var forwardedHeadersOptions = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        };
+        forwardedHeadersOptions.KnownIPNetworks.Clear();
+        forwardedHeadersOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedHeadersOptions);
     }
 
     if (!isWindowsService) app.UseHttpsRedirection();

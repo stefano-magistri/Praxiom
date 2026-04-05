@@ -37,9 +37,21 @@
 	<ItemGroup>
 	  <Content Include="_pdf_therapy\footer.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 	  </Content>
 	  <Content Include="_pdf_therapy\header.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </Content>
+	  <Content Include="..\Demo\app_old.db">
+	    <Link>Demo\app_old.db</Link>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </Content>
+	  <Content Include="..\Demo\app_unencrypted.db">
+	    <Link>Demo\app_unencrypted.db</Link>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 	  </Content>
 	</ItemGroup>
 	<ItemGroup>

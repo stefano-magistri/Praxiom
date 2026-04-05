@@ -17,8 +17,8 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
     /// </summary>
     public async Task<byte[]> GenerateTherapyPdfAsync(Therapy therapy)
     {
+        ConfigurePlaywrightEnvironment();
         using var playwright = await Playwright.CreateAsync();
-        ConfigurePlaywrightBrowsersPath();
 
         await using var browser = await LaunchBrowserAsync(playwright);
 
@@ -69,6 +69,26 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
         return builder.BuildFooterHtml(await File.ReadAllTextAsync(footerPath), therapy, settings, licenseService.IsTrial);
     }
 
+    internal static void ConfigurePlaywrightEnvironment()
+    {
+        ConfigurePlaywrightDriverSearchPath();
+        ConfigurePlaywrightBrowsersPath();
+    }
+
+    internal static void ConfigurePlaywrightDriverSearchPath()
+    {
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_DRIVER_SEARCH_PATH")))
+            return;
+
+        var bundledDriverPath = AppContext.BaseDirectory;
+        var bundledNodePath = Path.Combine(bundledDriverPath, ".playwright", "node", "win32_x64", "node.exe");
+
+        if (!File.Exists(bundledNodePath))
+            return;
+
+        Environment.SetEnvironmentVariable("PLAYWRIGHT_DRIVER_SEARCH_PATH", bundledDriverPath);
+    }
+
     private static async Task<IBrowser> LaunchBrowserAsync(IPlaywright playwright)
     {
         try
@@ -93,13 +113,44 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH")))
             return;
 
-        if (!IsProductionEnvironment())
+        var playwrightPath = GetDefaultPlaywrightBrowsersPath();
+        if (playwrightPath is null)
             return;
 
-        // Production runs as an installed app or service, so browsers live in ProgramData rather than a user profile cache.
-        const string playwrightPath = @"C:\ProgramData\Praxiom\ms-playwright";
         Directory.CreateDirectory(playwrightPath);
         Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", playwrightPath);
+    }
+
+    internal static string? GetDefaultPlaywrightBrowsersPath()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return null;
+
+        if (IsAzureEnvironment())
+        {
+            var homePath = Environment.GetEnvironmentVariable("HOME");
+            if (!string.IsNullOrWhiteSpace(homePath))
+            {
+                // Azure App Service needs a writable shared location instead of ProgramData.
+                return Path.Combine(homePath, "ms-playwright");
+            }
+        }
+
+        if (IsProductionEnvironment())
+        {
+            // Production runs as an installed app or service, so browsers live in ProgramData rather than a user profile cache.
+            return @"C:\ProgramData\Praxiom\ms-playwright";
+        }
+
+        return null;
+    }
+
+    internal static bool IsAzureEnvironment()
+    {
+        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                              ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+
+        return string.Equals(environmentName, "Azure", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsProductionEnvironment()
@@ -113,26 +164,14 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
     private static async Task InstallPlaywrightBrowsersAsync()
     {
         var baseDir = AppContext.BaseDirectory;
-        string fileName;
-        string arguments;
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            fileName = "pwsh";
-            arguments = $"\"{Path.Combine(baseDir, "playwright.ps1")}\" install chromium";
-        }
-        else
-        {
-            fileName = "bash";
-            arguments = $"\"{Path.Combine(baseDir, "playwright.sh")}\" install chromium";
-        }
+        var command = GetPlaywrightInstallCommand(baseDir);
 
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = fileName,
-                Arguments = arguments,
+                FileName = command.FileName,
+                Arguments = command.Arguments,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -149,5 +188,40 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
             throw new InvalidOperationException(
                 $"Failed to install Playwright browsers. Exit code: {process.ExitCode}. {error}".Trim());
         }
+    }
+
+    internal static (string FileName, string Arguments) GetPlaywrightInstallCommand(string baseDir)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            var scriptPath = Path.Combine(baseDir, "playwright.ps1");
+            var shellName = IsCommandAvailable("pwsh") ? "pwsh" : "powershell";
+            return (shellName, $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" install chromium");
+        }
+
+        return ("bash", $"\"{Path.Combine(baseDir, "playwright.sh")}\" install chromium");
+    }
+
+    internal static bool IsCommandAvailable(string commandName)
+    {
+        var pathValue = Environment.GetEnvironmentVariable("PATH");
+        if (string.IsNullOrWhiteSpace(pathValue))
+            return false;
+
+        var extensions = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? new[] { string.Empty, ".exe", ".cmd", ".bat" }
+            : new[] { string.Empty };
+
+        foreach (var pathEntry in pathValue.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            foreach (var extension in extensions)
+            {
+                var candidate = Path.Combine(pathEntry.Trim(), commandName + extension);
+                if (File.Exists(candidate))
+                    return true;
+            }
+        }
+
+        return false;
     }
 }

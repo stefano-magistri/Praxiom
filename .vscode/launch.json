@@ -1,0 +1,152 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "App Development",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "App Staging",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Staging"
+      }
+    },
+    {
+      "name": "App Production",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      }
+    },
+    {
+      "name": "App Azure",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Azure",
+        "HOME": "${workspaceFolder}\\.tmp\\azure-home"
+      }
+    },
+    {
+      "name": "App Azure Demo",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Azure",
+        "HOME": "${workspaceFolder}\\.tmp\\azure-home",
+        "UseDemoDatabase": "true",
+        "EncryptionKey": "",
+        "Authentication__UseNegotiate": "false",
+        "Authentication__AllowedUsername": ""
+      }
+    },
+    {
+      "name": "Trial Active",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--trial-active"
+      ],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      }
+    },
+    {
+      "name": "Trial Active Azure",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--trial-active"
+      ],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Azure",
+        "HOME": "${workspaceFolder}\\.tmp\\azure-home"
+      }
+    },
+    {
+      "name": "Trial Expired",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--trial-expired"
+      ],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      }
+    },
+    {
+      "name": "Trial Expired Azure",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--trial-expired"
+      ],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Azure",
+        "HOME": "${workspaceFolder}\\.tmp\\azure-home"
+      }
+    },
+    {
+      "name": "Demo Reset",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--demo"
+      ],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Online Backup",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build: Solution",
+      "program": "${workspaceFolder}/DottoressaIorio.App/bin/Debug/net10.0/DottoressaIorio.App.dll",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--online-backup"
+      ],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      }
+    }
+  ]
+}

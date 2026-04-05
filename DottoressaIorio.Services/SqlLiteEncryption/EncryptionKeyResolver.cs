@@ -29,20 +29,20 @@ public sealed class EncryptionKeyResolver(IConfiguration configuration, string e
     public string Resolve()
     {
         var configuredKey = configuration[ConfigKeyName];
-        if (IsDevelopmentEnvironment() && configuredKey is not null)
+        if (configuredKey is not null)
             return configuredKey;
 
         var localKeyFilePath = GetLocalKeyFilePath();
         if (TryReadLocalKey(localKeyFilePath, out var encryptionKey, out var localStoreFailure))
             return encryptionKey;
 
-        // Development can still use appsettings for local work. All other environments require the installed secret file.
+        // Configuration may now provide the key in any environment. Development still falls back to local settings for local work.
         if (IsDevelopmentEnvironment())
             throw new InvalidOperationException(
                 $"Encryption key was not found. Checked Development configuration key '{ConfigKeyName}' and local store '{localKeyFilePath}'. {localStoreFailure}");
 
         throw new InvalidOperationException(
-            $"Encryption key local store is required outside Development. Expected '{localKeyFilePath}'. {localStoreFailure}");
+            $"Encryption key was not found. Checked configuration key '{ConfigKeyName}' and local store '{localKeyFilePath}'. {localStoreFailure}");
     }
 
     /// <summary>
