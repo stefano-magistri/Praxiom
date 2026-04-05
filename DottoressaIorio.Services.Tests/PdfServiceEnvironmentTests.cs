@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using DottoressaIorio.Services.Pdf;
 
 namespace DottoressaIorio.Services.Tests;
@@ -19,7 +20,14 @@ public class PdfServiceEnvironmentTests
 
             var path = PdfService.GetDefaultPlaywrightBrowsersPath();
 
-            Assert.Equal(@"C:\home\ms-playwright", path);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assert.Equal(@"C:\home\ms-playwright", path);
+            }
+            else
+            {
+                Assert.Null(path);
+            }
         }
         finally
         {
@@ -44,7 +52,14 @@ public class PdfServiceEnvironmentTests
 
             var path = PdfService.GetDefaultPlaywrightBrowsersPath();
 
-            Assert.Equal(@"C:\ProgramData\Praxiom\ms-playwright", path);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assert.Equal(@"C:\ProgramData\Praxiom\ms-playwright", path);
+            }
+            else
+            {
+                Assert.Null(path);
+            }
         }
         finally
         {
