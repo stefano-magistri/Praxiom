@@ -78,4 +78,24 @@ public class PdfServiceEnvironmentTests
             Environment.SetEnvironmentVariable("HOME", originalHome);
         }
     }
+
+    [Fact]
+    public void GetPlaywrightInstallCommand_WhenPwshMissing_UsesWindowsPowerShell()
+    {
+        var originalPath = Environment.GetEnvironmentVariable("PATH");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("PATH", @"C:\Windows\System32");
+
+            var command = PdfService.GetPlaywrightInstallCommand(@"C:\app");
+
+            Assert.Equal("powershell", command.FileName);
+            Assert.Contains(@"-File ""C:\app\playwright.ps1"" install chromium", command.Arguments, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", originalPath);
+        }
+    }
 }

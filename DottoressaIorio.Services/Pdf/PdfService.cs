@@ -164,26 +164,14 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
     private static async Task InstallPlaywrightBrowsersAsync()
     {
         var baseDir = AppContext.BaseDirectory;
-        string fileName;
-        string arguments;
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            fileName = "pwsh";
-            arguments = $"\"{Path.Combine(baseDir, "playwright.ps1")}\" install chromium";
-        }
-        else
-        {
-            fileName = "bash";
-            arguments = $"\"{Path.Combine(baseDir, "playwright.sh")}\" install chromium";
-        }
+        var command = GetPlaywrightInstallCommand(baseDir);
 
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = fileName,
-                Arguments = arguments,
+                FileName = command.FileName,
+                Arguments = command.Arguments,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -200,5 +188,40 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
             throw new InvalidOperationException(
                 $"Failed to install Playwright browsers. Exit code: {process.ExitCode}. {error}".Trim());
         }
+    }
+
+    internal static (string FileName, string Arguments) GetPlaywrightInstallCommand(string baseDir)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            var scriptPath = Path.Combine(baseDir, "playwright.ps1");
+            var shellName = IsCommandAvailable("pwsh") ? "pwsh" : "powershell";
+            return (shellName, $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" install chromium");
+        }
+
+        return ("bash", $"\"{Path.Combine(baseDir, "playwright.sh")}\" install chromium");
+    }
+
+    internal static bool IsCommandAvailable(string commandName)
+    {
+        var pathValue = Environment.GetEnvironmentVariable("PATH");
+        if (string.IsNullOrWhiteSpace(pathValue))
+            return false;
+
+        var extensions = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? new[] { string.Empty, ".exe", ".cmd", ".bat" }
+            : new[] { string.Empty };
+
+        foreach (var pathEntry in pathValue.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            foreach (var extension in extensions)
+            {
+                var candidate = Path.Combine(pathEntry.Trim(), commandName + extension);
+                if (File.Exists(candidate))
+                    return true;
+            }
+        }
+
+        return false;
     }
 }
