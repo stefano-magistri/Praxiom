@@ -25,12 +25,73 @@
       "dependsOn": "Restore: Solution"
     },
     {
+      "label": "Build: Installer",
+      "type": "process",
+      "command": ".\\Setup\\build-installer.bat",
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build: Installer Prompt Key",
+      "type": "process",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "$key = Read-Host 'PRAXIOM_ENCRYPTION_KEY'; if ([string]::IsNullOrWhiteSpace($key)) { throw 'PRAXIOM_ENCRYPTION_KEY is required.' }; $env:PRAXIOM_ENCRYPTION_KEY = $key; & '.\\Setup\\build-installer.bat'"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
       "label": "Test: Solution",
       "type": "process",
       "command": "dotnet",
       "args": [
         "test",
         "DottoressaIorio.slnx"
+      ],
+      "group": "test",
+      "problemMatcher": "$msCompile",
+      "dependsOn": "Build: Solution"
+    },
+    {
+      "label": "Test: Unit Only",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "DottoressaIorio.slnx",
+        "--filter",
+        "Category!=Integration&Category!=E2E&Category!=E2ESmoke"
+      ],
+      "group": "test",
+      "problemMatcher": "$msCompile",
+      "dependsOn": "Build: Solution"
+    },
+    {
+      "label": "Test: Integration Only",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "DottoressaIorio.slnx",
+        "--filter",
+        "Category=Integration"
+      ],
+      "group": "test",
+      "problemMatcher": "$msCompile",
+      "dependsOn": "Build: Solution"
+    },
+    {
+      "label": "Test: E2E Only",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "DottoressaIorio.E2E",
+        "--filter",
+        "Category=E2E"
       ],
       "group": "test",
       "problemMatcher": "$msCompile",

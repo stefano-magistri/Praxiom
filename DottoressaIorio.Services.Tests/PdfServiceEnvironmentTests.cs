@@ -105,8 +105,16 @@ public class PdfServiceEnvironmentTests
 
             var command = PdfService.GetPlaywrightInstallCommand(@"C:\app");
 
-            Assert.Equal("powershell", command.FileName);
-            Assert.Contains(@"-File ""C:\app\playwright.ps1"" install chromium", command.Arguments, StringComparison.Ordinal);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assert.Equal("powershell", command.FileName);
+                Assert.Contains(@"-File ""C:\app\playwright.ps1"" install chromium", command.Arguments, StringComparison.Ordinal);
+            }
+            else
+            {
+                Assert.Equal("bash", command.FileName);
+                Assert.Contains(@"""C:\app/playwright.sh"" install chromium", command.Arguments, StringComparison.Ordinal);
+            }
         }
         finally
         {
