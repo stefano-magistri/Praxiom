@@ -1,5 +1,6 @@
 using Serilog;
 using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.Data.Sqlite;
 
 namespace DottoressaIorio.App.Middleware;
 
@@ -41,7 +42,7 @@ public static class DemoDatabaseExtensions
         Directory.CreateDirectory(databaseRootPath);
 
         var targetDbPath = Path.Combine(databaseRootPath, GetDemoDatabaseTargetFileName(useEncryption));
-        if (!overwriteExisting && File.Exists(targetDbPath))
+        if (!overwriteExisting && File.Exists(targetDbPath) && IsReadableSqliteDatabase(targetDbPath))
         {
             Log.Information("Demo database already present at {TargetDbPath}; keeping existing file.", targetDbPath);
             return;
@@ -61,5 +62,29 @@ public static class DemoDatabaseExtensions
             demoDbPath,
             targetDbPath,
             overwriteExisting);
+    }
+
+    private static bool IsReadableSqliteDatabase(string dbPath)
+    {
+        try
+        {
+            using var connection = new SqliteConnection(
+                new SqliteConnectionStringBuilder
+                {
+                    DataSource = dbPath,
+                    Mode = SqliteOpenMode.ReadOnly,
+                    Pooling = false
+                }.ToString());
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM sqlite_master;";
+            _ = command.ExecuteScalar();
+            return true;
+        }
+        catch (Exception ex) when (ex is SqliteException or InvalidOperationException)
+        {
+            Log.Warning(ex, "Existing demo database at {DatabasePath} is unreadable and will be replaced.", dbPath);
+            return false;
+        }
     }
 }

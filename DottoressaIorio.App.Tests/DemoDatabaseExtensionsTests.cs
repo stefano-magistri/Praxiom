@@ -50,6 +50,29 @@ public class DemoDatabaseExtensionsTests
         }
     }
 
+    [Fact]
+    public void IsReadableSqliteDatabase_WhenDatabaseIsNotSqlite_ReturnsFalse()
+    {
+        var tempDir = CreateTempDirectory();
+        try
+        {
+            var invalidDbPath = Path.Combine(tempDir, "app_unencrypted.db");
+            File.WriteAllText(invalidDbPath, "not-a-database");
+
+            var method = typeof(DemoDatabaseExtensions).GetMethod(
+                "IsReadableSqliteDatabase",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            var result = (bool)method!.Invoke(null, new object[] { invalidDbPath })!;
+
+            Assert.False(result);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDir);
+        }
+    }
+
     private static string CreateTempDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), "DottoressaIorio.DemoDbTests", Guid.NewGuid().ToString("N"));
