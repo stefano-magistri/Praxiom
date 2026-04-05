@@ -5,6 +5,17 @@ namespace DottoressaIorio.App.Middleware;
 
 public static class DemoDatabaseExtensions
 {
+    public static string ResolveDemoDatabasePath(string contentRootPath)
+    {
+        var deployedDemoDbPath = Path.Combine(contentRootPath, "Demo", "app_old.db");
+        if (File.Exists(deployedDemoDbPath))
+        {
+            return deployedDemoDbPath;
+        }
+
+        return Path.GetFullPath(Path.Combine(contentRootPath, "..", "Demo", "app_old.db"));
+    }
+
     public static string GetDatabaseRootPath(this WebApplicationBuilder builder)
     {
         var isWindowsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
@@ -22,7 +33,7 @@ public static class DemoDatabaseExtensions
         bool useEncryption,
         bool overwriteExisting)
     {
-        var demoDbPath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "Demo", "app_old.db"));
+        var demoDbPath = ResolveDemoDatabasePath(builder.Environment.ContentRootPath);
         if (!File.Exists(demoDbPath))
             throw new FileNotFoundException($"Demo database not found: {demoDbPath}");
 
