@@ -1,7 +1,6 @@
 @page "/settings"
 @inject DottoressaIorio.Repositories.IClinicSettingsRepository repository
 @inject DottoressaIorio.Shared.State.ClinicSettingsState clinicSettingsState
-@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 @inject ILicenseService licenseService
 
 <PageHeader Title="Impostazioni"/>
@@ -140,15 +139,6 @@ else
             originalModel = Clone(model);
             isEditMode = false;
             successMessage = "Impostazioni salvate.";
-
-            try
-            {
-                await onlineBackupService.TriggerBackupAsync("clinic-settings-update");
-            }
-            catch
-            {
-                // Backup failures must not block the settings save flow.
-            }
         }
         catch (Exception ex)
         {

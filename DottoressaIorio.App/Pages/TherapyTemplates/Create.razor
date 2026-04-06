@@ -2,7 +2,6 @@
 @inject TherapyTemplateRepository repository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
-@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 @inject ILicenseService licenseService
 
 <PageHeader Title="Nuova terapia precompilata"/>
@@ -58,15 +57,6 @@
             model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
             await repository.AddAsync(model);
             await unitOfWork.SaveChangesAsync();
-            try
-            {
-                await onlineBackupService.TriggerBackupAsync("therapy-template-create");
-            }
-            catch
-            {
-                // Backup failures must not block the user save flow.
-            }
-
             navigationManager.NavigateTo("/therapy-templates");
         }
         catch (Exception ex)

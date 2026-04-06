@@ -139,22 +139,7 @@ try
         }
     }
 
-    app.Lifetime.ApplicationStarted.Register(() =>
-    {
-        Log.Information("Application started.");
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                // Startup backups are opportunistic and respect the configured minimum age to avoid noisy repeats.
-                await onlineBackupService.TriggerBackupAsync("application-startup", onlineBackupOptions.StartupMinimumAge);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to execute startup online backup.");
-            }
-        });
-    });
+    app.Lifetime.ApplicationStarted.Register(() => { Log.Information("Application started."); });
 
     app.Lifetime.ApplicationStopping.Register(() =>
     {
