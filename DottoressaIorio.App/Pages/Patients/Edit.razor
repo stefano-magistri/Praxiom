@@ -2,7 +2,6 @@
 @inject PatientRepository repository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
-@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
 <ActionPageHeader Title="Modifica paziente"/>
 @if (model == null)
@@ -103,15 +102,6 @@ else
         {
             await repository.UpdateAsync(model);
             await unitOfWork.SaveChangesAsync();
-            try
-            {
-                await onlineBackupService.TriggerBackupAsync("patient-update");
-            }
-            catch
-            {
-                // Backup failures must not block the user save flow.
-            }
-
             navigationManager.NavigateTo($"/patient/{Id}/");
         }
         catch (Exception ex)

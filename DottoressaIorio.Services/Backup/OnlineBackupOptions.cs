@@ -13,7 +13,7 @@ public sealed class OnlineBackupOptions
     public string OneDriveBackupRelativePath { get; init; } = Path.Combine("Praxiom", "_db_backup");
     public bool EnableOneDriveMirror { get; init; } = true;
     public string? PreferredWindowsUsername { get; set; }
-    public int RetentionCount { get; init; } = 360;
+    public int RetentionCount { get; init; } = 30;
     public TimeSpan DebounceWindow { get; init; } = TimeSpan.FromMinutes(15);
     public TimeSpan StartupMinimumAge { get; init; } = TimeSpan.FromDays(1);
     public TimeSpan ShutdownMinimumAge { get; init; } = TimeSpan.FromDays(1);

@@ -2,7 +2,6 @@
 @inject TherapyTemplateRepository repository
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
-@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 
 <PageHeader Title="Modifica terapia precompilata"/>
 
@@ -45,15 +44,6 @@
             model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
             await repository.UpdateAsync(model);
             await unitOfWork.SaveChangesAsync();
-            try
-            {
-                await onlineBackupService.TriggerBackupAsync("therapy-template-update");
-            }
-            catch
-            {
-                // Backup failures must not block the user save flow.
-            }
-
             navigationManager.NavigateTo("/therapy-templates");
         }
         catch (Exception ex)

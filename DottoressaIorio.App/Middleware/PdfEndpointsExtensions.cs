@@ -1,7 +1,5 @@
 using DottoressaIorio.Repositories;
-using DottoressaIorio.Services.Backup;
 using DottoressaIorio.Services.Pdf;
-using Microsoft.Extensions.Logging;
 
 namespace DottoressaIorio.App.Middleware;
 
@@ -14,8 +12,6 @@ public static class PdfEndpointsExtensions
             PatientTherapyRepository therapyRepository,
             PatientRepository patientRepository,
             PdfService pdfService,
-            IOnlineBackupService onlineBackupService,
-            ILoggerFactory loggerFactory,
             HttpContext httpContext) =>
         {
             var therapy = await therapyRepository.GetByIdAsync(therapyId);
@@ -39,16 +35,6 @@ public static class PdfEndpointsExtensions
 
             httpContext.Response.Headers.ContentDisposition =
                 $"inline; filename=\"{quotedFilename}\"; filename*=UTF-8''{Uri.EscapeDataString(filename)}";
-
-            try
-            {
-                await onlineBackupService.TriggerBackupAsync("pdf-generate");
-            }
-            catch (Exception ex)
-            {
-                var logger = loggerFactory.CreateLogger("PdfBackup");
-                logger.LogWarning(ex, "Backup trigger failed after PDF generation for therapy {TherapyId}.", therapyId);
-            }
 
             return Results.File(pdfBytes, "application/pdf");
         });

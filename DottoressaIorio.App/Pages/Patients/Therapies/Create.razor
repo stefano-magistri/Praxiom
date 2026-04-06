@@ -6,7 +6,6 @@
 @inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 @inject IJSRuntime jsRuntime
-@inject DottoressaIorio.Services.Backup.IOnlineBackupService onlineBackupService
 @inject ILicenseService licenseService
 @using DottoressaIorio.Services.Therapies
 @using Microsoft.AspNetCore.Components
@@ -202,14 +201,6 @@
             model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
             await repository.AddAsync(model);
             await unitOfWork.SaveChangesAsync();
-            try
-            {
-                await onlineBackupService.TriggerBackupAsync("therapy-create");
-            }
-            catch
-            {
-                // Backup failures must not block the user save flow.
-            }
             return true;
         }
         catch (Exception ex)
