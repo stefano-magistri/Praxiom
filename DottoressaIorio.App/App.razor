@@ -1,14 +1,42 @@
-﻿<CascadingAuthenticationState>
-    <Router AppAssembly="@typeof(App).Assembly">
-        <Found Context="routeData">
-            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-            <FocusOnNavigate RouteData="@routeData" Selector=".page-title"/>
-        </Found>
-        <NotFound>
-            <PageTitle>Pagina non trovata</PageTitle>
-            <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Spiacenti, non c'e nulla a questo indirizzo.</p>
-            </LayoutView>
-        </NotFound>
-    </Router>
-</CascadingAuthenticationState>
+@inject IWebHostEnvironment HostEnvironment
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Stefano Magistri" />
+    <base href="/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="lib/quill/quill.snow.css" />
+    <link href="css/site.css" rel="stylesheet" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <div id="blazor-error-ui">
+        @if (!HostEnvironment.IsDevelopment())
+        {
+            <span>Si e verificato un errore. L'applicazione potrebbe non rispondere piu fino al ricaricamento.</span>
+        }
+        else
+        {
+            <span>Si e verificata un'eccezione non gestita. Consulta gli strumenti di sviluppo del browser per i dettagli.</span>
+        }
+        <a href="" class="reload">Ricarica</a>
+        <a class="dismiss">X</a>
+    </div>
+    <script src="_framework/blazor.web.js"></script>
+    <script src="js/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="lib/quill/quill.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.js"
+        integrity="sha384-uO3SXW5IuS1ZpFPKugNNWqTZRRglnUJK6UAZ/gxOX80nxEkN9NcGZTftn6RzhGWE"
+        crossorigin="anonymous"></script>
+    <script src="js/site.js"></script>
+</body>
+</html>
