@@ -69,7 +69,9 @@ try
     builder.Services.AddDottoressaIorioAuthentication(configuration, useNegotiate);
 
     builder.Services.AddRazorPages();
-    builder.Services.AddServerSideBlazor();
+    builder.Services.AddCascadingAuthenticationState();
+    builder.Services.AddRazorComponents()
+        .AddInteractiveServerComponents();
     builder.Services.AddScoped<ClinicSettingsState>();
     builder.Services.AddSingleton(configuration.GetSection("Branding").Get<ProductBrandingOptions>() ??
                                   new ProductBrandingOptions());
@@ -186,6 +188,7 @@ try
     if (!isWindowsService) app.UseHttpsRedirection();
     app.UseStaticFiles();
     app.UseRouting();
+    app.UseAntiforgery();
 
     // When Negotiate is disabled, the current authorization rules intentionally run without authentication middleware.
     if (useNegotiate) app.UseAuthentication();
@@ -194,8 +197,9 @@ try
     app.MapDottoressaPatientExportEndpoints();
     app.MapDottoressaPdfEndpoints();
 
-    app.MapBlazorHub();
-    app.MapFallbackToPage("/_Host");
+    app.MapRazorPages();
+    app.MapRazorComponents<DottoressaIorio.App.App>()
+        .AddInteractiveServerRenderMode();
 
     app.Run();
 }
