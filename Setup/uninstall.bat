@@ -35,7 +35,7 @@ set "service=Praxiom.App"
 set "dbBackupFolder=_db_backup"
 set "licenseFile=license.dat"
 set "backupTaskName=Praxiom Online Backup"
-set "legacyBackupTaskName=DottoressaIorio Online Backup"
+set "legacyBackupTaskName=DottoressaIorio Daily Backup"
 set "oneDriveRoot=%OneDrive%"
 set "oneDriveBackupFolder="
 set "backupTimestamp="
@@ -71,12 +71,13 @@ if exist "%destinationFolder%" (
 
     rem Keep SQLite database files for future reinstalls.
     if not exist "%dbBackupFolder%" mkdir "%dbBackupFolder%"
-    call :backupDbFile "app.db"
-    call :backupDbFile "app.db-shm"
-    call :backupDbFile "app.db-wal"
-    call :backupDbFile "app_unencrypted.db"
-    call :backupDbFile "app_unencrypted.db-shm"
-    call :backupDbFile "app_unencrypted.db-wal"
+    call :backupDatabaseFiles
+    if errorlevel 1 (
+        popd
+        echo ERROR: Failed to preserve existing database files under "%destinationFolder%\%dbBackupFolder%".
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
 
     rem Remove top-level files but keep persisted license data for reinstalls.
     for %%i in ("%destinationFolder%\*") do (
@@ -107,9 +108,25 @@ exit /b 0
 set "dbName=%~1"
 if exist "%destinationFolder%\%dbName%" (
     copy /Y "%destinationFolder%\%dbName%" "%destinationFolder%\%dbBackupFolder%\%dbName%" >nul
+    if errorlevel 1 exit /b 1
     if /I "%dbName%"=="app.db" call :copyBackupToOneDrive "%destinationFolder%\%dbBackupFolder%\%dbName%" "app_backup"
     if /I "%dbName%"=="app_unencrypted.db" call :copyBackupToOneDrive "%destinationFolder%\%dbBackupFolder%\%dbName%" "app_unencrypted_backup"
 )
+exit /b 0
+
+:backupDatabaseFiles
+call :backupDbFile "app.db"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app.db-shm"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app.db-wal"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db-shm"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db-wal"
+if errorlevel 1 exit /b 1
 exit /b 0
 
 :copyBackupToOneDrive
