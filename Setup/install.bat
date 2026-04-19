@@ -223,12 +223,13 @@ if errorlevel 1 (
 >> "%logFile%" echo [%date% %time%] Encryption key file written to "%encryptionKeyFile%".
 
 rem Backup current database files before replacing files.
-call :backupDbFile "app.db"
-call :backupDbFile "app.db-shm"
-call :backupDbFile "app.db-wal"
-call :backupDbFile "app_unencrypted.db"
-call :backupDbFile "app_unencrypted.db-shm"
-call :backupDbFile "app_unencrypted.db-wal"
+call :backupDatabaseFiles
+if errorlevel 1 (
+    > "%statusFile%" echo ERROR: Database backup preservation failed.
+    echo ERROR: Failed to preserve the existing database files. Check "%logFile%" for details.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
 
 rem Extract files from the 7z archive to the destination folder.
 >> "%logFile%" echo [%date% %time%] Extracting package to "%destinationFolder%".
@@ -245,12 +246,13 @@ if "%skipAutoDbRestore%"=="1" (
     >> "%logFile%" echo [%date% %time%] Automatic database restore from local backup skipped by installer option.
 ) else (
     rem Reuse the local backup folder when replacing binaries so upgrades preserve the existing database by default.
-    call :restoreDbFile "app.db"
-    call :restoreDbFile "app.db-shm"
-    call :restoreDbFile "app.db-wal"
-    call :restoreDbFile "app_unencrypted.db"
-    call :restoreDbFile "app_unencrypted.db-shm"
-    call :restoreDbFile "app_unencrypted.db-wal"
+    call :restoreDatabaseFiles
+    if errorlevel 1 (
+        > "%statusFile%" echo ERROR: Database restore failed.
+        echo ERROR: Failed to restore the preserved database files. Check "%logFile%" for details.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
 )
 
 if exist "%backupScriptSource%" (
@@ -424,12 +426,52 @@ endlocal & exit /b 1
 
 :backupDbFile
 set "dbName=%~1"
-if exist "%destinationFolder%\%dbName%" copy /Y "%destinationFolder%\%dbName%" "%destinationFolder%\%dbBackupFolder%\%dbName%" >nul
+if not exist "%destinationFolder%\%dbName%" exit /b 0
+copy /Y "%destinationFolder%\%dbName%" "%destinationFolder%\%dbBackupFolder%\%dbName%" >nul
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to preserve database file "%destinationFolder%\%dbName%".
+    exit /b 1
+)
 exit /b 0
 
 :restoreDbFile
 set "dbName=%~1"
-if exist "%destinationFolder%\%dbBackupFolder%\%dbName%" copy /Y "%destinationFolder%\%dbBackupFolder%\%dbName%" "%destinationFolder%\%dbName%" >nul
+if not exist "%destinationFolder%\%dbBackupFolder%\%dbName%" exit /b 0
+copy /Y "%destinationFolder%\%dbBackupFolder%\%dbName%" "%destinationFolder%\%dbName%" >nul
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to restore preserved database file "%destinationFolder%\%dbName%".
+    exit /b 1
+)
+exit /b 0
+
+:backupDatabaseFiles
+call :backupDbFile "app.db"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app.db-shm"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app.db-wal"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db-shm"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db-wal"
+if errorlevel 1 exit /b 1
+exit /b 0
+
+:restoreDatabaseFiles
+call :restoreDbFile "app.db"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app.db-shm"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app.db-wal"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app_unencrypted.db"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app_unencrypted.db-shm"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app_unencrypted.db-wal"
+if errorlevel 1 exit /b 1
 exit /b 0
 
 :setAllowedUsernameJson
