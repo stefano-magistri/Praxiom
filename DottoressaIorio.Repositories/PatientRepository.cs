@@ -60,7 +60,7 @@ public class PatientRepository : GenericRepository<Patient>
     /// <returns>A list of matching patients with their therapies loaded.</returns>
     public async Task<IList<Patient>> SearchPatientsWithTherapiesAsync(string searchTerm)
     {
-        return await ApplySearch(BaseQuery(), searchTerm).ToListAsync();
+        return await SearchPatientsAsync(searchTerm);
     }
 
     /// <summary>
