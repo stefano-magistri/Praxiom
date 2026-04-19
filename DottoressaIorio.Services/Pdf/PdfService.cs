@@ -53,20 +53,23 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
     /// </summary>
     public async Task<string> BuildHeaderHtmlAsync(Therapy therapy, string? templateRoot = null)
     {
-        var effectiveTemplateRoot = templateRoot ?? Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
-        var headerPath = Path.Combine(effectiveTemplateRoot, "header.html");
         var settings = await clinicSettingsRepository.GetAsync();
-        return builder.BuildHeaderHtml(await File.ReadAllTextAsync(headerPath), therapy, settings);
+        return builder.BuildHeaderHtml(
+            await ReadTemplateFileAsync("header.html", templateRoot),
+            therapy,
+            settings);
     }
 
     private async Task<string> BuildFooterHtmlAsync(Therapy therapy, string? templateRoot = null)
     {
-        var effectiveTemplateRoot = templateRoot ?? Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
-        var footerPath = Path.Combine(effectiveTemplateRoot, "footer.html");
         var settings = await clinicSettingsRepository.GetAsync();
         // The footer shows the trial marker, so PDF generation must observe the same cached license state as the app shell.
         await licenseService.InitializeAsync();
-        return builder.BuildFooterHtml(await File.ReadAllTextAsync(footerPath), therapy, settings, licenseService.IsTrial);
+        return builder.BuildFooterHtml(
+            await ReadTemplateFileAsync("footer.html", templateRoot),
+            therapy,
+            settings,
+            licenseService.IsTrial);
     }
 
     internal static void ConfigurePlaywrightEnvironment()
@@ -223,5 +226,11 @@ public class PdfService(PdfHtmlBuilder builder, IClinicSettingsRepository clinic
         }
 
         return false;
+    }
+
+    private static Task<string> ReadTemplateFileAsync(string fileName, string? templateRoot)
+    {
+        var effectiveTemplateRoot = templateRoot ?? Path.Combine(AppContext.BaseDirectory, "_pdf_therapy");
+        return File.ReadAllTextAsync(Path.Combine(effectiveTemplateRoot, fileName));
     }
 }

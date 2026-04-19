@@ -10,8 +10,10 @@ public class BackupTriggerConfigurationTests
     public void Program_KeepsScheduledTaskMode()
     {
         var programSource = ReadRepoFile("DottoressaIorio.App", "Program.cs");
+        var launchOptionsSource = ReadRepoFile("DottoressaIorio.App", "Startup", "LaunchOptions.cs");
 
-        Assert.Contains("argument.Equals(\"--online-backup\", StringComparison.OrdinalIgnoreCase)", programSource);
+        Assert.Contains("LaunchOptions.Parse(args, configuration)", programSource);
+        Assert.Contains("argument.Equals(expectedArgument, StringComparison.OrdinalIgnoreCase)", launchOptionsSource);
         Assert.Contains("TriggerBackupAsync(\"scheduled-task\")", programSource);
     }
 
@@ -19,10 +21,12 @@ public class BackupTriggerConfigurationTests
     public void Program_KeepsShutdownBackup_AndRemovesStartupBackup()
     {
         var programSource = ReadRepoFile("DottoressaIorio.App", "Program.cs");
+        var webApplicationExtensionsSource = ReadRepoFile("DottoressaIorio.App", "Middleware", "ProgramWebApplicationExtensions.cs");
 
-        Assert.Contains("TriggerBackupAsync(", programSource);
-        Assert.Contains("\"application-stopping\"", programSource);
-        Assert.DoesNotContain("TriggerBackupAsync(\"application-startup\"", programSource);
+        Assert.Contains("RegisterDottoressaLifetimeEvents", programSource);
+        Assert.Contains("TriggerBackupAsync(", webApplicationExtensionsSource);
+        Assert.Contains("\"application-stopping\"", webApplicationExtensionsSource);
+        Assert.DoesNotContain("TriggerBackupAsync(\"application-startup\"", webApplicationExtensionsSource);
     }
 
     [Theory]

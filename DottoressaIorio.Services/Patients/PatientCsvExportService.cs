@@ -49,34 +49,30 @@ public sealed class PatientCsvExportService
 
         for (var patientIndex = 0; patientIndex < patientGroups.Count; patientIndex++)
         {
-            var patient = patientGroups[patientIndex].Patient;
+            var group = patientGroups[patientIndex];
+            var patient = group.Patient;
+            var therapies = group.Therapies;
             var age = PatientAgeCalculator.CalculateAge(patient.DateOfBirth);
 
-            if (patientGroups[patientIndex].Therapies.Count == 0)
+            if (therapies.Count == 0)
             {
-                builder.AppendJoin(Separator,
-                    Escape(patient.FirstName),
-                    Escape(patient.LastName),
-                    FormatDate(patient.DateOfBirth),
-                    age?.ToString() ?? string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    FormatDate(patient.CreatedDate));
-                builder.AppendLine();
+                AppendPatientRow(
+                    builder,
+                    patient,
+                    age,
+                    therapyCreatedDate: null,
+                    therapyDescription: null);
             }
             else
             {
-                foreach (var therapy in patientGroups[patientIndex].Therapies)
+                foreach (var therapy in therapies)
                 {
-                    builder.AppendJoin(Separator,
-                        Escape(patient.FirstName),
-                        Escape(patient.LastName),
-                        FormatDate(patient.DateOfBirth),
-                        age?.ToString() ?? string.Empty,
-                        FormatDate(therapy.CreatedDate),
-                        Escape(FormatDescription(therapy.Description)),
-                        FormatDate(patient.CreatedDate));
-                    builder.AppendLine();
+                    AppendPatientRow(
+                        builder,
+                        patient,
+                        age,
+                        therapy.CreatedDate,
+                        FormatDescription(therapy.Description));
                 }
             }
 
@@ -88,6 +84,24 @@ public sealed class PatientCsvExportService
 
         var contentBytes = Encoding.UTF8.GetBytes(builder.ToString());
         return [.. Encoding.UTF8.Preamble, .. contentBytes];
+    }
+
+    private static void AppendPatientRow(
+        StringBuilder builder,
+        Patient patient,
+        int? age,
+        DateTime? therapyCreatedDate,
+        string? therapyDescription)
+    {
+        builder.AppendJoin(Separator,
+            Escape(patient.FirstName),
+            Escape(patient.LastName),
+            FormatDate(patient.DateOfBirth),
+            age?.ToString() ?? string.Empty,
+            FormatDate(therapyCreatedDate),
+            Escape(therapyDescription),
+            FormatDate(patient.CreatedDate));
+        builder.AppendLine();
     }
 
     private static string FormatDescription(string? value)
