@@ -1,6 +1,8 @@
 # Praxiom Medical Management System
+**Developer portfolio:** [Stefano Magistri](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/)
 
 Praxiom is a private Windows-first medical management application for a single-doctor workflow. The solution manages patients, therapies, reusable therapy templates, printable therapy PDFs, local licensing, and installer-driven deployment.
+
 
 ## Solution structure
 
