@@ -24,6 +24,18 @@ These are the four application screenshots featured in my [professional portfoli
 
 ![Generated therapy PDF in a document viewer](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-pdf.png)
 
+## Windows installation & licensing
+
+Praxiom includes a Windows installer with machine- and user-bound licence validation, an optional database-restore step, and an application launch option at the end of installation. Installation can proceed in trial mode when no licence file is provided.
+
+| Licence verification | Database restore |
+| --- | --- |
+| ![Installer licence validation screen](docs/screenshots/01_installer.png) | ![Installer database restore options](docs/screenshots/02_installer.png) |
+
+| Installation progress | Installation complete |
+| --- | --- |
+| ![Praxiom installation in progress](docs/screenshots/03_installer.png) | ![Praxiom installation completed](docs/screenshots/04_installer.png) |
+
 ## Solution structure
 
 - `DottoressaIorio.App`: Blazor Server UI, startup wiring, auth/authz, HTTP endpoints, and app host.
