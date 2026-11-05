@@ -1,28 +1,28 @@
 # Praxiom Medical Management System
-**Developer portfolio:** [Stefano Magistri](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/)
+**Developer portfolio:** [Stefano Magistri](https://stefano-magistri.github.io/)
 
 Praxiom is a private Windows-first medical management application for a single-doctor workflow. The solution manages patients, therapies, reusable therapy templates, printable therapy PDFs, local licensing, and installer-driven deployment.
 
 
 ## Application screenshots
 
-These are the four application screenshots featured in my [professional portfolio](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/).
+These are the four application screenshots featured in my [professional portfolio](https://stefano-magistri.github.io/).
 
 ### Patient management
 
-![Patient management screen with search and patient records](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-patients.png)
+![Patient management screen with search and patient records](https://stefano-magistri.github.io/assets/praxiom-patients.png)
 
 ### Patient details and therapies
 
-![Patient information and associated therapies](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-details.png)
+![Patient information and associated therapies](https://stefano-magistri.github.io/assets/praxiom-details.png)
 
 ### Therapy editor
 
-![Rich-text therapy editor](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-editor.png)
+![Rich-text therapy editor](https://stefano-magistri.github.io/assets/praxiom-editor.png)
 
 ### PDF document generation
 
-![Generated therapy PDF in a document viewer](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-pdf.png)
+![Generated therapy PDF in a document viewer](https://stefano-magistri.github.io/assets/praxiom-pdf.png)
 
 ## Windows installation & licensing
 
