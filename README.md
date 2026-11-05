@@ -1,5 +1,7 @@
 # Dottoressa Iorio Medical Management System
 
+**Developer portfolio:** [Stefano Magistri — .NET Modernisation](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/)
+
 A comprehensive medical management system built with Blazor WebAssembly, designed for individual medical practitioners to efficiently manage patient records, therapies, and documentation.
 
 ## Table of Contents
