@@ -36,6 +36,10 @@ Praxiom includes a Windows installer with machine- and user-bound licence valida
 | --- | --- |
 | ![Praxiom installation in progress](docs/screenshots/03_installer.png) | ![Praxiom installation completed](docs/screenshots/04_installer.png) |
 
+| Existing installation / upgrade | Uninstall confirmation |
+| --- | --- |
+| ![Prompt when an existing Praxiom installation is detected](docs/screenshots/01_Uninistall.png) | ![Praxiom uninstall confirmation dialog](docs/screenshots/02_Uninistall.png) |
+
 ## Solution structure
 
 - `DottoressaIorio.App`: Blazor Server UI, startup wiring, auth/authz, HTTP endpoints, and app host.
