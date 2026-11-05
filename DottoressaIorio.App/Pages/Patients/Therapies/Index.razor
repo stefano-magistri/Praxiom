@@ -1,13 +1,12 @@
-﻿@page "/patient/{patientId:int}/"
+@page "/patient/{patientId:int}/"
 
 @inject PatientRepository patientRepository
 @inject PatientTherapyRepository repository
 @inject NavigationManager navigationManager
 @inject IJSRuntime jsRuntime
-@inject PdfService pdfService
+@inject ILicenseService licenseService
 
-<PageHeader Title="@($"{patient.Title} {patient.FirstName} {patient.LastName}")"></PageHeader>
-
+<PageHeader Title="@PatientPageTitle"></PageHeader>
 
 @if (patient == null)
 {
@@ -15,126 +14,240 @@
 }
 else
 {
-    <div>
-        <p>
-            <strong>Data di Nascita:</strong> @patient.DateOfBirth?.ToShortDateString()
-        </p>
-        @if (!string.IsNullOrEmpty(patient.Email))
-        {
-            <p>
-                <strong>Email:</strong> <a href="mailto:@patient.Email">@patient.Email</a>
-            </p>
-        }
-        @if (patient.PlaceOfBirth != null)
-        {
-            <p>
-                <strong>Luogo di Nascita:</strong> @patient.PlaceOfBirth
-            </p>
-        }
-        @if (patient.Gender != null)
-        {
-            <p>
-                <strong>Sesso:</strong> @patient.Gender
-            </p>
-        }
-        @if (patient.PhoneNumber != null)
-        {
-            <p>
-                <strong>Numero di telefono:</strong> <a href="tel:@patient.PhoneNumber">@patient.PhoneNumber</a>
-            </p>
-        }
+    <div class="patient-detail-summary mb-4">
+        <PatientContextCard Patient="patient" UseCompactSummary="true"/>
     </div>
 
-    <hr class="my-4">
-    <h3>Note</h3>
+    <div class="patient-action-row patient-detail-secondary-actions mb-4">
+        <AnchorButton ButtonClass="outline-secondary" Url="@($"/patient/{PatientId}/edit/")" IconClass="oi oi-pencil" ButtonText="Modifica"></AnchorButton>
+        <AnchorButton ButtonClass="outline-danger btn-delete-soft" Url="@($"/patient/{PatientId}/delete/")" IconClass="oi oi-trash" ButtonText="Rimuovi"></AnchorButton>
+    </div>
 
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h3 class="mb-0">Terapie</h3>
+    </div>
 
-    @if (!string.IsNullOrEmpty(patient.Notes))
-    {
-        <p>
-            @((MarkupString)patient.GetHtmlNotes())
-        </p>
-    }
-    else
-    {
-        <p>
-            Non ci sono note.
-        </p>
-    }
+    <div class="card therapies-card">
+        <div class="card-body p-4">
+            <div class="therapy-section-toolbar mb-3">
+                <div class="therapy-section-search">
+                    <SearchBox Id="therapySearch"
+                               Value="@TherapySearchTerm"
+                               OnInput="SearchTherapies"
+                               Placeholder="Cerca terapia nella descrizione o per data (gg/MM/aaaa)"/>
+                </div>
+                <div class="therapy-section-actions">
+                    @if (licenseService.IsTrialExpired)
+                    {
+                        <button type="button" class="btn btn-primary btn-create-therapy btn-create-therapy-prominent" disabled>
+                            <span class="oi oi-plus px-1" aria-hidden="true"></span>Scrivi terapia
+                        </button>
+                    }
+                    else
+                    {
+                        <AnchorButton ButtonClass="primary btn-create-therapy btn-create-therapy-prominent"
+                                      Url="@($"/patient/{PatientId}/create-therapy/")"
+                                      IconClass="oi oi-plus"
+                                      ButtonText="Scrivi terapia"></AnchorButton>
+                    }
+                </div>
+            </div>
 
-    <hr class="my-4">
-    <AnchorButton ButtonClass="primary" Url="@($"/patient/{PatientId}/edit/")" IconClass="oi oi-pencil" ButtonText="Modifica"></AnchorButton>
-    <AnchorButton ButtonClass="danger" Url="@($"/patient/{PatientId}/delete/")" IconClass="oi oi-trash" ButtonText="Rimuovi"></AnchorButton>
-
-    <hr class="my-4">
-    <h3>Terapie</h3>
-
-    <AnchorButton ButtonClass="outline-primary" Url="@($"/patient/{PatientId}/create-therapy/")" IconClass="oi oi-plus" ButtonText="Aggiungi"></AnchorButton>
-    
-    @if (therapies != null && therapies.Any())
-    {
-        <hr class="my-4">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Data inizio terapia</th>
-                    <th>Descrizione</th>
-                    <th>Azioni</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var t in therapies)
+            @if (DisplayedTherapies.Any())
+            {
+                @if (TherapyTotalPages > 1)
                 {
-                    <tr>
-                        <td>
-                            @t.CreatedDate.ToString("dd/MM/yyyy")
-                        </td>
-                        <td class="text-truncate truncate-small">
-                            @t.Description
-                        </td>
-                        <td> 
-                            <ActionButton ButtonClass="dark" OnClick="() => PrintAsync(t.TherapyId)" IconClass="oi oi-data-transfer-download"></ActionButton>
-                            <ActionButton ButtonClass="primary" OnClick="() => NavigateToEditTherapy(t.TherapyId)" IconClass="oi oi-pencil"></ActionButton>
-                            <ActionButton ButtonClass="danger" OnClick="() => NavigateToDeleteTherapy(t.TherapyId)" IconClass="oi oi-trash"></ActionButton>
-                        </td>
-                    </tr>
+                    <Pagination CurrentPage="TherapyCurrentPage"
+                                TotalPages="TherapyTotalPages"
+                                SelectedPage="HandleTherapySelectedPage"
+                                PreviousPage="PreviousTherapyPage"
+                                NextPage="NextTherapyPage"/>
                 }
-            </tbody>
-        </table>
-    }
+
+                <div class="table-responsive patients-table-wrapper mt-0 mb-0">
+                    <table class="table table-sm align-middle mb-0 patients-table">
+                        <thead>
+                        <tr>
+                            <th>Data inizio terapia</th>
+                            <th>Descrizione</th>
+                            <th class="text-end">Azioni</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var t in DisplayedTherapies)
+                        {
+                            <tr>
+                                <td>@t.CreatedDate.ToString("dd/MM/yyyy")</td>
+                                <td class="text-truncate truncate-small">@GetDescriptionPreview(t.Description)</td>
+                                <td class="text-end">
+                                    <div class="table-row-actions">
+                                        <button type="button"
+                                                class="btn btn-primary"
+                                                title="Stampa"
+                                                aria-label="Stampa"
+                                                @onclick="() => PrintAsync(t.TherapyId)">
+                                            <span class="oi oi-print px-1" aria-hidden="true"></span>Stampa
+                                        </button>
+                                        <a class="btn btn-outline-primary patient-row-action-compact"
+                                           href="@($"/patient/{PatientId}/create-therapy?duplicateFrom={t.TherapyId}")"
+                                           title="Duplica terapia"
+                                           aria-label="Duplica terapia">
+                                            <span class="oi oi-layers" aria-hidden="true"></span>
+                                        </a>
+                                        <ActionButton ButtonClass="outline-secondary patient-row-action-compact"
+                                                      ButtonText=""
+                                                      Title="Modifica"
+                                                      AriaLabel="Modifica"
+                                                      OnClick="() => NavigateToEditTherapy(t.TherapyId)"
+                                                      IconClass="oi oi-pencil"></ActionButton>
+                                        <ActionButton ButtonClass="outline-danger btn-delete-soft patient-row-action-compact"
+                                                      ButtonText=""
+                                                      Title="Elimina"
+                                                      AriaLabel="Elimina"
+                                                      OnClick="() => NavigateToDeleteTherapy(t.TherapyId)"
+                                                      IconClass="oi oi-trash"></ActionButton>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (TherapyTotalPages > 1)
+                {
+                    <Pagination CurrentPage="TherapyCurrentPage"
+                                TotalPages="TherapyTotalPages"
+                                SelectedPage="HandleTherapySelectedPage"
+                                PreviousPage="PreviousTherapyPage"
+                                NextPage="NextTherapyPage"/>
+                }
+            }
+            else
+            {
+                <p class="mb-0">Nessuna terapia trovata.</p>
+            }
+        </div>
+    </div>
 }
 
 @code {
-    private Patient patient;
+    private Patient? patient;
 
     [Parameter] public int PatientId { get; set; }
-    private IList<Therapy> therapies;
+    private IList<Therapy> allTherapies = [];
+    private IList<Therapy> filteredTherapies = [];
+    private IList<Therapy> DisplayedTherapies { get; set; } = [];
+    private int TherapyCurrentPage { get; set; } = 1;
+    private string TherapySearchTerm { get; set; } = string.Empty;
+    private const int TherapyPageSize = 8;
+    private int TherapyTotalPages => filteredTherapies.Count == 0 ? 1 : (int)Math.Ceiling((double)filteredTherapies.Count / TherapyPageSize);
 
+    private string PatientPageTitle => patient == null
+        ? "Paziente"
+        : FormatDisplayName(patient.Title, patient.FirstName, patient.LastName);
 
     protected override async Task OnParametersSetAsync()
     {
+        await licenseService.InitializeAsync();
         patient = await patientRepository.GetByIdAsync(PatientId);
-        therapies = await repository.GetAllsync(PatientId);
+        allTherapies = (await repository.GetAllAsync(PatientId))
+            .OrderByDescending(t => t.CreatedDate)
+            .ThenByDescending(t => t.TherapyId)
+            .ToList();
+
+        TherapyCurrentPage = 1;
+        await UpdateDisplayedTherapiesAsync();
     }
 
     private async Task PrintAsync(int id)
     {
-        var therapy = await repository.GetByIdAsync(id);
-        var pdfBytes = pdfService.GenerateTherapyPdf(therapy);
-        // Convert the PDF bytes to a Base64 string
-        var pdfBase64 = Convert.ToBase64String(pdfBytes);
-        var filename = $"{patient.FirstName}_{patient.LastName}_{therapy.CreatedDate:yy_MM_dd}_{DateTime.Now.ToFileTimeUtc()}.pdf";
-        // Open the PDF in a new tab
-        await jsRuntime.InvokeVoidAsync("jsSaveAsFile", filename, pdfBase64);
+        var displayName = patient is null
+            ? $"therapy_{id}.pdf"
+            : $"{patient.FirstName}_{patient.LastName}.pdf";
+        var encodedDisplayName = Uri.EscapeDataString(displayName);
+
+        await jsRuntime.InvokeVoidAsync("open", $"/pdf/therapy/{id}/{encodedDisplayName}", "_blank");
     }
-    
+
     private void NavigateToDeleteTherapy(int id)
     {
         navigationManager.NavigateTo($"/patient/{id}/delete-therapy/");
     }
+
     private void NavigateToEditTherapy(int id)
     {
         navigationManager.NavigateTo($"/patient/{id}/edit-therapy/");
     }
 
+    private async Task SearchTherapies(ChangeEventArgs e)
+    {
+        TherapySearchTerm = e.Value?.ToString() ?? string.Empty;
+        TherapyCurrentPage = 1;
+        await UpdateDisplayedTherapiesAsync();
+    }
+
+    private async Task HandleTherapySelectedPage(int page)
+    {
+        TherapyCurrentPage = page;
+        await UpdateDisplayedTherapiesAsync();
+    }
+
+    private async Task PreviousTherapyPage()
+    {
+        if (TherapyCurrentPage > 1)
+        {
+            TherapyCurrentPage--;
+            await UpdateDisplayedTherapiesAsync();
+        }
+    }
+
+    private async Task NextTherapyPage()
+    {
+        if (TherapyCurrentPage < TherapyTotalPages)
+        {
+            TherapyCurrentPage++;
+            await UpdateDisplayedTherapiesAsync();
+        }
+    }
+
+    private async Task UpdateDisplayedTherapiesAsync()
+    {
+        await FilterTherapiesAsync();
+        var startIndex = (TherapyCurrentPage - 1) * TherapyPageSize;
+        DisplayedTherapies = filteredTherapies.Skip(startIndex).Take(TherapyPageSize).ToList();
+    }
+
+    private Task FilterTherapiesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(TherapySearchTerm))
+        {
+            filteredTherapies = allTherapies.ToList();
+            return Task.CompletedTask;
+        }
+
+        var term = TherapySearchTerm.Trim();
+        filteredTherapies = allTherapies
+            .Where(t =>
+                StringExtensions.ToPlainText(t.Description).Contains(term, StringComparison.CurrentCultureIgnoreCase) ||
+                t.CreatedDate.ToString("dd/MM/yyyy").Contains(term, StringComparison.CurrentCultureIgnoreCase))
+            .ToList();
+
+        return Task.CompletedTask;
+    }
+
+    private static string FormatFullName(string? firstName, string? lastName)
+    {
+        return PatientNameFormatter.FormatFullName(firstName, lastName);
+    }
+
+    private static string FormatDisplayName(string? title, string? firstName, string? lastName)
+    {
+        return PatientNameFormatter.FormatDisplayName(title, firstName, lastName);
+    }
+
+    private static string GetDescriptionPreview(string? description)
+    {
+        return StringExtensions.ToPlainText(description);
+    }
 }

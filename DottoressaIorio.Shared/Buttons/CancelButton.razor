@@ -1,6 +1,5 @@
-﻿<AnchorButton ButtonText="Annulla" ButtonClass="secondary" Url="@Url" />
+﻿<AnchorButton ButtonText="Annulla" ButtonClass="secondary" Url="@Url"/>
 
 @code {
-    [Parameter, EditorRequired]
-    public string Url { get; set; }
+    [Parameter] [EditorRequired] public string Url { get; set; }
 }

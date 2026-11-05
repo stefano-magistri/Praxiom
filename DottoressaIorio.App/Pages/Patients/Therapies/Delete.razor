@@ -1,18 +1,20 @@
 ﻿@page "/patient/{id:int}/delete-therapy"
 
 @inject PatientTherapyRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
 
-<PageHeader Title="Rimuovi Terapia" /> 
+<PageHeader Title="Rimuovi Terapia"/>
 
-<p>Vuoi rimuovere questa terapia?</p>
- 
-<CancelButton Url="@($"/patient/{model.PatientId}/")" />
-<RemoveButton OnClick="@SaveAsync" />
+<ConfirmDeleteSection ConfirmationText="Vuoi rimuovere questa terapia?"
+                      CancelUrl="@CancelUrl"
+                      OnConfirm="@SaveAsync"/>
+
 @code {
     [Parameter] public int Id { get; set; }
 
     private Therapy model;
+    private string CancelUrl => model == null ? "/" : $"/patient/{model.PatientId}/";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -22,6 +24,8 @@
     private async Task SaveAsync()
     {
         await repository.DeleteAsync(model);
+        await unitOfWork.SaveChangesAsync();
         navigationManager.NavigateTo($"/patient/{model.PatientId}/");
     }
+
 }

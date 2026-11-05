@@ -1,9 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<ApplicationIcon>wwwroot/favicon.ico</ApplicationIcon>
+		<Version>1.0.0</Version>
+		<FileVersion>$(Version)</FileVersion>
+		<InformationalVersion>$(Version)</InformationalVersion>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)' == '' Or '$(Configuration)' == 'Development'">
 		<EnvironmentName>Development</EnvironmentName>
@@ -17,34 +21,45 @@
   
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="8.0.7" />
-		<PackageReference Include="Serilog" Version="4.0.0" />
-		<PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
-		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Serilog" Version="4.3.1" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.8" />
-		<PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Content Update="appsettings.Development.json">
+	    <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+	  </Content>
 	  <Content Include="_pdf_therapy\footer.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 	  </Content>
 	  <Content Include="_pdf_therapy\header.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 	  </Content>
-	</ItemGroup>
-	<ItemGroup>
-		<EmbeddedResource Include="libwkhtmltox.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</EmbeddedResource>
+	  <Content Include="..\Demo\app_old.db">
+	    <Link>Demo\app_old.db</Link>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </Content>
+	  <Content Include="..\Demo\app_unencrypted.db">
+	    <Link>Demo\app_unencrypted.db</Link>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </Content>
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="wwwroot\js\bootstrap\bootstrap.bundle.min.js" />
 	  <None Include="wwwroot\js\bootstrap\bootstrap.bundle.min.js.map" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="logs\" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,3 +1,4 @@
+using System.Globalization;
 using DottoressaIorio.Data;
 using DottoressaIorio.Models;
 using DottoressaIorio.Repositories;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DottoressaIorio.App.Repository.Tests.Repositories;
 
 /// <summary>
-/// Contains unit tests for the PatientRepository class, testing patient-specific repository operations.
+///     Contains unit tests for the PatientRepository class, testing patient-specific repository operations.
 /// </summary>
 public class PatientRepositoryTests : IDisposable, IAsyncDisposable
 {
@@ -17,12 +18,14 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         new Patient
         {
             PatientId = 1, FirstName = "John", LastName = "Doe", CreatedDate = DateTime.Now,
-            DateOfBirth = DateTime.Parse("10/02/1981"), Email = "s@s.com"
+            DateOfBirth = DateTime.ParseExact("10/02/1981", "dd/MM/yyyy", CultureInfo.InvariantCulture),
+            Email = "s@s.com"
         },
         new Patient
         {
             PatientId = 2, FirstName = "Jane", LastName = "Smith", CreatedDate = DateTime.Now,
-            DateOfBirth = DateTime.Parse("01/12/2002"), Email = "s@s1.com"
+            DateOfBirth = DateTime.ParseExact("01/12/2002", "dd/MM/yyyy", CultureInfo.InvariantCulture),
+            Email = "s@s1.com"
         },
         new Patient
         {
@@ -31,15 +34,15 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
             LastName = "Patient",
             Deleted = true,
             CreatedDate = DateTime.Now.AddMonths(-1),
-            DateOfBirth = DateTime.Parse("18/12/1990"),
+            DateOfBirth = DateTime.ParseExact("18/12/1990", "dd/MM/yyyy", CultureInfo.InvariantCulture),
             EditDate = DateTime.Now,
             Email = "s@s2.com"
         }
     };
 
     /// <summary>
-    /// Initializes a new instance of the PatientRepositoryTests class.
-    /// Sets up an in-memory database for testing.
+    ///     Initializes a new instance of the PatientRepositoryTests class.
+    ///     Sets up an in-memory database for testing.
     /// </summary>
     public PatientRepositoryTests()
     {
@@ -51,7 +54,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously disposes of the test resources.
+    ///     Asynchronously disposes of the test resources.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
@@ -59,7 +62,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Disposes of the test resources.
+    ///     Disposes of the test resources.
     /// </summary>
     public void Dispose()
     {
@@ -67,7 +70,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Tests that the SearchPatientsAsync method returns the expected number of results for various search terms.
+    ///     Tests that the SearchPatientsAsync method returns the expected number of results for various search terms.
     /// </summary>
     /// <param name="searchTerm">The term to search for.</param>
     /// <param name="expectedCount">The expected number of results.</param>
@@ -85,27 +88,81 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
         Assert.Equal(expectedCount, result.Count);
     }
 
-    /// <summary>
-    /// Tests that the GetAllOrderedAsync method returns all non-deleted patients ordered by last name and first name.
-    /// </summary>
-    [Fact]
-    public async Task GetAllOrderedAsync_ShouldReturnAllPatientsOrdered()
+    [Theory]
+    [InlineData("John")]
+    [InlineData("jane smith")]
+    [InlineData("")]
+    public async Task SearchPatientsWithTherapiesAsync_ShouldUseSameFilteringRulesAsPatientsList(string? searchTerm)
     {
-        var result = await GetAllOrderedAsync();
-        Assert.Equal(data.Count(p => !p.Deleted), result.Count); // Excluding deleted patients
-        // Assert that patients are ordered by last name then first name
-        for (var i = 1; i < result.Count; i++)
-        {
-            Assert.True(
-                string.Compare(result[i - 1].LastName, result[i].LastName, StringComparison.OrdinalIgnoreCase) <= 0);
-            if (string.Equals(result[i - 1].LastName, result[i].LastName, StringComparison.OrdinalIgnoreCase))
-                Assert.True(string.Compare(result[i - 1].FirstName, result[i].FirstName,
-                    StringComparison.OrdinalIgnoreCase) <= 0);
-        }
+        await SeedPatientsAsync();
+        _context.Therapies.AddRange(
+            new Therapy
+            {
+                TherapyId = 10,
+                PatientId = 1,
+                Description = "Therapy A",
+                CreatedDate = DateTime.UtcNow.AddDays(-2)
+            },
+            new Therapy
+            {
+                TherapyId = 11,
+                PatientId = 2,
+                Description = "Therapy B",
+                CreatedDate = DateTime.UtcNow.AddDays(-1)
+            });
+        await _context.SaveChangesAsync();
+
+        var repository = new PatientRepository(_context);
+
+        var listResults = await repository.SearchPatientsAsync(searchTerm);
+        var exportResults = await repository.SearchPatientsWithTherapiesAsync(searchTerm);
+
+        Assert.Equal(listResults.Select(p => p.PatientId), exportResults.Select(p => p.PatientId));
+        Assert.All(exportResults, patient => Assert.NotNull(patient.Therapies));
+        Assert.Equal(exportResults.Count, exportResults.Sum(patient => patient.Therapies.Count));
     }
 
     /// <summary>
-    /// Tests that the PatientExistsAsync method correctly identifies whether a patient exists based on their details.
+    ///     Tests that the GetAllOrderedAsync method returns all non-deleted patients ordered by latest visit date.
+    /// </summary>
+    [Fact]
+    public async Task GetAllOrderedAsync_ShouldPrioritizeMostRecentlyVisitedPatientsAndKeepNeverVisitedLast()
+    {
+        await SeedPatientsAsync();
+        _context.Patients.Add(new Patient
+        {
+            PatientId = 4,
+            FirstName = "Anna",
+            LastName = "Zero",
+            CreatedDate = DateTime.Now,
+            DateOfBirth = DateTime.ParseExact("02/01/1992", "dd/MM/yyyy", CultureInfo.InvariantCulture),
+            Email = "anna@example.test"
+        });
+        _context.Therapies.AddRange(
+            new Therapy
+            {
+                TherapyId = 10,
+                PatientId = 1,
+                Description = "Older visit",
+                CreatedDate = new DateTime(2026, 3, 1)
+            },
+            new Therapy
+            {
+                TherapyId = 11,
+                PatientId = 2,
+                Description = "Latest visit",
+                CreatedDate = new DateTime(2026, 3, 5)
+            });
+        await _context.SaveChangesAsync();
+
+        var repository = new PatientRepository(_context);
+        var result = await repository.GetAllOrderedAsync();
+
+        Assert.Equal([2, 1, 4], result.Select(patient => patient.PatientId));
+    }
+
+    /// <summary>
+    ///     Tests that the PatientExistsAsync method correctly identifies whether a patient exists based on their details.
     /// </summary>
     /// <param name="firstName">The first name to check.</param>
     /// <param name="lastName">The last name to check.</param>
@@ -113,6 +170,7 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     /// <param name="expectedResult">The expected result of the existence check.</param>
     [Theory]
     [InlineData("John", "Doe", "10/02/1981", true)]
+    [InlineData("  john ", " doe  ", "10/02/1981", true)]
     [InlineData("John", "Doe", "10/02/1982", false)] // Wrong date of birth
     [InlineData("NonExistent", "Person", "01/01/2000", false)]
     [InlineData("Deleted", "Patient", "18/12/1990", false)]
@@ -120,7 +178,12 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     public async Task PatientExistsAsync_ShouldReturnExpectedResult(string firstName, string lastName, string dob,
         bool expectedResult)
     {
-        var patient = new Patient { FirstName = firstName, LastName = lastName, DateOfBirth = DateTime.Parse(dob) };
+        var patient = new Patient
+        {
+            FirstName = firstName,
+            LastName = lastName,
+            DateOfBirth = DateTime.ParseExact(dob, "dd/MM/yyyy", CultureInfo.InvariantCulture)
+        };
 
         var result = await PatientExistsAsync(patient);
 
@@ -128,14 +191,13 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Helper method to test patient search functionality.
+    ///     Helper method to test patient search functionality.
     /// </summary>
     /// <param name="searchTerm">The term to search for.</param>
     /// <returns>A list of patients matching the search criteria.</returns>
-    private async Task<IList<Patient>> SearchPatientsAsync(string searchTerm = null)
+    private async Task<IList<Patient>> SearchPatientsAsync(string? searchTerm = null)
     {
-        _context.Patients.AddRange(data);
-        await _context.SaveChangesAsync();
+        await SeedPatientsAsync();
 
         var repository = new PatientRepository(_context);
         var result = await repository.SearchPatientsAsync(searchTerm);
@@ -144,13 +206,12 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Helper method to test retrieving all ordered patients.
+    ///     Helper method to test retrieving all ordered patients.
     /// </summary>
     /// <returns>A list of all non-deleted patients ordered by last name and first name.</returns>
     private async Task<IList<Patient>> GetAllOrderedAsync()
     {
-        _context.Patients.AddRange(data);
-        await _context.SaveChangesAsync();
+        await SeedPatientsAsync();
 
         var repository = new PatientRepository(_context);
         var result = await repository.GetAllOrderedAsync();
@@ -159,18 +220,23 @@ public class PatientRepositoryTests : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Helper method to test patient existence check.
+    ///     Helper method to test patient existence check.
     /// </summary>
     /// <param name="patient">The patient to check for existence.</param>
     /// <returns>True if the patient exists, false otherwise.</returns>
     private async Task<bool> PatientExistsAsync(Patient patient)
     {
-        _context.Patients.AddRange(data);
-        await _context.SaveChangesAsync();
+        await SeedPatientsAsync();
 
         var repository = new PatientRepository(_context);
         var result = await repository.PatientExistsAsync(patient);
 
         return result;
+    }
+
+    private async Task SeedPatientsAsync()
+    {
+        _context.Patients.AddRange(data);
+        await _context.SaveChangesAsync();
     }
 }

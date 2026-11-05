@@ -1,0 +1,8 @@
+@inject ILicenseService LicenseService
+
+@if (LicenseService.IsTrialExpired)
+{
+    <div class="alert alert-danger" role="alert">
+        @LicenseService.TrialExpiredMessage
+    </div>
+}

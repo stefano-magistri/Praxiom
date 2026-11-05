@@ -1,59 +1,302 @@
-﻿@page "/patient/{id:int}/create-therapy"
+@page "/patient/{id:int}/create-therapy"
 
 @inject TherapyTemplateRepository templateRepository
 @inject PatientTherapyRepository repository
+@inject PatientRepository patientRepository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
+@inject IJSRuntime jsRuntime
+@inject ILicenseService licenseService
+@using DottoressaIorio.Services.Therapies
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
 
-<PageHeader Title="Aggiungi Terapia" />
+<ActionPageHeader Title="Scrivi terapia"/>
 
-<EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
-    <DataAnnotationsValidator />
+<PatientContextCard Patient="patient" ShowHeaderName="true" UseCompactSummary="true"/>
+
+<EditForm EditContext="@editContext" OnSubmit="@HandleSubmitAsync" class="needs-validation therapy-editor-form" novalidate>
+    <DataAnnotationsValidator/>
+    <ValidationWarningAlert Message="@warningMessage"/>
+    <TrialExpiredAlert/>
     <div class="row g-3">
         <div class="col-12">
             <label for="TemplateId">Precompilato:</label>
-            <select id="TemplateId" @onchange="TemplateChanged" class="form-select">
+            <select id="TemplateId" value="@selectedTemplateId" @onchange="TemplateChanged" class="form-select">
                 <option value="0">Seleziona...</option>
                 @foreach (var template in templates)
                 {
                     <option value="@template.Id">@template.Title</option>
                 }
             </select>
+            <div class="therapy-description-help">
+                Opzionale: usa una terapia precompilata per velocizzare la compilazione.
+            </div>
         </div>
     </div>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="Description">Descrizione:</label>
-            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control" />
-            <ValidationMessage For="@(() => model.Description)" />
+    <TherapyDescriptionField Label="Descrizione:"
+                             InputId="Description"
+                             AriaLabel="Descrizione terapia"
+                             TestId="therapy-description-editor"
+                             Value="@EditorDescription"
+                             ValueChanged="OnDescriptionChanged"
+                             For="@(() => model.Description)"/>
+    <FormActionSection>
+        <div class="therapy-editor-actions" data-testid="therapy-form-actions">
+            <CancelButton Url="@($"/patient/{Id}/")"/>
+            <button type="button"
+                    class="btn btn-outline-primary me-2"
+                    disabled="@(isSubmitting || licenseService.IsTrialExpired)"
+                    data-testid="therapy-print-button"
+                    title="Stampa"
+                    aria-label="Stampa"
+                    @onclick="HandlePrintAsync">
+                <span class="oi oi-print px-1" aria-hidden="true"></span>Stampa
+            </button>
+            <button type="submit"
+                    class="btn btn-primary"
+                    disabled="@(isSubmitting || licenseService.IsTrialExpired)"
+                    data-testid="therapy-save-button"
+                    @onclick="PrepareSaveAndClose">
+                <span class="oi oi-beaker px-1" aria-hidden="true"></span>Salva
+            </button>
         </div>
-    </div>
-    <hr class="my-4">
-    <CancelButton Url="@($"/patient/{Id}/")" /> 
-    <SubmitButton />
+    </FormActionSection>
 </EditForm>
 
+@if (showTemplateConflictDialog)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="templateConflictTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="templateConflictTitle" class="modal-title">Sostituire il testo esistente oppure aggiungerlo?</h5>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmTemplateReplace">Sostituisci</button>
+                    <button type="button" class="btn btn-outline-primary" @onclick="ConfirmTemplateAppend">Aggiungi</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="CancelTemplateChange">Annulla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
-    [Parameter]
-    public int Id { get; set; }
-    private readonly Therapy model = new();
-    private IList<TherapyTemplate> templates;
+    [Parameter] public int Id { get; set; }
+    private Patient? patient;
+    [SupplyParameterFromQuery(Name = "duplicateFrom")] public int? DuplicateFromTherapyId { get; set; }
+
+    private Therapy model = new();
+    private EditContext editContext = default!;
+    private IList<TherapyTemplate> templates = [];
+    private string warningMessage = "";
+    private int selectedTemplateId;
+    private int appliedTemplateId;
+    private int? loadedDuplicateTherapyId;
+    private bool showTemplateConflictDialog;
+    private bool isSubmitting;
+    private int pendingTemplateId;
+    private string pendingTemplateDescription = string.Empty;
+    private TherapySubmitAction pendingSubmitAction = TherapySubmitAction.SaveAndClose;
+    private string EditorDescription => StringExtensions.ToEditorValue(model.Description);
 
     protected override async Task OnInitializedAsync()
     {
+        await licenseService.InitializeAsync();
         templates = await templateRepository.GetAllOrderedAsync();
+        ResetEditContext();
     }
 
-    private async Task SaveAsync()
+    protected override async Task OnParametersSetAsync()
     {
+        patient = await patientRepository.GetByIdAsync(Id);
+
+        if (DuplicateFromTherapyId.HasValue && DuplicateFromTherapyId != loadedDuplicateTherapyId)
+        {
+            var sourceTherapy = await repository.GetByIdAsync(DuplicateFromTherapyId.Value);
+            if (sourceTherapy != null && sourceTherapy.PatientId == Id)
+            {
+                model = TherapyDraftService.CreateDuplicate(sourceTherapy, DateTime.Today);
+                loadedDuplicateTherapyId = DuplicateFromTherapyId;
+                ResetEditContext();
+            }
+        }
+
         model.PatientId = Id;
-        await repository.AddAsync(model);
-        navigationManager.NavigateTo($"/patient/{Id}");
+    }
+
+    private void ResetEditContext()
+    {
+        editContext = new EditContext(model);
+    }
+
+    private void PrepareSaveAndClose()
+    {
+        pendingSubmitAction = TherapySubmitAction.SaveAndClose;
+    }
+
+    private async Task HandleSubmitAsync(EditContext _)
+    {
+        await SubmitAsync(pendingSubmitAction);
+    }
+
+    private async Task HandlePrintAsync()
+    {
+        pendingSubmitAction = TherapySubmitAction.SaveAndPrint;
+        await SubmitAsync(TherapySubmitAction.SaveAndPrint);
+    }
+
+    private async Task SubmitAsync(TherapySubmitAction action)
+    {
+        if (isSubmitting)
+        {
+            return;
+        }
+
+        warningMessage = string.Empty;
+
+        if (!editContext.Validate())
+        {
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            if (!await SaveAsync())
+            {
+                return;
+            }
+
+            if (action == TherapySubmitAction.SaveAndPrint)
+            {
+                await OpenPrintAsync();
+                navigationManager.NavigateTo($"/patient/{model.TherapyId}/edit-therapy/?printStatus=created");
+                return;
+            }
+
+            navigationManager.NavigateTo($"/patient/{Id}/");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task<bool> SaveAsync()
+    {
+        var trialMessage = await licenseService.GetTherapyCreationBlockMessageAsync();
+        if (!string.IsNullOrWhiteSpace(trialMessage))
+        {
+            warningMessage = trialMessage;
+            return false;
+        }
+
+        try
+        {
+            model.PatientId = Id;
+            model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
+            await repository.AddAsync(model);
+            await unitOfWork.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
+            return false;
+        }
     }
 
     private async Task TemplateChanged(ChangeEventArgs args)
     {
-        int.TryParse(args.Value?.ToString(), out var id);
+        if (!int.TryParse(args.Value?.ToString(), out var id) || id <= 0)
+        {
+            selectedTemplateId = 0;
+            appliedTemplateId = 0;
+            model.Description = string.Empty;
+            return;
+        }
+
         var selected = await templateRepository.GetByIdAsync(id);
-        model.Description = selected.Description;
+        if (selected == null)
+        {
+            selectedTemplateId = appliedTemplateId;
+            return;
+        }
+
+        selectedTemplateId = id;
+        var templateDescription = selected.Description ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(model.Description))
+        {
+            model.Description = templateDescription;
+            appliedTemplateId = id;
+            return;
+        }
+
+        pendingTemplateId = id;
+        pendingTemplateDescription = templateDescription;
+        showTemplateConflictDialog = true;
+    }
+
+    private Task ConfirmTemplateReplace()
+    {
+        model.Description = TherapyDraftService.ApplyTemplate(
+            model.Description,
+            pendingTemplateDescription,
+            TherapyTemplateApplyMode.Replace);
+        appliedTemplateId = pendingTemplateId;
+        showTemplateConflictDialog = false;
+        return Task.CompletedTask;
+    }
+
+    private Task ConfirmTemplateAppend()
+    {
+        model.Description = TherapyDraftService.ApplyTemplate(
+            model.Description,
+            pendingTemplateDescription,
+            TherapyTemplateApplyMode.Append);
+        appliedTemplateId = pendingTemplateId;
+        showTemplateConflictDialog = false;
+        return Task.CompletedTask;
+    }
+
+    private Task CancelTemplateChange()
+    {
+        selectedTemplateId = appliedTemplateId;
+        pendingTemplateId = 0;
+        pendingTemplateDescription = string.Empty;
+        showTemplateConflictDialog = false;
+        return Task.CompletedTask;
+    }
+
+    private static string FormatFullName(string? firstName, string? lastName)
+    {
+        return PatientNameFormatter.FormatFullName(firstName, lastName);
+    }
+
+    private async Task OpenPrintAsync()
+    {
+        var displayName = patient is null
+            ? $"therapy_{model.TherapyId}.pdf"
+            : $"{patient.FirstName}_{patient.LastName}.pdf";
+        var encodedDisplayName = Uri.EscapeDataString(displayName);
+
+        await jsRuntime.InvokeVoidAsync("open", $"/pdf/therapy/{model.TherapyId}/{encodedDisplayName}", "_blank");
+    }
+
+    private Task OnDescriptionChanged(string value)
+    {
+        model.Description = value;
+        return Task.CompletedTask;
+    }
+
+    private enum TherapySubmitAction
+    {
+        SaveAndClose,
+        SaveAndPrint
     }
 }
+

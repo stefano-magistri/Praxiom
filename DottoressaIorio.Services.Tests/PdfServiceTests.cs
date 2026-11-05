@@ -1,25 +1,14 @@
-using DinkToPdf;
-using DinkToPdf.Contracts;
 using DottoressaIorio.Models;
-using Moq;
+using DottoressaIorio.Services.Pdf;
 
 namespace DottoressaIorio.Services.Tests;
 
-/// <summary>
-/// Contains unit tests for the PdfService class.
-/// </summary>
-public class PdfServiceTests
+public class PdfHtmlBuilderTests
 {
-    /// <summary>
-    /// Tests that the GenerateTherapyPdf method correctly formats the PDF document with the therapy details,
-    /// including patient information, therapy description, and proper header/footer settings.
-    /// </summary>
     [Fact]
-    public void GenerateTherapyPdf_ShouldCallConverterWithCorrectSettings()
+    public void BuildHtml_ShouldGenerateCorrectHtml()
     {
-        // Arrange
-        var mockConverter = new Mock<IConverter>();
-        var pdfService = new PdfService(mockConverter.Object);
+        var builder = new PdfHtmlBuilder();
 
         var therapy = new Therapy
         {
@@ -33,18 +22,118 @@ public class PdfServiceTests
             Description = "Therapy description"
         };
 
-        mockConverter.Setup(m => m.Convert(It.IsAny<HtmlToPdfDocument>())).Returns(Array.Empty<byte>());
+        var html = builder.BuildHtml(therapy);
 
-        // Act
-        var result = pdfService.GenerateTherapyPdf(therapy);
+        Assert.Contains("Dr. John Doe", html);
+        Assert.Contains("Therapy description", html);
+    }
 
-        // Assert 
-        mockConverter.Verify(m => m.Convert(It.Is<HtmlToPdfDocument>(doc =>
-            //doc.GlobalSettings.PaperSize.ToString() == PaperKind.A4.ToString() &&
-            doc.Objects[0].HtmlContent.Contains("Dr. John Doe") &&
-            doc.Objects[0].HtmlContent.Contains("Therapy description") &&
-            doc.Objects[0].HeaderSettings.Right == "Data terapia: 01/01/2023" &&
-            doc.Objects[0].FooterSettings.Left.Contains("Dr. John Doe")
-        )), Times.Once);
+    [Fact]
+    public void BuildHtml_ShouldUseSharedPatientDisplayFormatting()
+    {
+        var builder = new PdfHtmlBuilder();
+
+        var therapy = new Therapy
+        {
+            Patient = new Patient
+            {
+                Title = "Dott.ssa",
+                FirstName = "mARIO",
+                LastName = "rOSSI"
+            },
+            Description = "Therapy description"
+        };
+
+        var html = builder.BuildHtml(therapy);
+
+        Assert.Contains("Dott.ssa Mario Rossi", html);
+    }
+
+    [Fact]
+    public void BuildHtml_ShouldRenderOnlySupportedDescriptionMarkup()
+    {
+        var builder = new PdfHtmlBuilder();
+        var therapy = new Therapy
+        {
+            Patient = new Patient
+            {
+                Title = "Dr.",
+                FirstName = "Jane",
+                LastName = "Doe"
+            },
+            Description = "<p><strong>Mattina</strong></p><ul><li>Acqua</li></ul><script>alert('x')</script>"
+        };
+
+        var html = builder.BuildHtml(therapy);
+
+        Assert.Contains("<strong>Mattina</strong>", html, StringComparison.Ordinal);
+        Assert.Contains("<ul><li>Acqua</li></ul>", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("<script>", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void BuildHeaderHtml_ShouldReplacePlaceholders()
+    {
+        var builder = new PdfHtmlBuilder();
+        var therapy = new Therapy { CreatedDate = new DateTime(2023, 1, 1) };
+        var settings = new ClinicSettings { DoctorName = "Doctor Test" };
+
+        string template = "{{doctorName}} Data terapia: {{therapyDate}}";
+        var header = builder.BuildHeaderHtml(template, therapy, settings);
+
+        Assert.Equal("Doctor Test Data terapia: 01/01/2023", header);
+    }
+
+    [Fact]
+    public void BuildFooterHtml_ShouldReplacePlaceholders()
+    {
+        var builder = new PdfHtmlBuilder();
+        var settings = new ClinicSettings { FooterText = "Footer test" };
+
+        var therapy = new Therapy
+        {
+            CreatedDate = new DateTime(2023, 1, 1),
+            Patient = new Patient { Title = "Dr.", FirstName = "John", LastName = "Doe" }
+        };
+
+        string template = "{{footerText}} Terapia {{therapyDate}} - {{patient}}";
+        var footer = builder.BuildFooterHtml(template, therapy, settings);
+
+        Assert.Equal("Footer test Terapia 01/01/2023 - Dr. John Doe", footer);
+    }
+
+    [Fact]
+    public void BuildFooterHtml_ShouldUseSharedPatientDisplayFormatting()
+    {
+        var builder = new PdfHtmlBuilder();
+        var settings = new ClinicSettings { FooterText = "Footer test" };
+
+        var therapy = new Therapy
+        {
+            CreatedDate = new DateTime(2023, 1, 1),
+            Patient = new Patient { Title = "Dott.ssa", FirstName = "mARIO", LastName = "rOSSI" }
+        };
+
+        string template = "{{patient}}";
+        var footer = builder.BuildFooterHtml(template, therapy, settings);
+
+        Assert.Equal("Dott.ssa Mario Rossi", footer);
+    }
+
+    [Fact]
+    public void BuildFooterHtml_WhenTrial_ShouldIncludeTrialLabel()
+    {
+        var builder = new PdfHtmlBuilder();
+        var settings = new ClinicSettings { FooterText = "Footer test" };
+
+        var therapy = new Therapy
+        {
+            CreatedDate = new DateTime(2023, 1, 1),
+            Patient = new Patient { Title = "Dr.", FirstName = "John", LastName = "Doe" }
+        };
+
+        var footer = builder.BuildFooterHtml("{{trialLabel}}", therapy, settings, isTrial: true);
+
+        Assert.Contains("VERSIONE DI PROVA", footer, StringComparison.Ordinal);
     }
 }

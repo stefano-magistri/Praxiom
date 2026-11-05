@@ -1,70 +1,541 @@
 @echo off
+setlocal EnableExtensions
 
-:: Check if the script is run as administrator
->nul 2>&1 "%SYSTEMROOT%\System32\cacls.exe" "%SYSTEMROOT%\System32\config\system" && (
-    goto :runCommand
-) || (
-    echo Please run this script as an administrator.
-    echo Exiting...    
-    pause
-    exit /b
+set "interactive=1"
+set "allowedUsername="
+set "appUrl=http://localhost:5000"
+set "licenseFile="
+set "encryptionKey="
+set "skipAutoDbRestore=0"
+set "scriptDir=%~dp0"
+set "logFile=%~dp0install.log"
+set "statusFile=%~dp0install.status"
+set "licenseValidatorExe=%scriptDir%setup-helper.exe"
+set "secretHelperExe=%scriptDir%setup-helper.exe"
+set "licenseValidatorProject=%scriptDir%..\DottoressaIorio.LicenseGenerator\DottoressaIorio.LicenseGenerator.csproj"
+
+> "%logFile%" echo [%date% %time%] Installer script started.
+>> "%logFile%" echo [%date% %time%] Script path=%0
+>> "%logFile%" echo [%date% %time%] Script dir=%scriptDir%
+if exist "%statusFile%" del /q "%statusFile%" >nul 2>nul
+
+:parseArgs
+if "%~1"=="" goto argsDone
+if /I "%~1"=="--silent" (
+    set "interactive=0"
+    shift
+    goto parseArgs
+)
+if /I "%~1"=="--allowed-username" (
+    if "%~2"=="" (
+        echo Missing value for --allowed-username.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    set "allowedUsername=%~2"
+    shift
+    shift
+    goto parseArgs
+)
+if /I "%~1"=="--app-url" (
+    if "%~2"=="" (
+        echo Missing value for --app-url.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    set "appUrl=%~2"
+    shift
+    shift
+    goto parseArgs
+)
+if /I "%~1"=="--license-file" (
+    if "%~2"=="" (
+        echo Missing value for --license-file.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    set "licenseFile=%~2"
+    shift
+    shift
+    goto parseArgs
+)
+if /I "%~1"=="--encryption-key" (
+    if "%~2"=="" (
+        echo Missing value for --encryption-key.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    set "encryptionKey=%~2"
+    shift
+    shift
+    goto parseArgs
+)
+if /I "%~1"=="--skip-auto-db-restore" (
+    set "skipAutoDbRestore=1"
+    shift
+    goto parseArgs
+)
+echo Unknown argument: %~1
+if "%interactive%"=="1" pause
+exit /b 1
+
+:argsDone
+if "%allowedUsername%"=="" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing required parameter --allowed-username.
+    echo Missing required parameter --allowed-username.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+if "%encryptionKey%"=="" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing required parameter --encryption-key.
+    echo Missing required parameter --encryption-key.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+if not "%licenseFile%"=="" if not exist "%licenseFile%" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file "%licenseFile%" not found.
+    echo License file not found: "%licenseFile%"
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+if not exist "%licenseValidatorExe%" (
+    if exist "%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe" (
+        set "licenseValidatorExe=%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"
+        set "secretHelperExe=%scriptDir%tmp\LicenseValidator\DottoressaIorio.LicenseGenerator.exe"
+    )
+)
+echo %appUrl% | findstr /I "://">nul
+if errorlevel 1 set "appUrl=http://%appUrl%"
+>> "%logFile%" echo [%date% %time%] Parsed arguments. interactive=%interactive% appUrl=%appUrl% skipAutoDbRestore=%skipAutoDbRestore% licenseFile=%licenseFile%
+if not "%licenseFile%"=="" (
+    rem Installer-side validation prevents a mismatched license from being copied into ProgramData.
+    call :validateLicense "%licenseFile%" "%allowedUsername%"
+    if errorlevel 1 (
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] No license file provided. Installation will continue with automatic trial mode.
+)
+call :validateUrl "%appUrl%"
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Invalid app URL "%appUrl%".
+    echo Invalid service URL. Use format: http://hostname:port or https://hostname:port
+    if "%interactive%"=="1" pause
+    exit /b 1
 )
 
-:runCommand
+rem Check if the script is running as administrator.
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Script is not running as administrator.
+    echo Please run this script as administrator.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
 
-setlocal 
+rem Change to the directory where the script is located.
+cd /d "%scriptDir%"
 
-rem Change to the directory where the script is located
-cd /d "%~dp0"
-
-rem Define source file, destination folder, and service-related variables
-set "sourceFile=Service.7z"
-set "destinationFolder=C:\Program Files\DottoressaIorio\"
-set "service=DottoressaIorio.App"
+rem Define source file, destination folder, and service-related variables.
+set "sourceFile=%scriptDir%Service.7z"
+set "sevenZipExe=%scriptDir%7z.exe"
+set "destinationFolder=C:\ProgramData\Praxiom"
+set "secretsFolder=%destinationFolder%\secrets"
+set "encryptionKeyFile=%secretsFolder%\encryption-key.json"
+set "licenseDestination=%destinationFolder%\license.dat"
+set "service=Praxiom.App"
 set "app=DottoressaIorio.App.exe"
 set "dbBackupFolder=_db_backup"
+set "legacyBackupDb=C:\Program Files\DottoressaIorio\_db_backup\app.db"
+set "configFile=%destinationFolder%\appsettings.Production.json"
+set "backupScriptSource=%scriptDir%backup_script.ps1"
+set "backupScriptDest=%destinationFolder%\backup_script.ps1"
+set "restoreScriptSource=%scriptDir%restore_script.ps1"
+set "restoreScriptDest=%destinationFolder%\restore_script.ps1"
+set "backupTaskName=Praxiom Online Backup"
+set "legacyBackupTaskName=DottoressaIorio Daily Backup"
+set "backupTaskUser=%USERDOMAIN%\%USERNAME%"
 
+rem Stop and remove existing service before touching files.
+set "serviceDeleted=1"
+sc query "%service%" >> "%logFile%" 2>&1
+if %errorlevel% equ 0 (
+    >> "%logFile%" echo [%date% %time%] Existing service found. Stopping and deleting...
+    sc stop "%service%" >> "%logFile%" 2>&1
+    timeout /t 2 /nobreak >nul
+    sc delete "%service%" >> "%logFile%" 2>&1
+    set "serviceDeleted=0"
+)
+if "%serviceDeleted%"=="0" (
+    rem Wait until the service record is actually removed.
+    for /L %%I in (1,1,10) do (
+        sc query "%service%" >> "%logFile%" 2>&1
+        if errorlevel 1 goto continueInstall
+        timeout /t 1 /nobreak >nul
+    )
+    >> "%logFile%" echo [%date% %time%] WARNING: Service is still pending deletion.
+    echo WARNING: Service "%service%" is still pending deletion.
+)
+:continueInstall
 
-rem Create the destination folder if it does not exist
+if not exist "%sourceFile%" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing package "%sourceFile%".
+    echo Missing package: "%sourceFile%"
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+
+if not exist "%sevenZipExe%" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing extractor "%sevenZipExe%".
+    echo Missing extractor: "%sevenZipExe%"
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+
 if not exist "%destinationFolder%" mkdir "%destinationFolder%"
+if not exist "%destinationFolder%\%dbBackupFolder%" mkdir "%destinationFolder%\%dbBackupFolder%"
+if not exist "%secretsFolder%" mkdir "%secretsFolder%"
 
-rem Extract files from the 7z archive to the destination folder
-7z x %sourceFile% -o"%destinationFolder%" *.* -r -y
-
-rem Check if winget is available
-where winget >nul 2>nul
-if %errorlevel% neq 0 (
-    echo "Winget is not installed. Skipping package installation."
-    goto :afterWinget
+if not "%licenseFile%"=="" (
+    copy /Y "%licenseFile%" "%licenseDestination%" >nul
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] ERROR: Failed to copy license file to "%licenseDestination%".
+        echo Failed to copy license file to "%licenseDestination%".
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+    >> "%logFile%" echo [%date% %time%] License file copied to "%licenseDestination%".
+) else (
+    if exist "%licenseDestination%" (
+        del /q "%licenseDestination%" >nul 2>nul
+        >> "%logFile%" echo [%date% %time%] Existing license file removed from "%licenseDestination%" to allow trial mode.
+    )
 )
 
-rem Install .NET 8 Runtime using winget
-echo Installing .NET 8 Runtime using winget...
-echo y | winget install Microsoft.DotNet.Runtime.8
+call :writeEncryptionKeyFile "%encryptionKeyFile%" "%encryptionKey%"
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to write encryption key file "%encryptionKeyFile%".
+    echo Failed to write encryption key file.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+>> "%logFile%" echo [%date% %time%] Encryption key file written to "%encryptionKeyFile%".
 
-rem Install .NET 8 AspNetCore using winget
-echo Installing .NET 8 AspNetCore using winget...
-echo y | winget install Microsoft.DotNet.AspNetCore.8
-
-rem End of script
-:afterWinget
-
-rem Navigate to the destination folder
-cd "%destinationFolder%"
-
-rem Move files from _db_backup to the destination folder
-if exist "%dbBackupFolder%" (
-    move /Y "%dbBackupFolder%\*" "%destinationFolder%"
+rem Backup current database files before replacing files.
+call :backupDatabaseFiles
+if errorlevel 1 (
+    > "%statusFile%" echo ERROR: Database backup preservation failed.
+    echo ERROR: Failed to preserve the existing database files. Check "%logFile%" for details.
+    if "%interactive%"=="1" pause
+    exit /b 1
 )
 
-rem Install the service using NSSM
-nssm install %service% "%destinationFolder%\%app%"
+rem Extract files from the 7z archive to the destination folder.
+>> "%logFile%" echo [%date% %time%] Extracting package to "%destinationFolder%".
+"%sevenZipExe%" x "%sourceFile%" -o"%destinationFolder%" *.* -r -y
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to extract package.
+    echo Failed to extract "%sourceFile%".
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
 
-rem Start the installed service using NSSM
-nssm start %service%
- 
-rem Open the default browser to the application's URL
-start http://localhost:5000
+rem Restore database files if backup is present.
+if "%skipAutoDbRestore%"=="1" (
+    >> "%logFile%" echo [%date% %time%] Automatic database restore from local backup skipped by installer option.
+) else (
+    rem Reuse the local backup folder when replacing binaries so upgrades preserve the existing database by default.
+    call :restoreDatabaseFiles
+    if errorlevel 1 (
+        > "%statusFile%" echo ERROR: Database restore failed.
+        echo ERROR: Failed to restore the preserved database files. Check "%logFile%" for details.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+)
 
-pause
-exit /b
+if exist "%backupScriptSource%" (
+    copy /Y "%backupScriptSource%" "%backupScriptDest%" >nul
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to copy manual cold-copy fallback script to "%backupScriptDest%".
+    ) else (
+        >> "%logFile%" echo [%date% %time%] Manual cold-copy fallback script copied to "%backupScriptDest%".
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] WARNING: Manual cold-copy fallback script not found at "%backupScriptSource%".
+)
+
+if exist "%restoreScriptSource%" (
+    copy /Y "%restoreScriptSource%" "%restoreScriptDest%" >nul
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to copy restore script to "%restoreScriptDest%".
+    ) else (
+        >> "%logFile%" echo [%date% %time%] Restore script copied to "%restoreScriptDest%".
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] WARNING: Restore script not found at "%restoreScriptSource%".
+)
+
+rem Configure and install Playwright browser binaries in ProgramData for service account usage.
+set "PLAYWRIGHT_BROWSERS_PATH=C:\ProgramData\Praxiom\ms-playwright"
+if not exist "%PLAYWRIGHT_BROWSERS_PATH%" mkdir "%PLAYWRIGHT_BROWSERS_PATH%"
+setx /M PLAYWRIGHT_BROWSERS_PATH "%PLAYWRIGHT_BROWSERS_PATH%" >nul 2>nul
+if exist "%destinationFolder%\playwright.ps1" (
+    >> "%logFile%" echo [%date% %time%] Installing Playwright chromium to "%PLAYWRIGHT_BROWSERS_PATH%".
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%destinationFolder%\playwright.ps1" install chromium >> "%logFile%" 2>&1
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Playwright browser installation failed.
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] WARNING: Playwright install script not found at "%destinationFolder%\playwright.ps1".
+)
+
+rem Apply installer wizard configuration to production settings.
+if not exist "%configFile%" (
+    >> "%logFile%" echo [%date% %time%] ERROR: Missing config file "%configFile%".
+    echo Missing configuration file: "%configFile%"
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+call :setAllowedUsernameJson "%configFile%" "%allowedUsername%"
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to update appsettings.Production.json.
+    echo Failed to update appsettings.Production.json.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+
+rem Recreate the Windows service using native Service Control Manager.
+>> "%logFile%" echo [%date% %time%] Creating service "%service%" with URL "%appUrl%".
+sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Praxiom App" >> "%logFile%" 2>&1
+if errorlevel 1 (
+    rem Retry once in case the service was still finishing deletion.
+    >> "%logFile%" echo [%date% %time%] WARNING: First service creation attempt failed, retrying.
+    timeout /t 2 /nobreak >nul
+    sc create "%service%" binPath= "\"%destinationFolder%\%app%\" --urls \"%appUrl%\"" start= auto DisplayName= "Praxiom App" >> "%logFile%" 2>&1
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] ERROR: Failed to create service after retry.
+        > "%statusFile%" echo ERROR: Service creation failed.
+        echo ERROR: Failed to create service "%service%". Check "%logFile%" for details.
+        if "%interactive%"=="1" pause
+        exit /b 1
+    )
+)
+
+sc description "%service%" "Praxiom medical management application" >> "%logFile%" 2>&1
+sc start "%service%" >> "%logFile%" 2>&1
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Service start command failed.
+    call :logServiceDiagnostics
+    > "%statusFile%" echo ERROR: Service start failed.
+    echo ERROR: Service "%service%" failed to start. Check "%logFile%" for details.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+
+call :waitForServiceRunning
+if errorlevel 1 (
+    call :isServiceRunning
+    if not errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Service readiness wait reported failure, but service is running. Continuing installation.
+        goto serviceReady
+    )
+    >> "%logFile%" echo [%date% %time%] ERROR: Service did not reach RUNNING state.
+    call :logServiceDiagnostics
+    > "%statusFile%" echo ERROR: Service not running after start.
+    echo ERROR: Service "%service%" did not reach RUNNING state. Check "%logFile%" for details.
+    if "%interactive%"=="1" pause
+    exit /b 1
+)
+
+:serviceReady
+if exist "%destinationFolder%\%app%" (
+    >> "%logFile%" echo [%date% %time%] Configuring scheduled ONLINE backup task "%backupTaskName%" for user "%backupTaskUser%".
+    schtasks /Delete /TN "%legacyBackupTaskName%" /F >> "%logFile%" 2>&1
+    schtasks /Delete /TN "%backupTaskName%" /F >> "%logFile%" 2>&1
+    schtasks /Create /TN "%backupTaskName%" /TR "\"%destinationFolder%\%app%\" --online-backup" /SC DAILY /ST 20:00 /RU "%backupTaskUser%" /RL HIGHEST /IT /F >> "%logFile%" 2>&1
+    if errorlevel 1 (
+        >> "%logFile%" echo [%date% %time%] WARNING: Failed to create scheduled online backup task.
+        echo WARNING: Could not create scheduled backup task "%backupTaskName%".
+    ) else (
+        >> "%logFile%" echo [%date% %time%] Scheduled online backup task created successfully.
+        >> "%logFile%" echo [%date% %time%] NOTE: "%backupScriptDest%" is retained only for manual cold-copy fallback.
+    )
+) else (
+    >> "%logFile%" echo [%date% %time%] WARNING: Skipping scheduled task creation because app executable is missing.
+)
+
+if "%interactive%"=="1" start "" "%appUrl%"
+> "%statusFile%" echo SUCCESS
+>> "%logFile%" echo [%date% %time%] Installation completed successfully.
+echo Installation completed successfully.
+if "%interactive%"=="1" pause
+exit /b 0
+
+:validateLicense
+setlocal EnableDelayedExpansion
+set "licenseToValidate=%~1"
+set "usernameToValidate=%~2"
+set "validatorExitCode=9"
+if not exist "%licenseValidatorExe%" (
+    if exist "%licenseValidatorProject%" (
+        dotnet run --project "%licenseValidatorProject%" -- validate --license-file "%licenseToValidate%" --allowed-username "%usernameToValidate%" >nul 2>&1
+        set "validatorExitCode=!errorlevel!"
+        goto validatorDone
+    )
+
+    >> "%logFile%" echo [%date% %time%] ERROR: License validator executable not found at "%licenseValidatorExe%".
+    echo File di licenza non valido. Contatta il fornitore del software.
+    endlocal & exit /b 1
+)
+
+"%licenseValidatorExe%" validate --license-file "%licenseToValidate%" --allowed-username "%usernameToValidate%" >nul 2>&1
+set "validatorExitCode=%errorlevel%"
+:validatorDone
+if "!validatorExitCode!"=="0" (
+    >> "%logFile%" echo [%date% %time%] License file pre-validation succeeded.
+    endlocal & exit /b 0
+)
+
+rem Exit codes come from the bundled license helper and are mapped to the same messages used by the wizard.
+if "!validatorExitCode!"=="2" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file not found during validation.
+    echo File di licenza non trovato.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="3" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License does not match this machine.
+    echo Questa licenza non é valida per questo computer.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="4" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License does not match the configured Windows user.
+    echo La licenza non é valida per questo utente Windows.
+    endlocal & exit /b 1
+)
+if "!validatorExitCode!"=="6" (
+    >> "%logFile%" echo [%date% %time%] ERROR: License file is invalid or corrupted.
+    echo Il file di licenza non é valido o é danneggiato.
+    endlocal & exit /b 1
+)
+
+>> "%logFile%" echo [%date% %time%] ERROR: License validation failed with exit code !validatorExitCode!.
+echo File di licenza non valido. Contatta il fornitore del software.
+endlocal & exit /b 1
+
+:backupDbFile
+set "dbName=%~1"
+if not exist "%destinationFolder%\%dbName%" exit /b 0
+copy /Y "%destinationFolder%\%dbName%" "%destinationFolder%\%dbBackupFolder%\%dbName%" >nul
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to preserve database file "%destinationFolder%\%dbName%".
+    exit /b 1
+)
+exit /b 0
+
+:restoreDbFile
+set "dbName=%~1"
+if not exist "%destinationFolder%\%dbBackupFolder%\%dbName%" exit /b 0
+copy /Y "%destinationFolder%\%dbBackupFolder%\%dbName%" "%destinationFolder%\%dbName%" >nul
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: Failed to restore preserved database file "%destinationFolder%\%dbName%".
+    exit /b 1
+)
+exit /b 0
+
+:backupDatabaseFiles
+call :backupDbFile "app.db"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app.db-shm"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app.db-wal"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db-shm"
+if errorlevel 1 exit /b 1
+call :backupDbFile "app_unencrypted.db-wal"
+if errorlevel 1 exit /b 1
+exit /b 0
+
+:restoreDatabaseFiles
+call :restoreDbFile "app.db"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app.db-shm"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app.db-wal"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app_unencrypted.db"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app_unencrypted.db-shm"
+if errorlevel 1 exit /b 1
+call :restoreDbFile "app_unencrypted.db-wal"
+if errorlevel 1 exit /b 1
+exit /b 0
+
+:setAllowedUsernameJson
+setlocal
+set "configFile=%~1"
+set "allowedUsername=%~2"
+set "CONFIG_FILE=%configFile%"
+set "ALLOWED_USERNAME=%allowedUsername%"
+
+powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $p=$env:CONFIG_FILE; $u=$env:ALLOWED_USERNAME; $json=Get-Content -Raw -Path $p | ConvertFrom-Json; if($null -eq $json.Authentication){ $json | Add-Member -MemberType NoteProperty -Name Authentication -Value (@{}) }; $json.Authentication.AllowedUsername=$u; $json | ConvertTo-Json -Depth 32 | Set-Content -Encoding UTF8 -Path $p"
+if errorlevel 1 (
+    >> "%logFile%" echo [%date% %time%] ERROR: PowerShell config update failed.
+    endlocal
+    exit /b 1
+)
+
+endlocal
+exit /b 0
+
+:validateUrl
+setlocal
+set "urlToValidate=%~1"
+set "URL_TO_VALIDATE=%urlToValidate%"
+powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $u=$env:URL_TO_VALIDATE; if($u -notmatch '^(https?)://[^/:\s]+:\d{1,5}$'){ exit 1 }; $port=[int]($u.Split(':')[-1]); if($port -lt 1 -or $port -gt 65535){ exit 1 } else { exit 0 }"
+set "exitCode=%errorlevel%"
+endlocal & exit /b %exitCode%
+
+:writeEncryptionKeyFile
+setlocal
+set "keyFile=%~1"
+set "keyValue=%~2"
+if not exist "%secretHelperExe%" (
+    endlocal
+    exit /b 1
+)
+rem The helper writes the installed secret using the same DPAPI-backed format expected by runtime key resolution.
+"%secretHelperExe%" write-secret --secret-file "%keyFile%" --value "%keyValue%" >nul 2>> "%logFile%"
+if errorlevel 1 (
+    endlocal
+    exit /b 1
+)
+endlocal
+exit /b 0
+
+:logServiceDiagnostics
+>> "%logFile%" echo [%date% %time%] Collecting service diagnostics...
+sc query "%service%" >> "%logFile%" 2>&1
+sc queryex "%service%" >> "%logFile%" 2>&1
+set "DIAG_FILE=%scriptDir%service-diagnostics.tmp.log"
+powershell -NoProfile -Command "$ErrorActionPreference='Continue'; try { Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-15)} -ErrorAction Stop | Where-Object { $_.ProviderName -match 'ASP.NET|Application Error|.NET Runtime|IIS AspNetCore Module V2' -or $_.Message -match 'Praxiom|Praxiom.App|DottoressaIorio|DottoressaIorio.App.exe|Kestrel|address already in use|failed to start' } | Select-Object -First 20 TimeCreated, ProviderName, Id, LevelDisplayName, Message | Format-List | Out-String -Width 4096 | Set-Content -Encoding UTF8 -Path $env:DIAG_FILE } catch { $_ | Out-String | Set-Content -Encoding UTF8 -Path $env:DIAG_FILE }"
+if exist "%scriptDir%service-diagnostics.tmp.log" (
+    >> "%logFile%" type "%scriptDir%service-diagnostics.tmp.log"
+    del /q "%scriptDir%service-diagnostics.tmp.log" >nul 2>nul
+)
+exit /b 0
+
+:isServiceRunning
+powershell -NoProfile -Command "$service = Get-Service -Name '%service%' -ErrorAction SilentlyContinue; if ($null -ne $service -and $service.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Running) { exit 0 } exit 1" >nul 2>&1
+exit /b %errorlevel%
+
+:waitForServiceRunning
+for /L %%I in (1,1,60) do (
+    call :isServiceRunning
+    if not errorlevel 1 exit /b 0
+    timeout /t 1 /nobreak >nul
+)
+exit /b 1

@@ -1,0 +1,199 @@
+@page "/settings"
+@inject DottoressaIorio.Repositories.IClinicSettingsRepository repository
+@inject DottoressaIorio.Shared.State.ClinicSettingsState clinicSettingsState
+@inject ILicenseService licenseService
+
+<PageHeader Title="Impostazioni"/>
+
+@if (model is null)
+{
+    <p>Caricamento impostazioni...</p>
+}
+else
+{
+    <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation settings-form" novalidate>
+        <DataAnnotationsValidator/>
+        <ValidationWarningAlert Message="@warningMessage"/>
+
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="alert alert-success" role="status">@successMessage</div>
+        }
+
+        <div class="card patients-card mb-4">
+            <div class="card-body p-4">
+                <h3 class="mt-0">Stato licenza</h3>
+                <p class="mb-3 settings-license-status-value" data-testid="license-status-value">@GetLicenseStatusValue()</p>
+                <dl class="row patient-summary-list mb-0">
+                    @if (licenseService.TrialExpiresUtc.HasValue)
+                    {
+                        <dt class="col-sm-4">Scadenza trial</dt>
+                        <dd class="col-sm-8">@licenseService.TrialExpiresUtc.Value.ToString("dd/MM/yyyy")</dd>
+                    }
+                    @if (licenseService.RemainingTrialDays.HasValue)
+                    {
+                        <dt class="col-sm-4">Giorni rimanenti</dt>
+                        <dd class="col-sm-8">@licenseService.RemainingTrialDays.Value</dd>
+                    }
+                    @if (licenseService.IsTrial)
+                    {
+                        <dt class="col-sm-4">Limiti</dt>
+                        <dd class="col-sm-8">@licenseService.TrialLimitsSummary</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="DoctorName" class="form-label">Nome medico</label>
+                <InputText id="DoctorName" @bind-Value="model.DoctorName" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="DoctorTitle" class="form-label">Titolo professionale</label>
+                <InputText id="DoctorTitle" @bind-Value="model.DoctorTitle" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Specialization" class="form-label">Specializzazione</label>
+                <InputText id="Specialization" @bind-Value="model.Specialization" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="ClinicName" class="form-label">Nome studio</label>
+                <InputText id="ClinicName" @bind-Value="model.ClinicName" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Address" class="form-label">Indirizzo</label>
+                <InputTextArea id="Address" @bind-Value="model.Address" class="@GetFieldClass()" rows="2" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Phone" class="form-label">Telefono</label>
+                <InputText id="Phone" @bind-Value="model.Phone" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="Email" class="form-label">Email</label>
+                <InputText id="Email" @bind-Value="model.Email" class="@GetFieldClass()" autocomplete="off" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
+                <ValidationMessage For="@(() => model.Email)"/>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="FooterText" class="form-label">Piè di pagina PDF</label>
+                <InputTextArea id="FooterText" @bind-Value="model.FooterText" class="@GetFieldClass()" rows="3" readonly="@(!isEditMode)" aria-readonly="@(!isEditMode)"/>
+            </div>
+        </div>
+        <FormActionSection>
+            @if (isEditMode)
+            {
+                <ActionButton ButtonText="Annulla" ButtonClass="secondary" IconClass="oi oi-x" OnClick="@CancelEdit"/>
+                <SubmitButton/>
+            }
+            else
+            {
+                <ActionButton ButtonText="Modifica" ButtonClass="primary" IconClass="oi oi-pencil" OnClick="@EnableEditMode"/>
+            }
+        </FormActionSection>
+    </EditForm>
+}
+
+@code {
+    private DottoressaIorio.Models.ClinicSettings? model;
+    private DottoressaIorio.Models.ClinicSettings? originalModel;
+    private string warningMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isEditMode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await licenseService.InitializeAsync();
+        model = await clinicSettingsState.GetAsync();
+        originalModel = Clone(model);
+        isEditMode = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (model is null || !isEditMode)
+        {
+            return;
+        }
+
+        warningMessage = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            await repository.SaveAsync(model);
+            clinicSettingsState.SetCurrent(model);
+            originalModel = Clone(model);
+            isEditMode = false;
+            successMessage = "Impostazioni salvate.";
+        }
+        catch (Exception ex)
+        {
+            warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
+        }
+    }
+
+    private void EnableEditMode()
+    {
+        warningMessage = string.Empty;
+        successMessage = string.Empty;
+        isEditMode = true;
+    }
+
+    private void CancelEdit()
+    {
+        if (originalModel is null)
+        {
+            return;
+        }
+
+        model = Clone(originalModel);
+        warningMessage = string.Empty;
+        successMessage = string.Empty;
+        isEditMode = false;
+    }
+
+    private string GetFieldClass()
+    {
+        return isEditMode ? "form-control" : "form-control settings-readonly-field";
+    }
+
+    private string GetLicenseStatusValue()
+    {
+        return licenseService.IsTrialExpired
+            ? licenseService.StatusLabel
+            : licenseService.IsTrial
+            ? "Versione di prova attiva"
+            : licenseService.StatusLabel;
+    }
+
+    private static DottoressaIorio.Models.ClinicSettings Clone(DottoressaIorio.Models.ClinicSettings settings)
+    {
+        return new DottoressaIorio.Models.ClinicSettings
+        {
+            Id = settings.Id,
+            DoctorName = settings.DoctorName,
+            DoctorTitle = settings.DoctorTitle,
+            Specialization = settings.Specialization,
+            ClinicName = settings.ClinicName,
+            Address = settings.Address,
+            Phone = settings.Phone,
+            Email = settings.Email,
+            FooterText = settings.FooterText,
+            TrialStartUtc = settings.TrialStartUtc
+        };
+    }
+}

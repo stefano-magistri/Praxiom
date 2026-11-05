@@ -1,11 +1,9 @@
 ﻿<PageTitle>@Title</PageTitle>
-<h1>@(Heading ?? Title)</h1>
+<h1 class="page-title" data-testid="page-heading">@(Heading ?? Title)</h1>
 <hr class="my-4">
 
 @code {
-    [Parameter, EditorRequired]
-    public string Title { get; set; }
+    [Parameter] [EditorRequired] public string Title { get; set; }
 
-    [Parameter]
-    public string? Heading { get; set; }
+    [Parameter] public string? Heading { get; set; }
 }

@@ -1,0 +1,92 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
+
+<div class="minimal-rich-text-editor" data-html-editor-input-id="@InputId">
+    <div id="@ToolbarId" class="minimal-rich-text-toolbar" role="toolbar" aria-label="Formattazione testo">
+        <button type="button" class="ql-bold" aria-label="Grassetto"></button>
+        <button type="button" class="ql-italic" aria-label="Corsivo"></button>
+        <button type="button" class="ql-list" value="bullet" aria-label="Elenco puntato"></button>
+        <button type="button" class="ql-list" value="ordered" aria-label="Elenco numerato"></button>
+    </div>
+    <div id="@EditorId"
+         class="minimal-rich-text-surface"
+         data-testid="@TestId"
+         aria-label="@AriaLabel">
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string InputId { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string AriaLabel { get; set; } = string.Empty;
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? TestId { get; set; }
+
+    private readonly string EditorId = $"editor_{Guid.NewGuid():N}";
+    private readonly string ToolbarId = $"toolbar_{Guid.NewGuid():N}";
+    private DotNetObjectReference<MinimalRichTextEditor>? _reference;
+    private bool _initialized;
+    private bool _suppressNextParameterSync;
+    private string _lastSyncedValue = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _reference = DotNetObjectReference.Create(this);
+        _lastSyncedValue = Value ?? string.Empty;
+        await JsRuntime.InvokeVoidAsync("dottoressaRichText.init", EditorId, ToolbarId, _reference, _lastSyncedValue);
+        _initialized = true;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var nextValue = Value ?? string.Empty;
+        if (!_initialized)
+        {
+            return;
+        }
+
+        if (_suppressNextParameterSync)
+        {
+            _lastSyncedValue = nextValue;
+            _suppressNextParameterSync = false;
+            return;
+        }
+
+        if (string.Equals(nextValue, _lastSyncedValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _lastSyncedValue = nextValue;
+        await JsRuntime.InvokeVoidAsync("dottoressaRichText.setValue", EditorId, nextValue);
+    }
+
+    [JSInvokable]
+    public async Task OnHtmlChanged(string value)
+    {
+        _lastSyncedValue = value ?? string.Empty;
+        _suppressNextParameterSync = true;
+        await ValueChanged.InvokeAsync(_lastSyncedValue);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_initialized)
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("dottoressaRichText.dispose", EditorId);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+
+        _reference?.Dispose();
+    }
+}

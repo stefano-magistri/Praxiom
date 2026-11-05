@@ -120,6 +120,11 @@ ipch/
 
 # Visual Studio Trace Files
 *.e2e
+!DottoressaIorio.E2E/
+!DottoressaIorio.E2E/*.csproj
+!DottoressaIorio.E2E/*.cs
+!DottoressaIorio.E2E/*.json
+!DottoressaIorio.E2E/*.md
 
 # TFS 2012 Local Workspace
 $tf/
@@ -256,6 +261,8 @@ Generated_Code/
 # because we have git ;-)
 _UpgradeReport_Files/
 Backup*/
+!DottoressaIorio.Services/Backup/
+!DottoressaIorio.Services/Backup/*.cs
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/
@@ -396,8 +403,15 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-/DottoressaIorio.App/app.db-shm
-/DottoressaIorio.App/app.db-wal
-/DottoressaIorio.App/app.db
-/Setup/Service
-/Setup/Service.7z
+
+#Custom ignores
+*/.artifacts/*
+DottoressaIorio.App/app*.db*
+DottoressaIorio.App/_db_backup/*
+DottoressaIorio.App/_runtime/*
+DottoressaIorio.E2E/appsettings.Local.json
+query
+Setup/Output/
+Setup/Praxiom Licenses/*
+Setup/Service.7z
+Setup/tmp/

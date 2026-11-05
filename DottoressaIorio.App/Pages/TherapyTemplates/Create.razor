@@ -1,51 +1,75 @@
-﻿@page "/create-therapy-template"
+@page "/create-therapy-template"
 @inject TherapyTemplateRepository repository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
- 
-<PageHeader Title="Aggiungi Terapia Precompilata" /> 
+@inject ILicenseService licenseService
+
+<PageHeader Title="Nuova terapia precompilata"/>
 
 <EditForm Model="@model" OnValidSubmit="@SaveAsync" class="needs-validation" novalidate>
-    <DataAnnotationsValidator />
-    @if (!string.IsNullOrEmpty(warningMessage))
-    {
-        <div class="alert alert-warning" role="alert">
-            @warningMessage
-        </div>
-    }
+    <DataAnnotationsValidator/>
+    <ValidationWarningAlert Message="@warningMessage"/>
+    <TrialExpiredAlert/>
     <div class="row g-3">
         <div class="col-12">
             <label for="Title" class="form-label">Titolo</label>
-            <InputText id="Title" @bind-Value="model.Title" class="form-control" autocomplete="off" />
-            <ValidationMessage For="@(() => model.Title)" />
+            <InputText id="Title" @bind-Value="model.Title" class="form-control" autocomplete="off"/>
+            <ValidationMessage For="@(() => model.Title)"/>
         </div>
     </div>
-    <div class="row g-3">
-        <div class="col-12">
-            <label for="Description">Descrizione</label>
-            <InputTextArea id="Description" @bind-Value="model.Description" class="form-control" />
-            <ValidationMessage For="@(() => model.Description)" />
-        </div>
-    </div>
-    <hr class="my-4">
-    <CancelButton Url="/therapy-templates" />
-    <SubmitButton />
+    <TherapyDescriptionField Label="Descrizione"
+                             InputId="TemplateDescription"
+                             AriaLabel="Descrizione terapia precompilata"
+                             TestId="template-description-editor"
+                             Value="@EditorDescription"
+                             ValueChanged="OnDescriptionChanged"
+                             For="@(() => model.Description)"/>
+    <StandardFormActions CancelUrl="/therapy-templates" SubmitDisabled="@licenseService.IsTrialExpired"/>
 </EditForm>
 
 @code {
     private readonly TherapyTemplate model = new();
     private string warningMessage = "";
+    private string EditorDescription => StringExtensions.ToEditorValue(model.Description);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await licenseService.InitializeAsync();
+    }
 
     private async Task SaveAsync()
     {
-        // Check if the title already exists
-        if (string.IsNullOrEmpty(warningMessage) && await repository.TitleExistsAsync(model.Title))
+        var trialMessage = await licenseService.GetTherapyTemplateCreationBlockMessageAsync();
+        if (!string.IsNullOrWhiteSpace(trialMessage))
         {
-            warningMessage = "Il titolo giá esiste. Sei sicura di voler continuare?";
+            warningMessage = trialMessage;
             return;
         }
 
-        // If title doesn't exist, proceed with saving
-        await repository.AddAsync(model);
-        navigationManager.NavigateTo("/therapy-templates");
+        if (await repository.TitleExistsAsync(model.Title))
+        {
+            warningMessage = "Il titolo giá esiste.";
+            return;
+        }
+
+        try
+        {
+            model.Description = StringExtensions.NormalizeStoredRichText(model.Description);
+            await repository.AddAsync(model);
+            await unitOfWork.SaveChangesAsync();
+            navigationManager.NavigateTo("/therapy-templates");
+        }
+        catch (Exception ex)
+        {
+            warningMessage = ValidationExceptionMapper.ToUserMessage(ex);
+        }
     }
+
+    private Task OnDescriptionChanged(string value)
+    {
+        model.Description = value;
+        return Task.CompletedTask;
+    }
+
 }
+

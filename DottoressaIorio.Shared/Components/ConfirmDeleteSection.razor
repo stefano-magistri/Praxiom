@@ -1,0 +1,14 @@
+@using DottoressaIorio.Shared.Buttons
+
+<p>@ConfirmationText</p>
+
+<CancelButton Url="@CancelUrl"/>
+<RemoveButton OnClick="@OnConfirm"/>
+
+@code {
+    [Parameter] [EditorRequired] public string ConfirmationText { get; set; } = string.Empty;
+
+    [Parameter] [EditorRequired] public string CancelUrl { get; set; } = string.Empty;
+
+    [Parameter] [EditorRequired] public EventCallback OnConfirm { get; set; }
+}

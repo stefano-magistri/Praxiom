@@ -1,5 +1,4 @@
-﻿@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IConfiguration Configuration
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IWebHostEnvironment Environment
 
 <AuthorizeView Policy="SpecificUserOnly">
@@ -7,20 +6,19 @@
         @ChildContent
     </Authorized>
     <NotAuthorized>
-        <p>You are not authorized to view this content.</p>
-        <p>Allowed Username: @Configuration["AllowedUsername"]</p>
-        <p>Current Environment: @Environment.EnvironmentName</p>
-        @if (authenticationStateTask != null)
+        <p>Non sei autorizzato a visualizzare questo contenuto.</p>
+        @if (!Environment.IsProduction())
         {
             var authenticationState = authenticationStateTask.Result;
             var user = authenticationState.User;
-            if (user.Identity?.IsAuthenticated == true)
+            <p>Ambiente corrente: @Environment.EnvironmentName</p>
+            @if (user.Identity?.IsAuthenticated == true)
             {
-                <p>User: @user.Identity.Name</p>
+                <p>Utente: @user.Identity.Name</p>
             }
             else
             {
-                <p>User: Not authenticated</p>
+                <p>Utente: non autenticato</p>
             }
         }
     </NotAuthorized>

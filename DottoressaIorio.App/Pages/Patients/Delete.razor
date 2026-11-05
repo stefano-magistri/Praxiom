@@ -1,17 +1,26 @@
-﻿@page "/patient/{id:int}/delete/"
+@page "/patient/{id:int}/delete/"
 @inject PatientRepository repository
+@inject PatientTherapyRepository therapyRepository
+@inject IUnitOfWork unitOfWork
 @inject NavigationManager navigationManager
- 
-<PageHeader Title="Rimuovi Paziente" /> 
 
-<p>Vuoi rimuovere questo paziente?</p>
- 
-<CancelButton Url="@($"/patient/{Id}/")" /> 
-<RemoveButton OnClick="@SaveAsync" />
+<ActionPageHeader Title="Rimuovi paziente"/>
+
+@if (model == null)
+{
+    <p>ID paziente non valido o paziente non trovato.</p>
+}
+else
+{
+    <PatientContextCard Patient="model" ShowHeaderName="true"/>
+
+    <ConfirmDeleteSection ConfirmationText="Vuoi rimuovere questo paziente?"
+                          CancelUrl="@($"/patient/{Id}/")"
+                          OnConfirm="@SaveAsync"/>
+}
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private Patient model;
 
@@ -22,7 +31,17 @@
 
     private async Task SaveAsync()
     {
-        await repository.DeleteAsync(model);
-        navigationManager.NavigateTo("/patients");
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var therapies = await therapyRepository.GetAllAsync(Id);
+            foreach (var therapy in therapies)
+            {
+                await therapyRepository.DeleteAsync(therapy);
+            }
+
+            await repository.DeleteAsync(model);
+        });
+        navigationManager.NavigateTo("/");
     }
+
 }

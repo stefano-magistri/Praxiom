@@ -1,29 +1,31 @@
-﻿<!DOCTYPE html>
-<html>
-<head>
-    <style type="text/css">
-        body {
-            font-family: Calibri, sans-serif;
-        }
+<div style="
+    font-family: Calibri, sans-serif;
+    margin-left: 44px;
+    margin-right: 44px;
+    width: calc(100% - 88px);
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+">
+    <div>
+        <p class="h1" style="
+            font-family: 'Monotype Corsiva', Times, Serif;
+            font-size: 30px;
+            margin: 0;
+        ">
+            {{doctorName}}
+        </p>
 
-        p {
-            margin: 0px;
-            font-size: 20px;
-        }
+        {{doctorTitleLine}}
+        {{specializationLine}}
+        {{clinicNameLine}}
+        {{addressLine}}
+        {{phoneLine}}
+        {{emailLine}}
+    </div>
 
-        .h1 {
-            font-family: Monotype Corsiva, Times, Serif;
-            font-size: 32px;
-            margin: 0px
-        }
-    </style>
-</head>
-<body>
-    <p class="h1">Dott.ssa Alessandra Iorio</p>
-    <p>Medico Chirurgo</p>
-    <p>Specialista in Dermatologia e Venereologia</p>
-    <p>Dirigente Medico Istituto San Gallicano – Roma I.R.C.S.S.</p>
-    <p>Cell: 320.1871136</p>
-    <p><i>alessandraiorio8@gmail.com</i></p>
-</body>
-</html>
+    <div style="font-size: 15px; white-space: nowrap;">
+        Data terapia: {{therapyDate}}
+    </div>
+</div>

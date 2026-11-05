@@ -1,22 +1,73 @@
-﻿@inherits LayoutComponentBase
+@using System.Reflection
+@inherits LayoutComponentBase
+@inject DottoressaIorio.Shared.Branding.ProductBrandingOptions Branding
+@inject ILicenseService LicenseService
 
-<PageTitle>Dottoressa Iorio v1.0</PageTitle>
+<PageTitle>@Branding.ProductName v. @AppVersion</PageTitle>
 
 <AuthorizeViewCustom>
-    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">Dottoressa Iorio v1.0</a>
+    <header class="navbar navbar-dark sticky-top app-header flex-md-nowrap p-0 shadow-sm">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">@Branding.ProductName</a>
         <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <LoginDisplay />
+        <LoginDisplay/>
     </header>
     <div class="container-fluid">
         <div class="row">
-            <NavMenu/>
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 p-3">
+            <NavMenu AppVersion="@AppVersion"/>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 p-3 app-main">
+                @if (LicenseService.IsTrialExpired)
+                {
+                    <div class="alert alert-danger trial-shell-banner trial-shell-banner-expired" role="alert">
+                        @LicenseService.TrialExpiredMessage
+                    </div>
+                }
+                else if (LicenseService.IsTrial)
+                {
+                    <div class="alert alert-warning trial-shell-banner" role="status">
+                        <strong>Versione di prova attiva</strong>
+                        <span>Scade il @LicenseService.TrialExpiresUtc?.ToString("dd/MM/yyyy")</span>
+                        @if (LicenseService.RemainingTrialDays.HasValue)
+                        {
+                            <span>• @GetRemainingDaysLabel(LicenseService.RemainingTrialDays.Value)</span>
+                        }
+                        <span>• Limiti: @LicenseService.TrialLimitsSummary.ToLowerInvariant()</span>
+                    </div>
+                }
                 @Body
             </main>
         </div>
     </div>
 
 </AuthorizeViewCustom>
+
+@code {
+    private static readonly string AppVersion = ResolveAppVersion();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LicenseService.InitializeAsync();
+    }
+
+    private static string GetRemainingDaysLabel(int remainingDays)
+    {
+        return remainingDays == 1
+            ? "scadenza tra 1 giorno"
+            : $"scadenza tra {remainingDays} giorni";
+    }
+
+    private static string ResolveAppVersion()
+    {
+        var entryAssembly = Assembly.GetEntryAssembly() ?? typeof(MainLayout).Assembly;
+        var fileVersion = entryAssembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
+        if (!string.IsNullOrWhiteSpace(fileVersion))
+        {
+            return fileVersion;
+        }
+
+        var version = entryAssembly.GetName().Version;
+        return version is null ? "unknown" : $"{version.Major}.{version.Minor}.{version.Build}";
+    }
+
+}

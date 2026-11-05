@@ -1,35 +1,40 @@
-﻿@inherits PaginationBase
+@inherits PaginationBase
 
 <nav aria-label="Patients Pagination">
-    <ul class="pagination">
-        <li class="page-item" @onclick="PreviousPage">
-            <a class="page-link" href="#" @onclick:preventDefault>
+    <ul class="pagination d-flex flex-wrap gap-1">
+        <li class="page-item @(IsPreviousDisabled ? "disabled" : string.Empty)">
+            <button class="page-link" type="button" data-testid="pagination-prev" @onclick="PreviousPageAsync" disabled="@IsPreviousDisabled">
                 <span class="oi oi-caret-left px-1" aria-hidden="true"></span>
-            </a>
+            </button>
         </li>
-        @for (var pageIndex = 1; pageIndex <= TotalPages; pageIndex++)
+        @foreach (var item in PageItems)
         {
-            if (pageIndex == CurrentPage)
+            if (item.IsEllipsis)
+            {
+                <li class="page-item disabled" aria-hidden="true">
+                    <span class="page-link">…</span>
+                </li>
+            }
+            else if (item.PageNumber == CurrentPage)
             {
                 <li class="page-item active" aria-current="page">
-                    <span class="page-link">@pageIndex</span>
+                    <span class="page-link">@item.PageNumber</span>
                 </li>
             }
             else
             {
-                var i = pageIndex;
                 <li class="page-item">
-                    <button class="page-link" href="#"
-                            @onclick="() => SelectedPage.InvokeAsync(i)">
-                        @pageIndex
+                    <button class="page-link" type="button"
+                            @onclick="() => SelectPageAsync(item.PageNumber!.Value)">
+                        @item.PageNumber
                     </button>
                 </li>
             }
         }
-        <li class="page-item" @onclick="NextPage">
-            <a class="page-link" href="#" @onclick:preventDefault>
+        <li class="page-item @(IsNextDisabled ? "disabled" : string.Empty)">
+            <button class="page-link" type="button" data-testid="pagination-next" @onclick="NextPageAsync" disabled="@IsNextDisabled">
                 <span class="oi oi-caret-right px-1" aria-hidden="true"></span>
-            </a>
+            </button>
         </li>
     </ul>
 </nav>
