@@ -4,6 +4,26 @@
 Praxiom is a private Windows-first medical management application for a single-doctor workflow. The solution manages patients, therapies, reusable therapy templates, printable therapy PDFs, local licensing, and installer-driven deployment.
 
 
+## Application screenshots
+
+These are the four application screenshots featured in my [professional portfolio](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/).
+
+### Patient management
+
+![Patient management screen with search and patient records](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-patients.png)
+
+### Patient details and therapies
+
+![Patient information and associated therapies](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-details.png)
+
+### Therapy editor
+
+![Rich-text therapy editor](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-editor.png)
+
+### PDF document generation
+
+![Generated therapy PDF in a document viewer](https://stefano-magistri-dotnet.topjaguar.chatgpt.site/assets/praxiom-pdf.png)
+
 ## Solution structure
 
 - `DottoressaIorio.App`: Blazor Server UI, startup wiring, auth/authz, HTTP endpoints, and app host.
